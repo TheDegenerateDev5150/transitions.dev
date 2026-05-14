@@ -143,10 +143,13 @@
          to rest, using --p10-ease-bob to add overshoot via a
          subtle-bounce cubic-bezier (the cubic itself produces the
          "lands and settles" feel — no manual keyframe overshoot). */
-      --p10-bob-dur:    550ms;
+      --p10-bob-dur:    450ms;
       --p10-y-amount:   40px;
       --p10-blur-dur:    500ms;
       --p10-blur-from:   10px;
+      /* Exit uses its own (softer) blur amount so the disappearance
+         reads as a gentle fade rather than a full reverse of entry. */
+      --p10-blur-out-from: 4px;
       --p10-path-dur:    550ms;
       --p10-path-delay:  80ms;
       --p10-out-dur:     500ms;
@@ -1166,17 +1169,34 @@
        when JS explicitly toggles from "in" → "out" via the
        .is-exiting helper class — on a cold page load the element
        is just at opacity: 0 with no animation. */
-    /* Geometry matches Figma node 358:786 exactly: 48×48 frame, the
-       circle is the SVG <circle> at 10% opacity of #35BA00 (the same
-       hex used by the check stroke). We let the SVG paint both the
-       circle and the check so the asset is a faithful 1:1 of the
-       Figma export — no separate CSS background. */
+    /* Geometry matches Figma node 358:786 exactly: 48×48 frame, a
+       solid #35BA00 disc with a white check stroked over it. We let
+       the SVG paint both the circle and the check so the asset is a
+       single self-contained inline export — no separate CSS background. */
     .p10-check {
       width: 48px;
       height: 48px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      /* Disc surface — Figma effect stack from node 358:786:
+           1. solid #35BA00 fill
+           2. inset hairline (5% black, 0-spread) — same visual as a
+              1px border but as a shadow layer, so it stays inside
+              the 48×48 box without box-sizing math
+           3. outer box-shadow: soft drop + softer halo
+           4. inset bottom highlight: subtle 1px line giving the disc
+              a baked-in 3D feel
+         All shadows are on the wrapper (not the SVG) so the wrapper's
+         filter:blur(...) keyframes also blur them during the
+         appear/exit transitions. */
+      border-radius: 48px;
+      background: #35BA00;
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.05) inset,
+        0 1px 1px 0 rgba(0, 0, 0, 0.10),
+        0 1px 4px 0 rgba(0, 0, 0, 0.08),
+        0 -1px 1px 0 rgba(0, 0, 0, 0.09) inset;
       transform-origin: center;
       opacity: 0;
       will-change: transform, opacity, filter;
@@ -1208,18 +1228,15 @@
       animation: p10-draw var(--p10-path-dur) var(--p10-ease-path) var(--p10-path-delay, 0ms) forwards;
     }
 
-    /* Exit runs only three subtransitions over a shared duration
-       (--p10-out-dur): fade, blur, and path-undraw. Rotate and Y
-       movement are intentionally omitted — see the section banner
-       above. The path-undraw runs on the inner <path> via the
-       descendant rule below. */
+    /* Exit runs only two subtransitions over a shared duration
+       (--p10-out-dur): wrapper fade and wrapper blur. Rotate, Y
+       movement, and the path stroke-undraw are intentionally
+       omitted — the check stroke just fades out together with its
+       parent. See the section banner above for why. */
     .p10-check.is-exiting {
       animation:
         p10-fade-out var(--p10-out-dur) var(--p10-ease-out) forwards,
         p10-blur-out var(--p10-out-dur) var(--p10-ease-out) forwards;
-    }
-    .p10-check.is-exiting svg path {
-      animation: p10-draw-out var(--p10-out-dur) var(--p10-ease-out) forwards;
     }
 
     @keyframes p10-fade     { from { opacity: 0; } to { opacity: 1; } }
@@ -1234,7 +1251,7 @@
     }
     @keyframes p10-blur-out {
       from { filter: blur(0); }
-      to   { filter: blur(var(--p10-blur-from)); }
+      to   { filter: blur(var(--p10-blur-out-from)); }
     }
     /* Y bob entry — single rise from below up to rest. The
        overshoot/settle feeling comes from --p10-ease-bob (a
@@ -1248,13 +1265,6 @@
     }
     @keyframes p10-draw {
       to { stroke-dashoffset: 0; }
-    }
-    /* Path-undraw: runs the stroke back from drawn (0) to fully
-       hidden (20). The trailing edge of the stroke retracts as
-       the icon disappears, mirroring the entry draw. */
-    @keyframes p10-draw-out {
-      from { stroke-dashoffset: 0; }
-      to   { stroke-dashoffset: 20; }
     }
 
     /* ============================================================ */
@@ -1881,14 +1891,12 @@
       <p class="proto-label">10.pototype</p>
       <div class="stage">
         <div class="p10-check" id="p10-check" data-state="out" aria-hidden="true">
-          <!-- 1:1 export of Figma node 358:786 (Group 41185).
-               Circle + check share the same #35BA00 hue; circle uses
-               fill-opacity 0.1 for the soft tint, path is drawn over
-               it via stroke-dashoffset. -->
+          <!-- White check only — the disc itself is rendered by
+               `.p10-check` (background + box-shadow). The path is
+               stroked over it via stroke-dashoffset (see CSS). -->
           <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="24" cy="24" r="24" fill="#35BA00" fill-opacity="0.1"/>
             <path d="M17.2803 24.9602L21.7603 29.7602L30.7203 20.1602"
-                  stroke="#35BA00"
+                  stroke="#ffffff"
                   stroke-width="3"
                   stroke-linecap="round"
                   stroke-linejoin="round"/>
@@ -2124,10 +2132,11 @@
         <div class="cp-row"><span class="cp-label">Opacity (ms)</span><input type="number" data-var="--p10-opacity-dur" data-unit="ms" min="0" max="2000" step="10" value="550"></div>
         <div class="cp-row"><span class="cp-label">Rotate (ms)</span><input type="number" data-var="--p10-rotate-dur" data-unit="ms" min="0" max="2000" step="10" value="550"></div>
         <div class="cp-row"><span class="cp-label">Rotate from (deg)</span><input type="number" data-var="--p10-rotate-from" data-unit="deg" min="-180" max="180" step="1" value="80"></div>
-        <div class="cp-row"><span class="cp-label">Y bob (ms)</span><input type="number" data-var="--p10-bob-dur" data-unit="ms" min="0" max="2000" step="10" value="550"></div>
+        <div class="cp-row"><span class="cp-label">Y bob (ms)</span><input type="number" data-var="--p10-bob-dur" data-unit="ms" min="0" max="2000" step="10" value="450"></div>
         <div class="cp-row"><span class="cp-label">Y amount (px)</span><input type="number" data-var="--p10-y-amount" data-unit="px" min="0" max="80" step="0.5" value="40"></div>
         <div class="cp-row"><span class="cp-label">Blur (ms)</span><input type="number" data-var="--p10-blur-dur" data-unit="ms" min="0" max="2000" step="10" value="500"></div>
         <div class="cp-row"><span class="cp-label">Blur from (px)</span><input type="number" data-var="--p10-blur-from" data-unit="px" min="0" max="80" step="1" value="10"></div>
+        <div class="cp-row"><span class="cp-label">Blur out (px)</span><input type="number" data-var="--p10-blur-out-from" data-unit="px" min="0" max="80" step="1" value="4"></div>
         <div class="cp-row"><span class="cp-label">Path (ms)</span><input type="number" data-var="--p10-path-dur" data-unit="ms" min="0" max="2000" step="10" value="550"></div>
         <div class="cp-row"><span class="cp-label">Path delay (ms)</span><input type="number" data-var="--p10-path-delay" data-unit="ms" min="0" max="1000" step="10" value="80"></div>
         <div class="cp-row"><span class="cp-label">Out (ms)</span><input type="number" data-var="--p10-out-dur" data-unit="ms" min="0" max="2000" step="10" value="500"></div>

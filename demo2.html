@@ -285,6 +285,9 @@
       --p10-y-amount:    40px;
       --p10-blur-dur:    500ms;
       --p10-blur-from:   10px;
+      /* Exit uses its own (softer) blur amount so the disappearance
+         reads as a gentle fade rather than a full reverse of entry. */
+      --p10-blur-out-from: 4px;
       --p10-path-dur:    550ms;
       --p10-path-delay:  80ms;
       --p10-out-dur:     500ms;
@@ -1804,10 +1807,9 @@
 
     /* ─── Prototype 10 — Success check appear / disappear ────── */
     /* Geometry mirrors Figma node 358:786 exactly: 48×48 frame,
-       circle is the SVG <circle> at 10% opacity of #35BA00 (the
-       hex shared with the check stroke). The path is drawn via
-       stroke-dashoffset; length ≈ 19.7, we use 20 with round caps
-       so a tiny overshoot is invisible. */
+       solid #35BA00 circle behind a white check stroke. The path is
+       drawn via stroke-dashoffset; length ≈ 19.7, we use 20 with
+       round caps so a tiny overshoot is invisible. */
     .p10-stage-inner {
       padding-bottom: 0;
     }
@@ -1826,6 +1828,10 @@
       height: 48px;
       display: block;
       overflow: visible;
+      /* Soft neutral shadow behind the disc (matches Figma 358:786 —
+         pixel-sampled from the asset: peak darkening ~12% black at
+         the bottom edge with a 1px Y-offset and 4px blur radius). */
+      filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.12));
     }
     .p10-check svg path {
       stroke-dasharray: 20;
@@ -1841,16 +1847,15 @@
     .p10-check[data-state="in"] svg path {
       animation: p10-draw var(--p10-path-dur) var(--p10-ease-path) var(--p10-path-delay, 0ms) forwards;
     }
-    /* Exit runs only fade + blur + path-undraw — rotate and Y are
-       intentionally omitted so the icon dissolves in place rather
-       than flicking back on a short out-duration. */
+    /* Exit runs only fade + blur on the wrapper — rotate / Y / path
+       are intentionally omitted so the icon dissolves in place
+       rather than flicking back on a short out-duration. The path
+       (check stroke) doesn't get its own exit animation; it just
+       fades out together with the wrapper. */
     .p10-check.is-exiting {
       animation:
         p10-fade-out var(--p10-out-dur) var(--p10-ease-out) forwards,
         p10-blur-out var(--p10-out-dur) var(--p10-ease-out) forwards;
-    }
-    .p10-check.is-exiting svg path {
-      animation: p10-draw-out var(--p10-out-dur) var(--p10-ease-out) forwards;
     }
     @keyframes p10-fade     { from { opacity: 0; } to { opacity: 1; } }
     @keyframes p10-fade-out { from { opacity: 1; } to { opacity: 0; } }
@@ -1864,14 +1869,13 @@
     }
     @keyframes p10-blur-out {
       from { filter: blur(0); }
-      to   { filter: blur(var(--p10-blur-from)); }
+      to   { filter: blur(var(--p10-blur-out-from)); }
     }
     @keyframes p10-bob {
       from { translate: 0 var(--p10-y-amount); }
       to   { translate: 0 0; }
     }
     @keyframes p10-draw     { to { stroke-dashoffset: 0; } }
-    @keyframes p10-draw-out { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 20; } }
 
     /* ─── Prototype 11 — Avatar group hover spring ───────────── */
     /* Each .p11-avatar reads two inline CSS variables that JS
@@ -2864,14 +2868,12 @@
         <div class="card-stage">
           <div class="stage-inner p10-stage-inner">
             <div class="p10-check" data-proto-check data-state="out" aria-hidden="true">
-              <!-- 1:1 export of Figma node 358:786. Circle + check
-                   share the same #35BA00 hue; the circle uses
-                   fill-opacity 0.1 for the soft tint, the path is
-                   stroked over it via stroke-dashoffset. -->
+              <!-- Solid #35BA00 disc with a white check stroked over
+                   it via stroke-dashoffset. -->
               <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <circle cx="24" cy="24" r="24" fill="#35BA00" fill-opacity="0.1"/>
+                <circle cx="24" cy="24" r="24" fill="#35BA00"/>
                 <path d="M17.2803 24.9602L21.7603 29.7602L30.7203 20.1602"
-                      stroke="#35BA00"
+                      stroke="#ffffff"
                       stroke-width="3"
                       stroke-linecap="round"
                       stroke-linejoin="round"/>
@@ -3339,39 +3341,33 @@ export function NumberPopIn({ value = "123" }) {
 
 // Pair with the CSS from the CSS tab.
 // The .t-success-check wrapper is the API surface — drop any icon
-// (SVG, image, glyph) inside it. data-state drives the entrance ("in")
-// and the resting hidden state ("out"). On "in" → "out" we briefly add
-// `.is-exiting` so the soft fade-out animations play; the cold "out"
-// state never runs the exit. Replay of "in" is handled by clearing
-// the state and re-applying it on the next animation frame so the
-// keyframes restart cleanly.
+// (SVG, image, glyph) inside it. data-state drives the appear
+// transition: "out" is the resting hidden state (opacity 0, no
+// animation), "in" runs fade + rotate + blur + Y-bob + path draw
+// in parallel. To replay "in" cleanly on rapid re-triggers we clear
+// the state and re-apply it after a forced layout commit so the
+// keyframes restart from offset 0.
+//
+// This snippet covers the appear transition only — bring your own
+// hide behavior (unmount, opacity:0, or a custom exit).
 export function SuccessCheck({ children }) {
   const [state, setState] = useState("out");
-  const [exiting, setExiting] = useState(false);
   const ref = useRef(null);
 
-  const toggle = () => {
-    if (state === "in") {
-      setExiting(true);
-      setState("out");
-      window.setTimeout(() => setExiting(false), readMs("--check-out-dur", 500) + 20);
-    } else {
-      setExiting(false);
-      // Force a layout commit before flipping back to "in" so the
-      // browser re-runs the entrance keyframes from offset 0.
-      requestAnimationFrame(() => {
-        if (ref.current) void ref.current.offsetWidth;
-        setState("in");
-      });
-    }
+  const show = () => {
+    setState("out");
+    requestAnimationFrame(() => {
+      if (ref.current) void ref.current.offsetWidth;
+      setState("in");
+    });
   };
 
   return (
     <>
-      <button type="button" onClick={toggle}>Animate</button>
+      <button type="button" onClick={show}>Animate</button>
       <span
         ref={ref}
-        className={"t-success-check" + (exiting ? " is-exiting" : "")}
+        className="t-success-check"
         data-state={state}
         aria-hidden="true"
       >
@@ -3379,13 +3375,6 @@ export function SuccessCheck({ children }) {
       </span>
     </>
   );
-}
-
-function readMs(name, fallback) {
-  const raw = getComputedStyle(document.documentElement)
-    .getPropertyValue(name).trim();
-  const n = parseFloat(raw);
-  return Number.isFinite(n) ? n : fallback;
 }
 </script>
 
@@ -4115,17 +4104,13 @@ function readMs(name, fallback) {
             "      </svg>\n" +
             "    </span>\n" +
             "\n" +
-            "  State machine:\n" +
+            "  Trigger:\n" +
             "    - Cold load is data-state=\"out\" (opacity 0; no animation).\n" +
-            "    - Show: set data-state=\"in\" (entry runs fade + rotate +\n" +
-            "      blur + Y-bob + path draw in parallel).\n" +
-            "    - Hide: add `.is-exiting`, set data-state=\"out\". After\n" +
-            "      --check-out-dur ms remove `.is-exiting` so a future\n" +
-            "      \"in\" replays cleanly.\n" +
+            "    - Show: set data-state=\"in\" (fade + rotate + blur + Y-bob\n" +
+            "      + path draw run in parallel).\n" +
             "\n" +
-            "  Note: rotate and Y are intentionally absent from the exit so\n" +
-            "  the icon dissolves in place — animating them backwards on a\n" +
-            "  short out-duration reads as a nervous flick.",
+            "  Snippet covers the appear transition only — bring your own\n" +
+            "  hide behavior (e.g. unmount, opacity:0, or a custom exit).",
           vars: [
             ["--check-opacity-dur",  "--p10-opacity-dur"],
             ["--check-rotate-dur",   "--p10-rotate-dur"],
@@ -4136,7 +4121,6 @@ function readMs(name, fallback) {
             ["--check-blur-from",    "--p10-blur-from"],
             ["--check-path-dur",     "--p10-path-dur"],
             ["--check-path-delay",   "--p10-path-delay"],
-            ["--check-out-dur",      "--p10-out-dur"],
             ["--check-ease-out",     "--p10-ease-out"],
             ["--check-ease-opacity", "--p10-ease-opacity"],
             ["--check-ease-rotate",  "--p10-ease-rotate"],
@@ -4144,8 +4128,8 @@ function readMs(name, fallback) {
             ["--check-ease-path",    "--p10-ease-path"]
           ],
           css:
-            "/* Wrapper drives the entrance / exit animations; it doesn't\n" +
-            "   own any sizing or color so you can drop in any icon. */\n" +
+            "/* Wrapper drives the appear animation; it doesn't own any\n" +
+            "   sizing or color so you can drop in any icon. */\n" +
             ".t-success-check {\n" +
             "  display: inline-block;\n" +
             "  transform-origin: center;\n" +
@@ -4174,17 +4158,7 @@ function readMs(name, fallback) {
             "  animation: t-check-draw var(--check-path-dur) var(--check-ease-path) var(--check-path-delay, 0ms) forwards;\n" +
             "}\n" +
             "\n" +
-            ".t-success-check.is-exiting {\n" +
-            "  animation:\n" +
-            "    t-check-fade-out var(--check-out-dur) var(--check-ease-out) forwards,\n" +
-            "    t-check-blur-out var(--check-out-dur) var(--check-ease-out) forwards;\n" +
-            "}\n" +
-            ".t-success-check.is-exiting svg path {\n" +
-            "  animation: t-check-draw-out var(--check-out-dur) var(--check-ease-out) forwards;\n" +
-            "}\n" +
-            "\n" +
-            "@keyframes t-check-fade     { from { opacity: 0; } to { opacity: 1; } }\n" +
-            "@keyframes t-check-fade-out { from { opacity: 1; } to { opacity: 0; } }\n" +
+            "@keyframes t-check-fade { from { opacity: 0; } to { opacity: 1; } }\n" +
             "@keyframes t-check-rotate {\n" +
             "  from { transform: rotate(var(--check-rotate-from)); }\n" +
             "  to   { transform: rotate(0deg); }\n" +
@@ -4193,16 +4167,11 @@ function readMs(name, fallback) {
             "  from { filter: blur(var(--check-blur-from)); }\n" +
             "  to   { filter: blur(0); }\n" +
             "}\n" +
-            "@keyframes t-check-blur-out {\n" +
-            "  from { filter: blur(0); }\n" +
-            "  to   { filter: blur(var(--check-blur-from)); }\n" +
-            "}\n" +
             "@keyframes t-check-bob {\n" +
             "  from { translate: 0 var(--check-y-amount); }\n" +
             "  to   { translate: 0 0; }\n" +
             "}\n" +
-            "@keyframes t-check-draw     { to { stroke-dashoffset: 0; } }\n" +
-            "@keyframes t-check-draw-out { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 20; } }\n" +
+            "@keyframes t-check-draw { to { stroke-dashoffset: 0; } }\n" +
             "\n" +
             "@media (prefers-reduced-motion: reduce) {\n" +
             "  .t-success-check { animation: none !important; opacity: 1; }\n" +
