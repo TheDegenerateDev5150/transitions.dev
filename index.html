@@ -514,7 +514,7 @@
       border: 0;
       border-radius: 50px;
       background: var(--chip-bg);
-      color: var(--text);
+      color: var(--icon-color-muted);
       font-family: var(--font-sans);
       font-size: 13px;
       font-weight: 500;
@@ -524,26 +524,28 @@
       transition: background-color 0.15s ease, color 0.15s ease;
       -webkit-tap-highlight-color: transparent;
     }
-    .icon-btn-pill:hover { background: var(--chip-bg-hover); }
+    .icon-btn-pill:hover { background: var(--chip-bg-hover); color: var(--icon-color); }
     .icon-btn-pill:active { background: var(--chip-bg-pressed); }
     .icon-btn-pill:focus-visible {
       outline: 2px solid var(--icon-color);
       outline-offset: 2px;
     }
     /* Height-capped so non-square icons (e.g. the 14×16 "Skill"
-       book) keep their native aspect ratio. */
+       book) keep their native aspect ratio. The icon and label
+       both inherit color from the .icon-btn-pill root so they
+       track together (muted by default, full --icon-color on
+       hover). */
     .icon-btn-pill svg {
       width: auto;
       height: 16px;
       max-width: 16px;
       display: block;
-      color: var(--icon-color-muted);
+      color: inherit;
       transition: color 0.15s ease;
     }
-    .icon-btn-pill:hover svg { color: var(--icon-color); }
     .icon-btn-pill .pill-label {
       display: inline-block;
-      color: var(--text);
+      color: inherit;
     }
 
     /* Mirrors the P5 "Icon swap" prototype architecture: both icons
@@ -1403,13 +1405,21 @@
       flex-shrink: 0;
     }
 
+    /* Every transform value below carries a trailing translateZ(0)
+       to pre-promote the compositor layer. Safari has a long-
+       standing quirk where the .surface box-shadow on a scale-
+       animated element paints with a delay — WebKit defers the
+       layer's paint until the transform settles, so the shadow
+       snaps in ~150-200 ms after the open animation starts.
+       translateZ(0) forces the layer to be created with paint
+       ready from frame 1 so the shadow rides in with the rest. */
     .p2-dropdown {
       width: 234px;
       height: 136px;
       position: relative;
       padding: 8px;
       transform-origin: var(--p2-origin);
-      transform: scale(var(--p2-pre-scale));
+      transform: scale(var(--p2-pre-scale)) translateZ(0);
       opacity: 0;
       pointer-events: none;
       transition:
@@ -1417,10 +1427,10 @@
         opacity var(--p2-open-dur) var(--p2-ease);
     }
     .p2-dropdown.is-open {
-      transform: scale(1); opacity: 1; pointer-events: auto;
+      transform: scale(1) translateZ(0); opacity: 1; pointer-events: auto;
     }
     .p2-dropdown.is-closing {
-      transform: scale(var(--p2-closing-scale));
+      transform: scale(var(--p2-closing-scale)) translateZ(0);
       opacity: 0;
       pointer-events: none;
       transition:
