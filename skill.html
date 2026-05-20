@@ -2014,15 +2014,16 @@
     .p10-check[data-state="in"] svg path {
       animation: p10-draw var(--p10-path-dur) var(--p10-ease-path) var(--p10-path-delay, 0ms) forwards;
     }
-    /* Exit runs only fade + blur on the wrapper — rotate / Y / path
-       are intentionally omitted so the icon dissolves in place
-       rather than flicking back on a short out-duration. The path
-       (check stroke) doesn't get its own exit animation; it just
-       fades out together with the wrapper. */
+    /* Exit runs ONLY opacity fade on the wrapper — rotate / Y /
+       blur / path are intentionally omitted. The appearance
+       already owns the blur axis (p10-blur, 10 px → 0), so adding
+       a separate blur on the exit would double-count the soft-
+       edge effect and read as a too-mushy fade. The path (check
+       stroke) doesn't get its own exit animation; it just fades
+       out together with the wrapper. */
     .p10-check.is-exiting {
       animation:
-        p10-fade-out var(--p10-out-dur) var(--p10-ease-out) forwards,
-        p10-blur-out var(--p10-out-dur) var(--p10-ease-out) forwards;
+        p10-fade-out var(--p10-out-dur) var(--p10-ease-out) forwards;
     }
     @keyframes p10-fade     { from { opacity: 0; } to { opacity: 1; } }
     @keyframes p10-fade-out { from { opacity: 1; } to { opacity: 0; } }

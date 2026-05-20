@@ -2,7 +2,9 @@
 
 ## When to use
 
-Confirmation icons that should land with a small flourish — a green check after publishing, a saved-state badge, a sent-message receipt. Stacks five sub-animations (fade, rotate, blur, Y-bob, path draw) so the icon arrives like a punctuation mark instead of just popping in.
+Confirming a completed action — payment processed, file uploaded, message sent, form saved. The icon fades in, rotates upright, settles with a Y-bob, and (for SVG icons) draws its path stroke. Use whenever a status changes from "pending / unknown" to "success" and you want the moment to feel earned rather than instantaneous.
+
+The snippet covers the **appear transition only** — bring your own hide behavior (e.g. unmount, opacity:0, or a custom exit). This is intentional: success states are usually persistent, and a soft fade-out is rarely worth the extra DOM/JS surface.
 
 ## HTML usage
 
@@ -125,24 +127,43 @@ The `@media (prefers-reduced-motion: reduce)` guard at the bottom of the snippet
 ## JavaScript orchestration
 
 ```js
-// Replay the success-check entry: snap data-state to "out", force a
-// reflow so the keyframes restart from 0, then flip back to "in". If
-// your check stroke isn't 20 units long, measure once with
-// path.getTotalLength() and update the stroke-dasharray inline.
+// Cold-load → "out" (no animation). On show, flip to "in".
+// Replay-on-retrigger: reset to "out", force a reflow, then flip
+// back to "in" so the keyframes restart from offset 0.
 const check = document.querySelector(".t-success-check");
 
-function playSuccessCheck() {
-  // Sync stroke-dasharray to the actual path length so the draw
-  // animation lands exactly at the end of the stroke.
-  const path = check.querySelector("svg path");
-  if (path) {
-    const len = path.getTotalLength();
-    path.style.strokeDasharray = len;
-    path.style.strokeDashoffset = len;
-  }
+function showCheck() {
   check.setAttribute("data-state", "out");
-  void check.offsetWidth; // reflow so the animation restarts
+  void check.offsetWidth; // force reflow so keyframes restart
   check.setAttribute("data-state", "in");
 }
+
+// If the icon is mounted unconditionally and only shown after some
+// event (e.g. await save()), the simpler form is enough:
+//   check.setAttribute("data-state", "in");
+// The reflow trick only matters when you replay the appear from
+// an already-visible state.
 ```
+
+### Calibrating `stroke-dasharray` for your path
+
+The CSS hardcodes `stroke-dasharray: 20` as a placeholder. For a clean draw, replace 20 with the actual length of **your** path (in user units), measured once with `path.getTotalLength()`. Two ways to do it:
+
+1. **Static (recommended)** — measure the path in the browser console once, then paste the rounded-up integer into the CSS:
+
+   ```js
+   document.querySelector(".t-success-check svg path").getTotalLength()
+   // → 19.42 → use stroke-dasharray: 20 (round up by 1px for safety)
+   ```
+
+2. **Dynamic** — measure on mount and set both properties inline. Use this when paths vary per-render:
+
+   ```js
+   const path = wrapper.querySelector("svg path");
+   const len = Math.ceil(path.getTotalLength());
+   path.style.strokeDasharray = String(len);
+   path.style.strokeDashoffset = String(len);
+   ```
+
+If the dasharray is too short the stroke pre-reveals before the animation starts; too long and the path appears to draw past its end before fading in. Round up by 1px to absorb sub-pixel float jitter.
 

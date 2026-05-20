@@ -2103,10 +2103,14 @@
          2. Snap data-state away from "in" — this removes the
             [data-state="in"] animation declaration and releases the
             forwards lock.
-         3. Reflow, then transition opacity + filter to the fade
-            target via inline styles (which now win the cascade).
-       clearBadgeFade strips the inline styles so the next publish
-       can re-run the canonical success-check from a clean slate. */
+         3. Reflow, then transition opacity to 0 via an inline
+            style (which now wins the cascade).
+       Only opacity is animated — the t-success-check entry already
+       owns the blur axis (10 px → 0 via t-check-blur), so stacking
+       another 2 px wrapper blur during the cross-fade would double-
+       count the effect and read as a too-soft fade. clearBadgeFade
+       strips the inline styles so the next publish can re-run the
+       canonical success-check from a clean slate. */
     function fadeBadgeOut() {
       const wrap = publishedBadge;
       const cs = getComputedStyle(wrap);
@@ -2122,11 +2126,10 @@
       // fades out the same way in skill and generic modes.
       wrap.style.setProperty(
         'transition',
-        'opacity ' + publishTextDur + 'ms ease, filter ' + publishTextDur + 'ms ease',
+        'opacity ' + publishTextDur + 'ms ease',
         'important'
       );
       wrap.style.opacity = '0';
-      wrap.style.filter  = 'blur(var(--text-swap-blur))';
     }
     function clearBadgeFade() {
       const wrap = publishedBadge;

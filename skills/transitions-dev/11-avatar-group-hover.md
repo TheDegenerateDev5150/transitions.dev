@@ -2,7 +2,9 @@
 
 ## When to use
 
-Avatar stacks, chip rows, or any horizontally clustered set of items where pointing at one should make the cluster react together. The hovered item scales up and lifts; siblings shift by `lift × falloff^distance` so the response decays cleanly with a directional ease-in / ease-out spring.
+Hovering an item in a horizontal stack (avatar row, chip group, badge cluster, segmented button) should lift the hovered item, gently lift its neighbors with a power-falloff, then snap everything back with an overshoot spring on `mouseleave`. Direction-aware easing (clean ease-in on hover, bouncy ease-out on return) is what gives the group its springy, physical feel.
+
+Equally good for: pill stacks in a tag editor, chips in a filter bar, reaction-emoji rows, anywhere a horizontal row benefits from a "comb" interaction signal.
 
 ## HTML usage
 
@@ -79,44 +81,120 @@ The `@media (prefers-reduced-motion: reduce)` guard at the bottom of the snippet
 ## JavaScript orchestration
 
 ```js
-// Direction-aware spring on hover. Lift uses --avatar-ease-in on
-// hover-in and --avatar-ease-out (typically a heavier overshoot) on
-// hover-leave so the bounce only fires on the way back to rest.
-const root  = document.querySelector(".t-avatar-group");
-const items = Array.from(root.querySelectorAll(".t-avatar"));
+// Distance-falloff lift with direction-aware easing. The trick
+// is setting transition-timing-function inline BEFORE writing the
+// CSS variables — the browser uses whatever timing-function is
+// current at the moment a transitionable property changes, so this
+// gives us ease-in on the way up and a bouncy spring on the return
+// without two separate transition declarations.
+const root = document.querySelector(".t-avatar-group");
+const avatars = Array.from(root.querySelectorAll(".t-avatar"));
+const cs = getComputedStyle(document.documentElement);
+const num = (name, fb) => {
+  const v = parseFloat(cs.getPropertyValue(name));
+  return Number.isFinite(v) ? v : fb;
+};
+const ease = (name, fb) =>
+  cs.getPropertyValue(name).trim() || fb;
 
-function readNum(name) {
-  const cs = getComputedStyle(root);
-  return parseFloat(cs.getPropertyValue(name)) || 0;
-}
-function readEase(name) {
-  return getComputedStyle(root).getPropertyValue(name).trim()
-    || "cubic-bezier(0.22, 1, 0.36, 1)";
-}
+function setShifts(activeIdx, phase) {
+  const lift    = num("--avatar-lift", -4);
+  const falloff = num("--avatar-falloff", 0.45);
+  const scale   = num("--avatar-scale", 1.05);
+  const tf      = phase === "out"
+    ? ease("--avatar-ease-out", "cubic-bezier(0.34, 3.85, 0.64, 1)")
+    : ease("--avatar-ease-in",  "cubic-bezier(0.22, 1, 0.36, 1)");
 
-function setShifts(activeIdx, easeName) {
-  const lift    = readNum("--avatar-lift");
-  const falloff = readNum("--avatar-falloff");
-  const scale   = readNum("--avatar-scale") || 1;
-  const ease    = readEase(easeName);
-  items.forEach((el, i) => {
-    el.style.transitionTimingFunction = ease;
-    if (activeIdx === null) {
+  avatars.forEach((el, i) => {
+    el.style.transitionTimingFunction = tf;
+    if (activeIdx == null) {
       el.style.setProperty("--shift", "0px");
       el.style.setProperty("--scale-active", "1");
-    } else {
-      const d = Math.abs(i - activeIdx);
-      el.style.setProperty("--shift",
-        (lift * Math.pow(falloff, d)).toFixed(3) + "px");
-      el.style.setProperty("--scale-active",
-        i === activeIdx ? scale : 1);
+      return;
     }
+    const d = Math.abs(i - activeIdx);
+    el.style.setProperty(
+      "--shift",
+      (lift * Math.pow(falloff, d)).toFixed(3) + "px"
+    );
+    el.style.setProperty(
+      "--scale-active",
+      i === activeIdx ? String(scale) : "1"
+    );
   });
 }
 
-items.forEach((el, i) => {
-  el.addEventListener("mouseenter", () => setShifts(i, "--avatar-ease-in"));
+avatars.forEach((el, i) => {
+  el.addEventListener("mouseenter", () => setShifts(i, "in"));
 });
-root.addEventListener("mouseleave", () => setShifts(null, "--avatar-ease-out"));
+root.addEventListener("mouseleave", () => setShifts(null, "out"));
 ```
+
+### React form
+
+```jsx
+import { useRef } from "react";
+
+// `items` is any list of React nodes (avatars, chips, badges, …)
+// — this hook only owns the hover-spring transition. Each item is
+// wrapped in a .t-avatar so it picks up the transform/transition
+// rules from CSS.
+export function AvatarGroup({ items }) {
+  const rootRef = useRef(null);
+
+  const setShifts = (activeIdx, phase) => {
+    if (!rootRef.current) return;
+    const cs = getComputedStyle(document.documentElement);
+    const num = (name, fb) => {
+      const v = parseFloat(cs.getPropertyValue(name));
+      return Number.isFinite(v) ? v : fb;
+    };
+    const ease = (name, fb) =>
+      cs.getPropertyValue(name).trim() || fb;
+
+    const lift    = num("--avatar-lift", -4);
+    const falloff = num("--avatar-falloff", 0.45);
+    const scale   = num("--avatar-scale", 1.05);
+    const tf      = phase === "out"
+      ? ease("--avatar-ease-out", "cubic-bezier(0.34, 3.85, 0.64, 1)")
+      : ease("--avatar-ease-in",  "cubic-bezier(0.22, 1, 0.36, 1)");
+
+    rootRef.current.querySelectorAll(".t-avatar").forEach((el, i) => {
+      el.style.transitionTimingFunction = tf;
+      if (activeIdx == null) {
+        el.style.setProperty("--shift", "0px");
+        el.style.setProperty("--scale-active", "1");
+        return;
+      }
+      const d = Math.abs(i - activeIdx);
+      el.style.setProperty(
+        "--shift",
+        (lift * Math.pow(falloff, d)).toFixed(3) + "px"
+      );
+      el.style.setProperty(
+        "--scale-active",
+        i === activeIdx ? String(scale) : "1"
+      );
+    });
+  };
+
+  return (
+    <div ref={rootRef} onMouseLeave={() => setShifts(null, "out")}>
+      {items.map((node, i) => (
+        <div
+          key={i}
+          className="t-avatar"
+          onMouseEnter={() => setShifts(i, "in")}
+        >
+          {node}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Why the timing-function is set inline before the variable writes
+
+Both the lift (hover-in) and the return (mouseleave) animate the same property — `transform`. If we declared one fixed `transition-timing-function` in CSS, both directions would share it. Setting it inline immediately before mutating `--shift` / `--scale-active` means each new transition picks up the timing-function that was current at the moment the property changed, giving us a clean curve on the way up and a bouncy overshoot on the way back without a second `.is-leaving` class.
 

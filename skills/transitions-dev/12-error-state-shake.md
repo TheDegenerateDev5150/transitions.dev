@@ -2,7 +2,9 @@
 
 ## When to use
 
-Form fields that need to call out an invalid submission — wrong email, password mismatch, required field empty. The input shakes briefly via a per-segment cubic-bezier shake, the error message fades in, and after a hold both auto-revert so the field returns to neutral once the user starts correcting.
+Form validation feedback — invalid email, wrong password, missing required field, mismatched confirmation. The input shakes left/right with overshoot, the border switches to error color, and a message reveals beneath. After a hold timer (long enough to read the message), border + message fade back to neutral. Optional: typing into the input cancels the auto-revert immediately.
+
+The `t-` snippet is also a fit for any "this is wrong, try again" moment that needs a percussive hint without an OS-level alert — a wrong-PIN field on a lock screen, a duplicate-tag warning in a tag editor, a "name already taken" username field.
 
 ## HTML usage
 
@@ -126,32 +128,75 @@ The `@media (prefers-reduced-motion: reduce)` guard at the bottom of the snippet
 ## JavaScript orchestration
 
 ```js
-// Replay the shake + manage the auto-revert hold. The shake replays
-// by removing/reflowing/re-adding .is-shaking; the revert timer drops
-// .is-error from both the wrap and the input so the border + message
-// fade back to neutral over --revert-dur.
-const wrap   = document.querySelector(".t-input-wrap");
-const input  = wrap.querySelector(".t-input");
-const cs     = getComputedStyle(document.documentElement);
-const holdMs = parseFloat(cs.getPropertyValue("--revert-hold")) || 3000;
+// Trigger the error state, replay the shake, and schedule the
+// auto-revert. Cancel any in-flight revert so the timer always
+// tracks the latest call.
+const wrap = document.querySelector(".t-input-wrap");
+const input = wrap.querySelector(".t-input");
 
-let revertTimer = null;
+const cs = getComputedStyle(document.documentElement);
+const ms = (name, fb) => {
+  const v = parseFloat(cs.getPropertyValue(name));
+  return Number.isFinite(v) ? v : fb;
+};
 
-function setError(show) {
-  wrap.classList.toggle("is-error", show);
-  input.classList.toggle("is-error", show);
-  clearTimeout(revertTimer);
-  if (show) {
-    // Replay the shake from a clean baseline.
-    input.classList.remove("is-shaking");
-    void input.offsetWidth; // reflow so the keyframe restarts from 0
-    input.classList.add("is-shaking");
-    // Auto-revert: drop .is-error after the hold so the border +
-    // message fade back. The shake itself ends much sooner.
-    revertTimer = setTimeout(() => setError(false), holdMs);
-  } else {
-    input.classList.remove("is-shaking");
-  }
+function showError() {
+  wrap.classList.add("is-error");
+  input.classList.add("is-error");
+
+  // Replay the shake from a clean baseline.
+  input.classList.remove("is-shaking");
+  void input.offsetWidth; // force reflow
+  input.classList.add("is-shaking");
+
+  const shakeMs =
+    ms("--shake-dur-a", 80) * 2 +
+    ms("--shake-dur-b", 60) * 2;
+  setTimeout(() => input.classList.remove("is-shaking"), shakeMs + 20);
+
+  // Auto-revert: hold long enough to read the message, then fade
+  // border + message back to neutral via the CSS transitions.
+  if (wrap._revertTimer) clearTimeout(wrap._revertTimer);
+  const hold = ms("--revert-hold", 3000);
+  wrap._revertTimer = setTimeout(() => {
+    wrap._revertTimer = null;
+    wrap.classList.remove("is-error");
+    input.classList.remove("is-error");
+  }, shakeMs + hold);
 }
+
+// Optional but recommended: typing cancels the auto-revert and
+// clears the error so the user isn't shaking at a value they're
+// already correcting.
+const inputEl = wrap.querySelector("input, textarea");
+inputEl?.addEventListener("input", () => {
+  if (wrap._revertTimer) {
+    clearTimeout(wrap._revertTimer);
+    wrap._revertTimer = null;
+  }
+  wrap.classList.remove("is-error");
+  input.classList.remove("is-error");
+});
 ```
+
+### Recomputing the keyframe stops
+
+The `%`-stops in `@keyframes t-input-shake` are cumulative leg durations as a fraction of the total. The default leg pattern is **A, A, B, B** — the two big-swing legs (right peak → left peak) take `--shake-dur-a` each, the two recovery legs (left peak → overshoot → rest) take `--shake-dur-b` each:
+
+```
+total                = 2·A + 2·B  =  2·80 + 2·60 = 280ms
+stop 1 (start)       =   0  / 280 =   0%      (rest)
+stop 2 (after A)     =  80  / 280 =  28.57%   (peak right,    +distance)
+stop 3 (after 2·A)   = 160  / 280 =  57.14%   (peak left,    -distance)
+stop 4 (after 2·A+B) = 220  / 280 =  78.57%   (overshoot,   +overshoot)
+stop 5 (end)         = 280  / 280 = 100%      (rest)
+```
+
+The total in the CSS uses `calc(var(--shake-dur-a) * 2 + var(--shake-dur-b) * 2)` — so the math stays consistent with the variables, but the **percentages** are baked literals. If you tune `--shake-dur-a` and `--shake-dur-b` to a different ratio, recompute the percentages by hand or the legs will drift out of sync with the duration calc.
+
+### Why three classes (`.is-error` on wrap + input, `.is-shaking` on input)
+
+- `.is-error` on `.t-input-wrap` controls the **message** visibility — the message lives in the wrap, not the input.
+- `.is-error` on `.t-input` controls the **border color** — the input owns the border.
+- `.is-shaking` on `.t-input` is **separate** from `.is-error` so you can replay the shake (remove → reflow → add) without flickering the error state on/off in the same tick. Keeping the shake state orthogonal also lets you trigger the shake on its own (e.g. for a "hint" jiggle) without the full error treatment.
 

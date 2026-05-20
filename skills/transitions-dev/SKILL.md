@@ -20,9 +20,9 @@ Twelve portable CSS transitions, each namespaced under `t-*` selectors with sema
 | **Panel reveal** | Slide a panel into a region with a cross-blur. | [07-panel-reveal.md](./07-panel-reveal.md) |
 | **Page side-by-side** | Slide between two side-by-side pages (list ↔ detail, step 1 ↔ step 2). | [08-page-side-by-side.md](./08-page-side-by-side.md) |
 | **Icon swap** | Cross-fade two icons in the same slot with blur and scale. | [09-icon-swap.md](./09-icon-swap.md) |
-| **Success check** | Reveal a success / confirmation icon with fade, rotate, blur, Y-bob, and SVG path draw. | [10-success-check.md](./10-success-check.md) |
-| **Avatar group hover** | Spring a hovered avatar up while neighbours follow with a falloff. | [11-avatar-group-hover.md](./11-avatar-group-hover.md) |
-| **Error state shake** | Shake an input on validation error and auto-revert to the neutral border + hide the message. | [12-error-state-shake.md](./12-error-state-shake.md) |
+| **Success check** | Compose fade + rotate + Y-bob + path stroke-draw to celebrate a completed action. | [10-success-check.md](./10-success-check.md) |
+| **Avatar group hover** | Distance-falloff lift on a row of items with a bouncy spring on return. | [11-avatar-group-hover.md](./11-avatar-group-hover.md) |
+| **Error state shake** | Per-segment cubic-bezier shake with auto-reverting border + message. | [12-error-state-shake.md](./12-error-state-shake.md) |
 
 ## Decision rules
 
@@ -36,11 +36,11 @@ When the user asks for a transition, match against the visible UI element first,
 - **Element's text content changes in place** → text states swap.
 - **Two icons in the same slot** → icon swap.
 - **A number updates** → number pop-in.
-- **A confirmation / success icon needs to land with a flourish** → success check.
-- **A clustered set of items (avatar stack, chip row) reacts to hover** → avatar group hover.
-- **A form field signals an invalid submission** → error state shake.
+- **Confirmation / success / "done" moment** (checkmark, payment processed, file uploaded) → success check.
+- **Hovering an item in a horizontal stack** (avatars, chips, segmented buttons, tag pills) → avatar group hover.
+- **Form validation error / "this is wrong" feedback** (invalid field, wrong PIN, duplicate name) → error state shake.
 
-If two transitions could fit, prefer the lower-overhead one (card resize over panel reveal, dropdown over modal) unless the design clearly calls for the heavier surface.
+If two transitions could fit, prefer the lower-overhead one (card resize over panel reveal, dropdown over modal, success check over a full modal celebration) unless the design clearly calls for the heavier surface. The success check is animation-only — if you also need to swap from a spinner to the check, pair it with **icon swap**.
 
 ## Universal install
 
@@ -151,7 +151,7 @@ When inserting a transition into the user's project:
 
 1. **Add the `:root` block above** to the user's global stylesheet, but only if it isn't already there. If the user already imported the universal install block once, do **not** duplicate it.
 2. **Paste the chosen transition's CSS verbatim** from the relevant reference file. Do not rewrite selectors, do not collapse the transition into shorthand, do not strip `will-change`. The snippets are tuned and tested.
-3. **Wire the documented HTML hooks** — class names (`.t-dropdown`, `.t-modal`, …) and state attributes (`data-open`, `data-state`, `data-page`, `.is-open`, `.is-closing`, `.is-exit`, `.is-enter-start`, `.is-animating`).
+3. **Wire the documented HTML hooks** — class names (`.t-dropdown`, `.t-modal`, `.t-success-check`, `.t-avatar`, `.t-input`, …) and state attributes (`data-open`, `data-state`, `data-page`, `.is-open`, `.is-closing`, `.is-exit`, `.is-enter-start`, `.is-animating`, `.is-error`, `.is-shaking`).
 4. **Preserve the `@media (prefers-reduced-motion: reduce)` block.** Every snippet ships one. Removing it makes the component fail accessibility audits.
 5. **For transitions that need JS** (dropdown, modal, text swap, number pop-in, page slide, success check, avatar group hover, error state shake), copy the small orchestration snippet from the reference file and adapt the selectors to the user's DOM. Keep the timing reads (`getComputedStyle(...)getPropertyValue("--…")`) so durations stay in sync with the `:root` values.
 
@@ -160,11 +160,12 @@ Keep the diff small: only edit the files needed to introduce the transition. Don
 ## Common mistakes to avoid
 
 - **Stripping the close-state class cleanup** on dropdown/modal — without the `setTimeout` that removes `.is-closing`, the next open jumps from the closing scale instead of the resting pre-open scale.
-- **Forgetting the reflow** between class removal and re-addition (text swap, number pop-in, success check, error state shake) — `void el.offsetHeight` is what guarantees the animation replays from frame 0 instead of inheriting the previous run's end state.
-- **Animating a single container** instead of the inner pieces — for the badge, animate the dot, not the trigger; for page slide, animate the page sections, not the container; for the success check, the wrapper drives fade/rotate/blur/Y-bob and the inner SVG path drives stroke-draw — both are needed.
+- **Forgetting the reflow** in the text swap, number pop-in, success check replay, and error state shake — `void el.offsetWidth` (or `offsetHeight`) between class/attribute removal and re-addition is what guarantees the animation replays.
+- **Animating a single container** instead of the inner pieces — for the badge, animate the dot, not the trigger; for page slide, animate the page sections, not the container.
 - **Replacing `transition: …` with `transition: all`** — every snippet enumerates exact properties on purpose so unrelated style changes don't ride in for free.
-- **Setting `stroke-dasharray: 20` on a path that isn't 20 units long** — the success-check default works for the demo's 3-segment check; for any other path measure once with `path.getTotalLength()` and update both `stroke-dasharray` and `stroke-dashoffset` to that value.
-- **Forgetting the directional ease swap** on the avatar group — without setting `transitionTimingFunction` to `--avatar-ease-in` on hover-in and `--avatar-ease-out` on hover-leave, the spring/overshoot only fires in one direction (or in both, which feels chaotic).
+- **Hardcoding the success check's `stroke-dasharray`** — the snippet ships `20` as a placeholder. Replace it with `path.getTotalLength()` rounded up by 1 for *your* path, otherwise the stroke pre-reveals or over-draws.
+- **Setting `transition-timing-function` in CSS** for the avatar group hover — it has to be set inline in JS *before* the `--shift` / `--scale-active` writes so the bouncy ease-out only applies on `mouseleave`.
+- **Mixing `.is-error` and `.is-shaking` into one class** for the error state shake — keeping them orthogonal is what allows the shake to replay (remove → reflow → re-add) without flickering the whole error treatment.
 
 ## Reference files
 
