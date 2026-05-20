@@ -1,0 +1,68 @@
+---
+name: transitions-dev
+description: Production-ready CSS transitions for web apps. Use when implementing notification badges, dropdowns, modals, panel reveals, page transitions, card resizes, number pop-ins, text swaps, icon swaps, success checks, avatar group hovers, or error state shakes. Triggers on "add a transition", "animate the dropdown", "make the modal open smoothly", "swap icon", "page slide", "stagger animation", "open / close transition", "make it animate", "tween the size", "fade between", "smooth open", "smooth close", "success animation", "checkmark animation", "confirmation animation", "form error", "shake on invalid", "validation feedback", "hover lift", "avatar stack hover", "chip group hover".
+---
+
+# Transitions.dev
+
+Twelve portable CSS transitions, each namespaced under `t-*` selectors with semantic CSS custom properties. Drop-in: paste the snippet, wire the documented HTML hooks, done. No framework dependencies, no demo-specific markup, and every snippet ships a `prefers-reduced-motion` guard.
+
+## Quick reference
+
+| Transition | When to use | Reference |
+| --- | --- | --- |
+{{table}}
+
+## Decision rules
+
+When the user asks for a transition, match against the visible UI element first, then the verb:
+
+- **Trigger + small dot floating on top** → notification badge.
+- **Trigger + surface that grows from it** → dropdown (anchored, origin-aware) or modal (centered, no anchor).
+- **Surface that slides into a region of the page** → panel reveal.
+- **Two screens, list ↔ detail or step 1 ↔ step 2** → page side-by-side.
+- **Element changes width or height** → card resize.
+- **Element's text content changes in place** → text states swap.
+- **Two icons in the same slot** → icon swap.
+- **A number updates** → number pop-in.
+- **A confirmation / success icon needs to land with a flourish** → success check.
+- **A clustered set of items (avatar stack, chip row) reacts to hover** → avatar group hover.
+- **A form field signals an invalid submission** → error state shake.
+
+If two transitions could fit, prefer the lower-overhead one (card resize over panel reveal, dropdown over modal) unless the design clearly calls for the heavier surface.
+
+## Universal install
+
+Drop this `:root` block into your project **once**. Every transition snippet reads from these semantic names — there are no per-component values to chase down later.
+
+```css
+{{rootBlock}}
+```
+
+The `--pX-*` source tokens used by the live demo at [transitions.dev](https://transitions.dev) are intentionally **not** exported here. Tunable values are renamed to semantic names (`--badge-*`, `--dropdown-*`, `--modal-*`, …) so the user owns the design vocabulary.
+
+## Output format
+
+When inserting a transition into the user's project:
+
+1. **Add the `:root` block above** to the user's global stylesheet, but only if it isn't already there. If the user already imported the universal install block once, do **not** duplicate it.
+2. **Paste the chosen transition's CSS verbatim** from the relevant reference file. Do not rewrite selectors, do not collapse the transition into shorthand, do not strip `will-change`. The snippets are tuned and tested.
+3. **Wire the documented HTML hooks** — class names (`.t-dropdown`, `.t-modal`, …) and state attributes (`data-open`, `data-state`, `data-page`, `.is-open`, `.is-closing`, `.is-exit`, `.is-enter-start`, `.is-animating`).
+4. **Preserve the `@media (prefers-reduced-motion: reduce)` block.** Every snippet ships one. Removing it makes the component fail accessibility audits.
+5. **For transitions that need JS** (dropdown, modal, text swap, number pop-in, page slide, success check, avatar group hover, error state shake), copy the small orchestration snippet from the reference file and adapt the selectors to the user's DOM. Keep the timing reads (`getComputedStyle(...)getPropertyValue("--…")`) so durations stay in sync with the `:root` values.
+
+Keep the diff small: only edit the files needed to introduce the transition. Don't rename the user's existing variables, don't reformat unrelated CSS, don't pull in a motion library.
+
+## Common mistakes to avoid
+
+- **Stripping the close-state class cleanup** on dropdown/modal — without the `setTimeout` that removes `.is-closing`, the next open jumps from the closing scale instead of the resting pre-open scale.
+- **Forgetting the reflow** between class removal and re-addition (text swap, number pop-in, success check, error state shake) — `void el.offsetHeight` is what guarantees the animation replays from frame 0 instead of inheriting the previous run's end state.
+- **Animating a single container** instead of the inner pieces — for the badge, animate the dot, not the trigger; for page slide, animate the page sections, not the container; for the success check, the wrapper drives fade/rotate/blur/Y-bob and the inner SVG path drives stroke-draw — both are needed.
+- **Replacing `transition: …` with `transition: all`** — every snippet enumerates exact properties on purpose so unrelated style changes don't ride in for free.
+- **Setting `stroke-dasharray: 20` on a path that isn't 20 units long** — the success-check default works for the demo's 3-segment check; for any other path measure once with `path.getTotalLength()` and update both `stroke-dasharray` and `stroke-dashoffset` to that value.
+- **Forgetting the directional ease swap** on the avatar group — without setting `transitionTimingFunction` to `--avatar-ease-in` on hover-in and `--avatar-ease-out` on hover-leave, the spring/overshoot only fires in one direction (or in both, which feels chaotic).
+
+## Reference files
+
+{{fileList}}
+- [_root.css](./_root.css) — the universal install block on its own, ready to import directly.

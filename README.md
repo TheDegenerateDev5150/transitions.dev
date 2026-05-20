@@ -17,22 +17,38 @@ Live site: https://transitions.dev/
 | 7 | **Panel reveal** | Panel open / close transition. |
 | 8 | **Page side-by-side** | Forward / back page transition. |
 | 9 | **Icon swap** | Scale and blur icon swap. |
+| 10 | **Success check** | Confirmation icon with fade, rotate, blur, Y-bob, and SVG path draw. |
+| 11 | **Avatar group hover** | Hovered avatar springs up while neighbours follow with a falloff. |
+| 12 | **Error state shake** | Input shake on validation error with auto-revert to neutral. |
 
 Each card has a copy button that emits a self-contained CSS snippet: semantic CSS custom properties on `:root`, the transition rules namespaced under `t-*` classes, and a `@media (prefers-reduced-motion: reduce)` guard — so you can paste the snippet into any project and apply it to any component without pulling in demo-specific markup or sizing.
 
 ## Use as an agent skill
 
-The same nine transitions are packaged as an installable agent skill so AI coding tools (Cursor, Claude Code, Codex, …) can apply them directly inside your project.
+The same twelve transitions are packaged as an installable agent skill so AI coding tools (Cursor, Claude Code, Codex, …) can apply them directly inside your project.
 
 ```bash
-npx skills add Jakubantalik/transitions-dev
+npx skills add Jakubantalik/transitions.dev
 ```
 
-Source: [Jakubantalik/transitions-dev](https://github.com/Jakubantalik/transitions-dev). The skill is generated from `index.html` in this repo, so its snippets always match what the showcase site demonstrates.
+Skill source lives in [`skills/transitions-dev/`](./skills/transitions-dev) — `SKILL.md`, twelve per-transition reference files (`01-card-resize.md` … `12-error-state-shake.md`), and `_root.css` (the universal install block on its own).
+
+The skill is generated from `index.html` so the snippets always match what the showcase site demonstrates. Re-run after editing the source site:
+
+```bash
+npm run build
+```
+
+`build/extract.mjs` parses `PROTO_TEMPLATES` and the `:root { --pX-* }` block out of `index.html`, then re-renders every file under `skills/transitions-dev/` from the templates in `build/templates/`.
 
 ## Files
 
-- `index.html` — main showcase page with all nine transitions and per-card "copy CSS" buttons.
+- `index.html` — main showcase page with all twelve transitions and per-card "copy CSS" buttons.
+- `prototypes.html` — interactive playground for each transition with live tuning controls (durations, distances, easings).
+- `skill.html` — landing page for the agent skill (install instructions + side-by-side compare embed).
+- `example.html` — modal demo with a side-by-side "generic AI output" vs "with Transitions.dev skill" toggle, embedded inside `skill.html` as an iframe.
+- `skills/transitions-dev/` — published skill payload (consumed by `npx skills add`).
+- `build/extract.mjs` + `build/templates/` — regenerator that keeps the skill in lockstep with `index.html`.
 - `assets/` — icons, favicons, and the social-share OG image.
 - `site.webmanifest`, `robots.txt`, `sitemap.xml` — PWA/SEO metadata.
 
