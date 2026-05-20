@@ -268,21 +268,63 @@
       min-height: 100vh;
       padding: 24px 16px;
       box-sizing: border-box;
-      overflow: hidden;
+      overflow: visible;
     }
     body[data-embed="true"] .modal-card {
       position: relative;
       left: auto;
       top: auto;
-      /* --embed-modal-scale is set by JS from window.innerWidth.
-         CSS @media + 100vw is unreliable inside iframes on iOS
-         Safari (the inner document can report a wider layout
-         viewport than the visible iframe width), so we compute
-         the ratio in initEmbed instead and always keep 16px of
-         breathing room on each side via the modal-root padding
-         above plus the scale math below. */
-      transform: scale(var(--embed-modal-scale, 1));
-      transform-origin: center center;
+      transform: none;
+      /* Fluid width inside the 16px-padded root — caps at the
+         Figma 425px canvas instead of scaling the whole UI down. */
+      width: 100%;
+      max-width: 425px;
+      height: auto;
+      min-height: 389px;
+    }
+    body[data-embed="true"] .modal-card[data-error="true"] {
+      height: auto;
+      min-height: 411px;
+    }
+    body[data-embed="true"] .page-stage.t-page-slide {
+      min-height: 389px;
+    }
+    body[data-embed="true"] .modal-card[data-error="true"] .page-stage.t-page-slide {
+      min-height: 411px;
+    }
+    /* Share row — input grows, Invite pins to the right edge. */
+    body[data-embed="true"] .invite-field-wrap {
+      right: 109px; /* 81px button + 12px gap + 16px inset */
+      width: auto;
+    }
+    body[data-embed="true"] .state-share > .primary-btn {
+      left: auto;
+      right: 16px;
+    }
+    body[data-embed="true"] .member-list,
+    body[data-embed="true"] .general-row {
+      right: 16px;
+      width: auto;
+    }
+    body[data-embed="true"] .member-main {
+      min-width: 0;
+    }
+    body[data-embed="true"] .member-text {
+      min-width: 0;
+    }
+    body[data-embed="true"] .member-name,
+    body[data-embed="true"] .member-mail {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    /* Publish tab — hero block stays centred but can shrink. */
+    body[data-embed="true"] .publish-center {
+      width: min(309px, calc(100% - 32px));
+    }
+    body[data-embed="true"] .publish-copy {
+      width: auto;
+      max-width: 297px;
     }
 
     /* "Generic AI output" style — strip all of the calibrated
@@ -2661,39 +2703,6 @@
       const initialTheme = params.get('theme');
       if (initialTheme === 'dark' || initialTheme === 'light') {
         applyTheme(initialTheme);
-      }
-
-      /* Scale the fixed 425px modal to fit the iframe with 16px
-         side margins. window.innerWidth is reliable inside iframes on
-         iOS Safari; CSS 100vw / @media often is not. */
-      const EMBED_MODAL_W = 425;
-      const EMBED_SIDE_MARGIN = 16;
-      const EMBED_SCALE_MIN = 0.5;
-      function updateEmbedModalScale() {
-        const card = document.querySelector('.modal-card');
-        const root = document.querySelector('.modal-root');
-        if (!card) return;
-        const avail = Math.max(0, window.innerWidth - EMBED_SIDE_MARGIN * 2);
-        const scale = Math.min(
-          1,
-          Math.max(EMBED_SCALE_MIN, avail / EMBED_MODAL_W)
-        );
-        document.documentElement.style.setProperty(
-          '--embed-modal-scale',
-          String(scale)
-        );
-        if (root) {
-          const visualH = card.offsetHeight * scale;
-          root.style.minHeight = Math.ceil(visualH + 48) + 'px';
-        }
-      }
-      updateEmbedModalScale();
-      window.addEventListener('resize', updateEmbedModalScale);
-      if (typeof ResizeObserver !== 'undefined') {
-        const card = document.querySelector('.modal-card');
-        if (card) {
-          new ResizeObserver(updateEmbedModalScale).observe(card);
-        }
       }
 
       window.addEventListener('message', (event) => {
