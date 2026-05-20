@@ -2990,7 +2990,10 @@
       height: 100%;
       min-height: 460px;
       border: 0;
-      background: transparent;
+      /* Match .skill-compare-stage so any letterboxing before the
+         iframe doc paints, or around transparent embed areas, reads
+         as the same surface — not the browser default white. */
+      background: var(--card-bg);
     }
     .skill-compare-pane strong {
       display: block;
@@ -3266,7 +3269,7 @@
         <iframe
           id="skill-compare-iframe-off"
           class="skill-compare-iframe"
-          src="example.html?embed=1&style=generic&v=20260520-4"
+          src="example.html?embed=1&style=generic&v=20260520-5"
           title="Modal demo without Transitions.dev skill — no motion"
           loading="lazy"
         ></iframe>
@@ -3275,7 +3278,7 @@
         <iframe
           id="skill-compare-iframe"
           class="skill-compare-iframe"
-          src="example.html?embed=1&v=20260520-4"
+          src="example.html?embed=1&v=20260520-5"
           title="Modal demo built with Transitions.dev skill"
           loading="lazy"
         ></iframe>

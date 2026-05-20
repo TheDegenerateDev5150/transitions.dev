@@ -237,10 +237,25 @@
        flow so its container can size it.
        ────────────────────────────────────────────────────────────── */
     body[data-embed="true"] {
-      background: transparent;
+      /* Match skill.html .skill-compare-stage surface — not
+         --bg-page (#070707 dark / #fdfdfd light). Transparent
+         let the iframe fall back to example.html page tokens,
+         which read as a lighter/different rectangle inside the
+         #181818 stage card in dark mode. */
+      background: #ffffff;
       min-height: 0;
       width: 100%;
       overflow-x: hidden;
+    }
+    html[data-embed="true"] {
+      background: #ffffff;
+    }
+    html[data-embed="true"][data-theme="dark"] {
+      background: #181818;
+      color-scheme: dark;
+    }
+    html[data-embed="true"][data-theme="dark"] body[data-embed="true"] {
+      background: #181818;
     }
     body[data-embed="true"] .toolbar { display: none; }
     body[data-embed="true"] .modal-backdrop { display: none; }
@@ -2640,6 +2655,7 @@
     (function initEmbed() {
       const params = new URLSearchParams(window.location.search);
       if (params.get('embed') !== '1') return;
+      document.documentElement.dataset.embed = 'true';
       document.body.dataset.embed = 'true';
       const style = params.get('style');
       if (style === 'generic') document.body.dataset.style = 'generic';
