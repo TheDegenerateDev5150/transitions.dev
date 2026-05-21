@@ -2979,10 +2979,39 @@
       color: var(--text-muted);
       margin: 0;
     }
+    /* Inline code chip inside notes — used to highlight the literal
+       verb when it shows up inside running prose (e.g. the
+       `transitions apply menu-dropdown` example under Commands).
+       Reads as a soft chip rather than raw monospace so it doesn't
+       fight the surrounding description for attention. */
+    .skill-section-note code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 18px;
+      padding: 1px 6px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--text);
+    }
+    html[data-theme="dark"] .skill-section-note code {
+      background: rgba(255, 255, 255, 0.06);
+    }
     .skill-section-rows {
       display: flex;
       flex-direction: column;
       gap: 10px;
+    }
+    /* Commands section: each entry is the literal `transitions …` verb
+       in a copyable code row plus a one-line description underneath.
+       The wrapper keeps the verb and its blurb visually paired so the
+       reader can scan the bold command first and then the rationale,
+       while the section's outer gap is widened so the three commands
+       don't look like a tight rhythm of similar rows. */
+    #commands .skill-section-rows { gap: 16px; }
+    .skill-command {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
     .skill-code-row {
       position: relative;
@@ -3202,8 +3231,9 @@
       </div>
       <h1 class="title">Transitions.dev Skill</h1>
       <p class="subtitle">
-        Transitions skill teaches your AI about product motion and includes all the transitions from the main page and useful<br />
-        commands for your agent.
+        Transitions skill teaches your AI about product motion<br />
+        and includes all the transitions from the main page and<br />
+        useful commands for your agent.
       </p>
       <div class="skill-cta-row">
         <a class="skill-btn skill-btn--primary" href="#installation">Get started</a>
@@ -3335,6 +3365,78 @@
         <p class="skill-section-note">
           Works with Claude Code, Cursor, GitHub Copilot, Codex, and Gemini CLI.
         </p>
+      </div>
+
+      <div class="skill-section" id="commands">
+        <h2 class="skill-section-title">Commands</h2>
+        <div class="skill-section-rows">
+          <div class="skill-command">
+            <div class="skill-code-row">
+              <code id="cmd-reveal">transitions reveal</code>
+              <button
+                type="button"
+                class="card-copy"
+                aria-label="Copy transitions reveal command"
+                data-copy-target="#cmd-reveal"
+              >
+                <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+            </div>
+            <p class="skill-section-note">
+              List every transition in the skill as a numbered text list — handy when you've forgotten what's in the catalog. Phrases like "list all transitions" or "what transitions are available" route here too.
+            </p>
+          </div>
+          <div class="skill-command">
+            <div class="skill-code-row">
+              <code id="cmd-review">transitions review</code>
+              <button
+                type="button"
+                class="card-copy"
+                aria-label="Copy transitions review command"
+                data-copy-target="#cmd-review"
+              >
+                <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+            </div>
+            <p class="skill-section-note">
+              Scan the whole project for ad-hoc transitions, hardcoded durations, and custom keyframes, then output a per-file list of where one of the twelve transitions would slot in. Read-only — nothing gets edited. Also triggers on "review my project" or "audit my animations".
+            </p>
+          </div>
+          <div class="skill-command">
+            <div class="skill-code-row">
+              <code id="cmd-apply">transitions apply</code>
+              <button
+                type="button"
+                class="card-copy"
+                aria-label="Copy transitions apply command"
+                data-copy-target="#cmd-apply"
+              >
+                <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+            </div>
+            <p class="skill-section-note">
+              Auto-detect the best-fit transition for your current cursor context, propose it with a one-line rationale, then install it after you confirm. Name a transition directly to skip the detection — for example, <code>transitions apply menu-dropdown</code>. Also triggers on "add the right transition here".
+            </p>
+          </div>
+        </div>
       </div>
 
       <div class="skill-section" id="try-it">

@@ -1,6 +1,6 @@
 ---
 name: transitions-dev
-description: Production-ready CSS transitions for web apps. Use when implementing notification badges, dropdowns, modals, panel reveals, page transitions, card resizes, number pop-ins, text swaps, icon swaps, success checks, avatar group hovers, or error state shakes. Triggers on "add a transition", "animate the dropdown", "make the modal open smoothly", "swap icon", "page slide", "stagger animation", "open / close transition", "make it animate", "tween the size", "fade between", "smooth open", "smooth close", "success animation", "checkmark animation", "confirmation animation", "form error", "shake on invalid", "validation feedback", "hover lift", "avatar stack hover", "chip group hover".
+description: Production-ready CSS transitions for web apps. Use when implementing notification badges, dropdowns, modals, panel reveals, page transitions, card resizes, number pop-ins, text swaps, icon swaps, success checks, avatar group hovers, or error state shakes. Triggers on "add a transition", "animate the dropdown", "make the modal open smoothly", "swap icon", "page slide", "stagger animation", "open / close transition", "make it animate", "tween the size", "fade between", "smooth open", "smooth close", "success animation", "checkmark animation", "confirmation animation", "form error", "shake on invalid", "validation feedback", "hover lift", "avatar stack hover", "chip group hover". Also exposes the namespaced verbs "transitions reveal", "transitions review", "transitions apply" and their natural-language paraphrases "review my transitions", "audit my animations with transitions-dev", "apply a transition here", "add the right transition", "reveal the available transitions", "list all transitions", "what transitions are available".
 ---
 
 # Transitions.dev
@@ -28,8 +28,44 @@ When the user asks for a transition, match against the visible UI element first,
 - **Confirmation / success / "done" moment** (checkmark, payment processed, file uploaded) → success check.
 - **Hovering an item in a horizontal stack** (avatars, chips, segmented buttons, tag pills) → avatar group hover.
 - **Form validation error / "this is wrong" feedback** (invalid field, wrong PIN, duplicate name) → error state shake.
+- **No clear match** → fall back to `transitions reveal` and let the user pick. Don't guess.
 
 If two transitions could fit, prefer the lower-overhead one (card resize over panel reveal, dropdown over modal, success check over a full modal celebration) unless the design clearly calls for the heavier surface. The success check is animation-only — if you also need to swap from a spinner to the check, pair it with **icon swap**.
+
+## Commands
+
+The skill exposes three namespaced verbs the agent should recognise in addition to direct transition requests. Every command starts with `transitions` so the invocation never collides with verbs from other skills installed in the same project.
+
+### transitions reveal — list every transition
+
+**Trigger phrases:** `transitions reveal`, "reveal the transitions", "list all transitions", "what transitions are in this skill", "show the transitions catalog".
+
+**Behaviour:** print the twelve transitions as a numbered plain-text list — name, one-line summary, and the matching reference filename. Reuse the rows in `## Quick reference` above; do not invent new copy. No project access.
+
+### transitions review — audit the project for fit
+
+**Trigger phrases:** `transitions review`, "review my project", "audit my animations", "where would transitions.dev help", "find places to use this skill".
+
+**Behaviour:**
+
+1. Search the workspace for indicators: `transition:` declarations, `@keyframes`, hardcoded `ms` / `s` durations in style files, components matching the eleven decision-rule patterns (modals, dropdowns, badges, …).
+2. For each hit, match against the decision rules and pick the single best-fit transition.
+3. Output a numbered list grouped by file:
+   - `path/to/Component.tsx:L42` — looks like a dropdown opening, suggest **menu-dropdown** (`05-menu-dropdown.md`).
+   - Skip ad-hoc transitions that already use a `t-*` class.
+4. Do not edit anything. End with: "Run `transitions apply` on any line to install the suggested transition."
+
+### transitions apply — install the best-fit transition
+
+**Trigger phrases:** `transitions apply`, "apply a transition here", "add the right transition", "install transitions-dev here", "fix the animation on this element".
+
+**Behaviour:**
+
+1. Read context: the currently-open file, the element nearest the cursor, surrounding CSS / JSX. If the user named a transition explicitly (e.g. `transitions apply menu-dropdown`), use it.
+2. Run the decision rules from `## Decision rules` on that context and pick **one** transition. If two could fit, prefer the lower-overhead one (same tie-breaker the existing rules use).
+3. Surface a one-line proposal: "I'd apply **menu-dropdown** here because the element opens from a trigger and is anchored. Confirm to install?".
+4. On confirmation, follow the existing five-step procedure in `## Output format` verbatim (root block, snippet, hooks, reduced-motion guard, JS orchestration if needed).
+5. If the agent can't pick a single transition with confidence, fall back to `transitions reveal` and ask the user to choose.
 
 ## Universal install
 
