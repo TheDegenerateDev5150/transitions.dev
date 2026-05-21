@@ -227,11 +227,26 @@
       font-family: inherit;
       -webkit-font-smoothing: inherit;
       -moz-osx-font-smoothing: inherit;
+      /* iOS Safari paints a gray/blue tap flash on controls inside
+         the embedded compare iframe. Clear it globally for buttons
+         so tab/copy/access taps feel native and don't blink. */
+      -webkit-tap-highlight-color: transparent;
     }
     input {
       font-family: inherit;
       -webkit-font-smoothing: inherit;
       -moz-osx-font-smoothing: inherit;
+    }
+    /* Coarse pointers: avoid long-press callout / accidental
+       text-selection flashes on high-frequency tap targets in the
+       modal (tabs, copy, access). */
+    @media (hover: none) and (pointer: coarse) {
+      .tab-btn,
+      .copy-link-btn,
+      .access-btn {
+        -webkit-touch-callout: none;
+        user-select: none;
+      }
     }
 
     /* ──────────────────────────────────────────────────────────────

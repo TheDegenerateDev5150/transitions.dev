@@ -2843,11 +2843,10 @@
       outline-offset: 3px;
     }
 
-    /* Compare stage — side-by-side on desktop; tabbed swap on mobile.
+    /* Compare stage — side-by-side on desktop; switch toggle on mobile.
        Desktop: both panes visible with Figma 450:547 headings above
-       each iframe. Mobile: tab row drives data-active on the stage
-       and cross-fades the two stacked panes (same behavior as the
-       old toggle, without the switch control). */
+       each iframe. Mobile: a compact toggle drives data-active on
+       the stage and cross-fades the two stacked panes. */
     .skill-compare-stage {
       display: flex;
       width: 100%;
@@ -2861,7 +2860,7 @@
       flex-wrap: wrap;
       box-sizing: border-box;
     }
-    /* Mobile tab row — hidden on desktop. */
+    /* Legacy tab row (kept for semantics/aria mapping), hidden in UI. */
     .skill-compare-tabs {
       display: none;
       width: 100%;
@@ -2887,6 +2886,80 @@
       outline: 2px solid var(--text);
       outline-offset: 3px;
       border-radius: 6px;
+    }
+    /* Mobile-only switch row (replaces old tab pills on phones). */
+    .skill-compare-mobile-toggle {
+      display: none;
+      width: 100%;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin: 0;
+    }
+    .skill-compare-mobile-label {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 22px;
+      color: var(--text-muted);
+      opacity: 0.72;
+      cursor: pointer;
+      transition: opacity 160ms ease, color 160ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .skill-compare-mobile-label[data-active="true"] {
+      opacity: 1;
+      color: var(--text);
+    }
+    .skill-compare-mobile-label:focus-visible {
+      outline: 2px solid var(--text);
+      outline-offset: 3px;
+      border-radius: 6px;
+    }
+    .skill-compare-mobile-switch {
+      position: relative;
+      width: 34px;
+      height: 20px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.14);
+      cursor: pointer;
+      transition: background-color 180ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .skill-compare-mobile-switch::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow:
+        0 1px 1px rgba(0, 0, 0, 0.12),
+        0 1px 4px rgba(0, 0, 0, 0.16);
+      transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .skill-compare-mobile-switch[aria-checked="true"] {
+      background: #35ba00;
+    }
+    .skill-compare-mobile-switch[aria-checked="true"]::after {
+      transform: translateX(14px);
+    }
+    .skill-compare-mobile-switch:focus-visible {
+      outline: 2px solid var(--text);
+      outline-offset: 3px;
+    }
+    html[data-theme="dark"] .skill-compare-mobile-switch {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    html[data-theme="dark"] .skill-compare-mobile-label[data-active="true"] {
+      color: #ededed;
     }
     /* Desktop: panes are direct flex children of the stage. */
     .skill-compare-panes {
@@ -3086,7 +3159,8 @@
         align-items: stretch;
         gap: 16px;
       }
-      .skill-compare-tabs { display: flex; }
+      .skill-compare-tabs { display: none; }
+      .skill-compare-mobile-toggle { display: inline-flex; }
       .skill-compare-panes {
         display: grid;
         width: 100%;
@@ -3291,6 +3365,28 @@
           </span>
         </button>
       </div>
+      <div class="skill-compare-mobile-toggle" role="group" aria-label="Compare AI output">
+        <button
+          type="button"
+          class="skill-compare-mobile-label"
+          data-compare-side="off"
+          data-active="true"
+        >Generic AI output</button>
+        <button
+          type="button"
+          class="skill-compare-mobile-switch"
+          id="skill-compare-switch"
+          role="switch"
+          aria-checked="false"
+          aria-label="Use Transitions skill"
+        ></button>
+        <button
+          type="button"
+          class="skill-compare-mobile-label"
+          data-compare-side="on"
+          data-active="false"
+        >With Transitions Skill</button>
+      </div>
       <div class="skill-compare-panes">
         <div
           class="skill-compare-pane skill-compare-pane--off"
@@ -3309,7 +3405,7 @@
           <iframe
             id="skill-compare-iframe-off"
             class="skill-compare-iframe"
-            src="example.html?embed=1&style=generic&v=20260521-11"
+            src="example.html?embed=1&style=generic&v=20260521-12"
             title="Modal demo without Transitions.dev skill — no motion"
             loading="lazy"
           ></iframe>
@@ -3332,7 +3428,7 @@
           <iframe
             id="skill-compare-iframe"
             class="skill-compare-iframe"
-            src="example.html?embed=1&v=20260521-11"
+            src="example.html?embed=1&v=20260521-12"
             title="Modal demo built with Transitions.dev skill"
             loading="lazy"
           ></iframe>
@@ -3704,6 +3800,10 @@
       /* ── Compare tabs (mobile only — desktop shows both panes) ─ */
       var compareStage = document.getElementById("skill-compare-stage");
       var compareTabs = document.querySelectorAll(".skill-compare-tab");
+      var compareSwitch = document.getElementById("skill-compare-switch");
+      var compareMobileLabels = compareStage
+        ? compareStage.querySelectorAll(".skill-compare-mobile-label")
+        : [];
       var compareMq = window.matchMedia ? window.matchMedia("(max-width: 760px)") : null;
 
       function isCompareMobile() {
@@ -3727,6 +3827,13 @@
           var on = tab.getAttribute("data-compare-tab") === active;
           tab.setAttribute("aria-selected", on ? "true" : "false");
         });
+        if (compareSwitch) {
+          compareSwitch.setAttribute("aria-checked", active === "on" ? "true" : "false");
+        }
+        compareMobileLabels.forEach(function (label) {
+          var on = label.getAttribute("data-compare-side") === active;
+          label.setAttribute("data-active", on ? "true" : "false");
+        });
         compareStage.querySelectorAll(".skill-compare-pane").forEach(function (pane) {
           if (!isCompareMobile()) {
             pane.setAttribute("aria-hidden", "false");
@@ -3743,6 +3850,17 @@
           setCompareTab(tab.getAttribute("data-compare-tab"), true);
         });
       });
+      compareMobileLabels.forEach(function (label) {
+        label.addEventListener("click", function () {
+          setCompareTab(label.getAttribute("data-compare-side"), true);
+        });
+      });
+      if (compareSwitch) {
+        compareSwitch.addEventListener("click", function () {
+          var current = compareStage && compareStage.getAttribute("data-active") === "on";
+          setCompareTab(current ? "off" : "on", true);
+        });
+      }
       setCompareTab("off", false);
 
       if (compareMq) {
