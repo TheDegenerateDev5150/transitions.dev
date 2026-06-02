@@ -220,6 +220,21 @@ The total in the CSS uses \`calc(var(--shake-dur-a) * 2 + var(--shake-dur-b) * 2
 - \`.is-error\` on \`.t-input-wrap\` controls the **message** visibility — the message lives in the wrap, not the input.
 - \`.is-error\` on \`.t-input\` controls the **border color** — the input owns the border.
 - \`.is-shaking\` on \`.t-input\` is **separate** from \`.is-error\` so you can replay the shake (remove → reflow → add) without flickering the error state on/off in the same tick. Keeping the shake state orthogonal also lets you trigger the shake on its own (e.g. for a "hint" jiggle) without the full error treatment.` },
+  { key: "p13", file: "13-input-clear-dissolve", summary: "Fly-out + per-word streak when a text field is cleared",
+    when: "Clearing a text field — search box, filter input, any field with a clear (×) button. The typed text flies down + blurs + fades while a soft per-word streak ignites under each word, and the placeholder falls in from above. Per-frame JS is required: the streak envelope and per-word gradient stack cannot be expressed as static @keyframes.",
+    notes: `### Dark mode
+
+The glow uses \`mix-blend-mode: multiply\` in light mode. In dark mode flip to \`screen\`, bump \`--glow-opacity\` to ~0.85, and paint **white** gradients in JS — multiply over a dark surface vanishes.` },
+  { key: "p14", file: "14-skeleton-reveal", summary: "Pulse a placeholder, then cross-fade + cross-blur to the loaded content",
+    when: "A placeholder that loads then reveals real content — list rows, cards, profile headers. The skeleton pulses, then both layers cross-fade with a matching cross-blur. Bring your own bars / avatar / text; the skeleton stays in the same slot as the content so the swap is layout-free." },
+  { key: "p15", file: "15-shimmer-text", summary: "Sweep a highlight band across muted text on a loop (pure CSS)",
+    when: "A loading / \"thinking\" label that shimmers — streaming status, \"Generating…\", any in-progress copy that should feel alive without a spinner. Pure CSS: duplicate the string into \`data-text\` on \`.t-shimmer\` and tune \`--shimmer-base\` / \`--shimmer-highlight\` per theme." },
+  { key: "p16", file: "16-tabs-sliding", summary: "Slide the active pill between tabs in a segmented control",
+    when: "A segmented control / tab bar where the active pill slides between options — view switchers, filter segments, small mutually-exclusive button sets. JS writes the active tab's \`offsetLeft\` / \`offsetWidth\` onto the pill; CSS owns the tween." },
+  { key: "p17", file: "17-tooltip", summary: "Delayed fade+scale in, instant out (pure CSS)",
+    when: "A hover/focus tooltip that fades + scales in with a short appear-delay but disappears immediately on leave. Pure CSS — the wrap (not the trigger) is the hover target so the pointer can drift onto the tooltip without flicker." },
+  { key: "p18", file: "18-texts-reveal", summary: "Staggered blurred rise for stacked text lines, quiet fade out",
+    when: "A headline + supporting line that rise into view with staggered blur — hero copy, empty states, onboarding steps. Exit is decoupled: a single quiet fade with no Y-return so dismissing doesn't replay the reveal in reverse." },
 ];
 
 // ── Default-value rewrites ───────────────────────────────────────
@@ -459,7 +474,7 @@ function showError() {
 // clears the error so the user isn't shaking at a value they're
 // already correcting.
 const inputEl = wrap.querySelector("input, textarea");
-inputEl?.addEventListener("input", () => {
+  inputEl?.addEventListener("input", () => {
   if (wrap._revertTimer) {
     clearTimeout(wrap._revertTimer);
     wrap._revertTimer = null;
@@ -468,6 +483,86 @@ inputEl?.addEventListener("input", () => {
   input.classList.remove("is-error");
 });`,
 };
+
+// Long orchestration lives in build/snippets/*.js so extract.mjs stays readable.
+const snippetDir = path.join(here, "snippets");
+for (const name of ["p13-clear.js"]) {
+  const p = path.join(snippetDir, name);
+  if (fs.existsSync(p)) {
+    JS_SNIPPETS[name.replace(".js", "").replace("p13-clear", "p13")] =
+      fs.readFileSync(p, "utf8").trim();
+  }
+}
+
+Object.assign(JS_SNIPPETS, {
+  p14: `const skel = document.querySelector(".t-skel");
+const skeleton = skel.querySelector(".t-skel-skeleton");
+const cs = getComputedStyle(document.documentElement);
+const num = (name, fb) => {
+  const v = parseFloat(cs.getPropertyValue(name));
+  return Number.isFinite(v) ? v : fb;
+};
+
+// Call when async data arrives:
+function reveal() {
+  skel.classList.add("is-revealed");
+}
+
+// Demo replay: snap back, pulse, then reveal.
+function replay() {
+  skel.classList.add("is-resetting");
+  skel.classList.remove("is-revealed");
+  skeleton.classList.remove("is-pulsing");
+  void skeleton.offsetWidth;
+  skel.classList.remove("is-resetting");
+  skeleton.classList.add("is-pulsing");
+  const total = num("--pulse-dur", 1000) * num("--pulse-count", 1);
+  setTimeout(() => skel.classList.add("is-revealed"), total);
+}`,
+  p16: `const bar = document.querySelector(".t-tabs");
+const pill = bar.querySelector(".t-tabs-pill");
+const tabs = [...bar.querySelectorAll(".t-tab")];
+
+function moveTo(tab, animate) {
+  if (!animate) {
+    const prev = pill.style.transition;
+    pill.style.transition = "none";
+    pill.style.transform = \`translateX(\${tab.offsetLeft}px)\`;
+    pill.style.width = \`\${tab.offsetWidth}px\`;
+    void pill.offsetWidth;
+    pill.style.transition = prev;
+  } else {
+    pill.style.transform = \`translateX(\${tab.offsetLeft}px)\`;
+    pill.style.width = \`\${tab.offsetWidth}px\`;
+  }
+}
+const active = () =>
+  tabs.find((t) => t.getAttribute("aria-selected") === "true") || tabs[0];
+
+tabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    tabs.forEach((t) =>
+      t.setAttribute("aria-selected", t === tab ? "true" : "false")
+    );
+    moveTo(tab, true);
+  });
+});
+requestAnimationFrame(() => moveTo(active(), false));
+window.addEventListener("resize", () => moveTo(active(), false));`,
+  p18: `const block = document.querySelector(".t-stagger");
+
+function showText() {
+  block.classList.remove("is-hiding");
+  block.classList.remove("is-shown");
+  void block.offsetHeight;
+  block.classList.add("is-shown");
+}
+function hideText() {
+  block.classList.add("is-hiding");
+  block.classList.remove("is-shown");
+  setTimeout(() => block.classList.remove("is-hiding"), 200);
+}`,
+});
 
 // ── Render templates ──────────────────────────────────────────────
 function renderTemplate(name, vars) {
@@ -559,7 +654,6 @@ const tableRows = ORDER.map((entry) => {
 
 const skillMd = renderTemplate("skill.md.tmpl", {
   table: tableRows,
-  rootBlock: rootCss.trim(),
   fileList: ORDER.map((e) => `- [${e.file}.md](./${e.file}.md) — ${PROTO_TEMPLATES[e.key].name}`).join("\n"),
 });
 const skillPath = path.join(skillDir, "SKILL.md");

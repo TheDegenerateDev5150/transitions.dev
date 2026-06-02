@@ -25,13 +25,13 @@ Each card has a copy button that emits a self-contained CSS snippet: semantic CS
 
 ## Use as an agent skill
 
-The same twelve transitions are packaged as an installable agent skill so AI coding tools (Cursor, Claude Code, Codex, …) can apply them directly inside your project.
+The same eighteen transitions are packaged as an installable agent skill so AI coding tools (Cursor, Claude Code, Codex, …) can apply them directly inside your project.
 
 ```bash
 npx skills add Jakubantalik/transitions.dev
 ```
 
-Skill source lives in [`skills/transitions-dev/`](./skills/transitions-dev) — `SKILL.md`, twelve per-transition reference files (`01-card-resize.md` … `12-error-state-shake.md`), and `_root.css` (the universal install block on its own).
+Skill source lives in [`skills/transitions-dev/`](./skills/transitions-dev) — `SKILL.md`, eighteen per-transition reference files (`01-card-resize.md` … `18-texts-reveal.md`), and `_root.css` (the universal install block on its own).
 
 The skill is generated from `index.html` so the snippets always match what the showcase site demonstrates. Re-run after editing the source site:
 
@@ -43,7 +43,7 @@ npm run build
 
 ## Files
 
-- `index.html` — main showcase page with all twelve transitions and per-card "copy CSS" buttons.
+- `index.html` — main showcase page with all eighteen transitions and per-card "copy CSS" buttons.
 - `prototypes.html` — interactive playground for each transition with live tuning controls (durations, distances, easings).
 - `skill.html` — landing page for the agent skill (install instructions + side-by-side compare embed).
 - `example.html` — modal demo with a side-by-side "generic AI output" vs "with Transitions.dev skill" toggle, embedded inside `skill.html` as an iframe.

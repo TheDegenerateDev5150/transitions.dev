@@ -213,6 +213,98 @@
       --p12-error-text:      #d62b11;
       --p12-revert-hold:     3000ms;
       --p12-revert-dur:      280ms;
+
+      /* P13 — Functional input field with clear transition.
+         Monochrome port of /Users/jakub/Dropbox/Work 2023+/cursor/ease/
+         border-beam/AI seach.html. The clear effect builds a per-word
+         radial-gradient streak under the text (greyscale-only — no
+         rainbow) and then translates the rendered text DOWN with blur
+         + opacity fade while the placeholder falls in from above with
+         the mirror math (both elements travel downward together, just
+         like the source template). --p13-text-out-dur / --p13-text-in-dur
+         and matching fly + ease vars drive the cleared text exit and
+         placeholder entrance independently. --p13-clear-dur is the outer
+         envelope (covers the glow's fade-in/out tail). */
+      --p13-clear-dur:       1000ms;
+      --p13-text-out-dur:    400ms;
+      --p13-text-in-dur:     400ms;
+      --p13-text-out-fly:    12px;
+      --p13-text-in-fly:     12px;
+      --p13-text-out-ease:   cubic-bezier(0.22, 1, 0.36, 1);
+      --p13-text-in-ease:    cubic-bezier(0.22, 1, 0.36, 1);
+      --p13-blur:            2px;
+      /* --p13-glow-delay holds the per-word streak completely
+         invisible for the first N ms so the text begins falling
+         on its own and only then does the streak ignite. */
+      --p13-glow-delay:      50ms;
+      --p13-glow-peak-at:    0.15;
+      --p13-glow-opacity:    0.42;
+      --p13-glow-spread:     1.5;
+
+      /* P14 — Skeleton loader → user row reveal.
+         The skeleton pulses at --p14-pulse-dur for --p14-pulse-count
+         iterations, drops to --p14-pulse-min mid-cycle, then on
+         animationend the wrapper flips to the revealed state and the
+         real content fades + un-blurs over --p14-reveal-dur. */
+      --p14-pulse-dur:       1000ms;
+      --p14-pulse-count:     1;
+      --p14-pulse-min:       0.5;
+      --p14-reveal-dur:      400ms;
+      --p14-reveal-blur:     2px;
+      --p14-reveal-ease:     ease-in-out;
+      --p14-skeleton-color:  #eeeeee;
+
+      /* P15 — Beautiful shimmer on text.
+         Continuous sweep masked into the glyphs via background-clip:
+         text. --p15-band controls the highlight's width as a
+         percentage of the text — wider band reads as a softer,
+         slower-feeling sweep at the same duration. --p15-ease drives
+         the per-cycle pacing; linear feels mechanical, smooth-out
+         eases each pass into rest at the end. */
+      --p15-dur:             2000ms;
+      --p15-base:            #7c7c7c;
+      --p15-highlight:       #0d0d0d;
+      --p15-band:            400%;
+      --p15-ease:            linear;
+
+      /* P16 — Tabs with sliding active indicator.
+         Per Figma: 36px outer pill on #eee, 30px-tall inner tabs
+         with 12px×4px padding, 13px Inter Medium. The active tab
+         is a white pill that slides + resizes via inline transform/
+         width writes from JS. Inactive tabs carry a 1px #efefef
+         outline so the segmented look reads on the gray bar even
+         while the white indicator is mid-flight. */
+      --p16-dur:             200ms;
+      --p16-ease:            cubic-bezier(0.22, 1, 0.36, 1);
+      --p16-text-muted:      rgba(15, 15, 15, 0.8);
+      --p16-text-active:     #0f0f0f;
+      --p16-bar-bg:          #eeeeee;
+      --p16-pill-bg:         #ffffff;
+      --p16-inactive-border: #efefef;
+
+      /* P17 — Tooltip with appear-only delay.
+         "Hover me" button trigger; the 50ms delay is set ONLY in
+         the :hover/:focus rule, so leaving the trigger snaps the
+         delay back to 0 and the fade-out plays immediately.
+         Pure CSS — no JS. */
+      --p17-in-dur:          150ms;
+      --p17-out-dur:         50ms;
+      --p17-scale-from:      0.98;
+      --p17-delay:           80ms;
+      --p17-in-ease:         ease-out;
+      --p17-out-ease:        ease-out;
+      --p17-bg:              #ffffff;
+      --p17-fg:              #17181c;
+
+      /* P18 — Primary + secondary text appear with stagger.
+         Both lines rise from --p18-distance with --p18-dur; the
+         secondary line is held back by --p18-stagger so the eye
+         locks onto the primary first. */
+      --p18-dur:             600ms;
+      --p18-distance:        12px;
+      --p18-stagger:         40ms;
+      --p18-blur:            3px;
+      --p18-ease:            cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     * {
@@ -351,8 +443,8 @@
     }
 
     .bell-btn .bell-icon {
-      width: 16px;
-      height: 16px;
+      width: 18px;
+      height: 18px;
       display: block;
       pointer-events: none;
       user-select: none;
@@ -450,14 +542,19 @@
 
     /* Default resting state: pre-open (hidden).
        Scale anchors at --p2-origin so the menu visually "grows" from
-       the trigger (top center by default — trigger button above). */
+       the trigger (top center by default — trigger button above).
+       Every transform carries a trailing translateZ(0) so Safari
+       pre-promotes the compositor layer and paints the .surface
+       box-shadow up-front. Without it, WebKit defers the layer
+       paint until the scale settles, making the shadow snap in
+       ~150-200 ms after the open animation starts. */
     .p2-dropdown {
       width: 234px;
       height: 136px;
       position: relative;
       padding: 8px;
       transform-origin: var(--p2-origin);
-      transform: scale(var(--p2-pre-scale));
+      transform: scale(var(--p2-pre-scale)) translateZ(0);
       opacity: 0;
       pointer-events: none;
       transition:
@@ -466,13 +563,13 @@
     }
 
     .p2-dropdown.is-open {
-      transform: scale(1);
+      transform: scale(1) translateZ(0);
       opacity: 1;
       pointer-events: auto;
     }
 
     .p2-dropdown.is-closing {
-      transform: scale(var(--p2-closing-scale));
+      transform: scale(var(--p2-closing-scale)) translateZ(0);
       opacity: 0;
       pointer-events: none;
       transition:
@@ -1431,6 +1528,481 @@
     }
 
     /* ============================================================ */
+    /* P13 — Functional input with clear transition (monochrome AI   */
+    /*       search port). The wrapper stacks four absolutely-       */
+    /*       positioned layers in the same frame:                    */
+    /*         1. real <input>           (catches typing, z=1)       */
+    /*         2. .p13-text-mirror       (the visible text — gets    */
+    /*                                    text-fill-color: trans on  */
+    /*                                    .has-value so input glyphs */
+    /*                                    don't render twice; this   */
+    /*                                    layer is what flies up)    */
+    /*         3. .p13-fake-placeholder  (slides in from above on    */
+    /*                                    clear; hidden when has-    */
+    /*                                    value)                     */
+    /*         4. .p13-clear-glow        (per-word streak overlay,   */
+    /*                                    only painted during clear) */
+    /* ============================================================ */
+    .p13-search {
+      position: relative;
+      width: 320px;
+      height: 44px;
+      border-radius: 22px;
+      background: #ffffff;
+      /* Inset hairline — painted inside the wrap so it lives within
+         the .p13-search__clear-glow layer's stacking context and
+         can be darkened by the glow's mix-blend-mode: multiply. The
+         soft drop shadow stays external. */
+      box-shadow:
+        inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      transition: box-shadow 200ms ease;
+    }
+    .p13-search:focus-within {
+      box-shadow:
+        inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+    }
+    .p13-search__icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: #6b7280;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .p13-search__icon svg { display: block; width: 100%; height: 100%; }
+    .p13-search__input {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      padding: 0 40px 0 38px;
+      border: 0;
+      background: transparent;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text);
+      outline: none;
+      caret-color: var(--text);
+      z-index: 2;
+    }
+    /* Hide the native placeholder — we use .p13-fake-placeholder
+       so we can animate it independently. */
+    .p13-search__input::placeholder { color: transparent; }
+    /* When the field has a value, the visible text is owned by
+       .p13-text-mirror. Hiding the input's own glyphs prevents a
+       double-render during the clear animation. */
+    .p13-search.has-value .p13-search__input {
+      -webkit-text-fill-color: transparent;
+    }
+    .p13-search__text-mirror,
+    .p13-search__fake-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      padding: 0 40px 0 38px;
+      display: flex;
+      align-items: center;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text);
+      pointer-events: none;
+      white-space: nowrap;
+      overflow: hidden;
+      z-index: 2;
+    }
+    .p13-search__text-mirror { opacity: 0; }
+    .p13-search.has-value .p13-search__text-mirror { opacity: 1; }
+    .p13-search.is-clearing .p13-search__text-mirror { opacity: 1; }
+    .p13-search.is-clearing .p13-search__input {
+      -webkit-text-fill-color: transparent !important;
+    }
+    .p13-search__fake-placeholder { color: var(--muted); }
+    .p13-search.has-value .p13-search__fake-placeholder { opacity: 0; }
+    .p13-search__clear-glow {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 3;
+      mix-blend-mode: multiply;
+    }
+    .p13-search__clear {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      z-index: 4;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 150ms ease;
+      display: grid;
+      place-items: center;
+      color: #a9a9a9;
+    }
+    .p13-search__clear:hover { color: #4b5563; }
+    .p13-search.has-value .p13-search__clear {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ============================================================ */
+    /* P14 — Skeleton loader → user row reveal                       */
+    /* ============================================================ */
+    .p14-card {
+      position: relative;
+      width: 280px;
+      height: 56px;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.06),
+        0 1px 2px rgba(0, 0, 0, 0.03);
+      overflow: hidden;
+    }
+    .p14-skeleton,
+    .p14-content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+    }
+    /* Skeleton follows Figma 488:575 — 6px gap between avatar and
+       text column, 12px-tall pill bars, name 100px / email 131px.
+       The bar column itself sits 4px further right than the avatar
+       gap implies, so during the reveal the bars peek out from
+       under the real text rather than aligning with it. The avatar
+       slot stays fixed so the swap-in is seamless. */
+    .p14-skeleton { gap: 6px; }
+    .p14-skeleton .p14-sk-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--p14-skeleton-color);
+      flex: none;
+    }
+    .p14-skeleton .p14-sk-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-left: 4px;
+    }
+    .p14-skeleton .p14-sk-name,
+    .p14-skeleton .p14-sk-email {
+      height: 12px;
+      border-radius: 4px;
+      background: var(--p14-skeleton-color);
+    }
+    .p14-skeleton .p14-sk-name  { width: 100px; }
+    .p14-skeleton .p14-sk-email { width: 131px; }
+    .p14-skeleton.is-pulsing .p14-sk-avatar,
+    .p14-skeleton.is-pulsing .p14-sk-name,
+    .p14-skeleton.is-pulsing .p14-sk-email {
+      animation: p14-pulse var(--p14-pulse-dur) ease-in-out var(--p14-pulse-count);
+    }
+    @keyframes p14-pulse {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: var(--p14-pulse-min); }
+    }
+    /* Reveal: skeleton fades out, real content fades + un-blurs in.
+       Both run on the .is-revealed parent so the swap stays
+       single-source-of-truth. The transition rules live on the
+       base elements (not on the .is-revealed variant) so the
+       --p14-reveal-* vars are always in effect — both the
+       skeleton fade-out and the content fade-in happen over the
+       same duration and easing. */
+    .p14-skeleton {
+      z-index: 1;
+      opacity: 1;
+      filter: blur(0);
+      transition:
+        opacity var(--p14-reveal-dur) var(--p14-reveal-ease),
+        filter  var(--p14-reveal-dur) var(--p14-reveal-ease);
+      transition-delay: 0ms;
+    }
+    .p14-content {
+      z-index: 2;
+      opacity: 0;
+      filter: blur(var(--p14-reveal-blur));
+      transition:
+        opacity var(--p14-reveal-dur) var(--p14-reveal-ease),
+        filter  var(--p14-reveal-dur) var(--p14-reveal-ease);
+      transition-delay: 0ms;
+    }
+    /* When resetting back to the skeleton state (Animate clicked
+       while the card was already revealed), suppress transitions
+       so --p14-reveal-* only governs the forward skeleton→content
+       reveal — never the reverse snap-back. */
+    .p14-card.is-resetting .p14-skeleton,
+    .p14-card.is-resetting .p14-content {
+      transition: none !important;
+    }
+    .p14-content .p14-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex: none;
+    }
+    .p14-content .p14-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .p14-content .p14-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 16px;
+    }
+    .p14-content .p14-email {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 16px;
+    }
+    .p14-card.is-revealed .p14-skeleton {
+      opacity: 0;
+      filter: blur(var(--p14-reveal-blur));
+    }
+    .p14-card.is-revealed .p14-content {
+      opacity: 1;
+      filter: blur(0);
+    }
+
+    /* ============================================================ */
+    /* P15 — Beautiful shimmer on text.                              */
+    /* Mirrors Figma node 494:588 — two-layer construction:          */
+    /*   1. The base text renders normally in --p15-base (gray).     */
+    /*   2. A ::before pseudo-element duplicates the same string     */
+    /*      via content: attr(data-text), paints a horizontal        */
+    /*      transparent → highlight → transparent gradient onto it,  */
+    /*      and clips that gradient to the text glyphs via           */
+    /*      background-clip: text. As the gradient's background-     */
+    /*      position animates, the highlight band sweeps across the  */
+    /*      text — darkening the base for the duration of the pass.  */
+    /*                                                               */
+    /* The transparent edges mean the base layer shows through       */
+    /* outside the highlight band, so the text never becomes         */
+    /* invisible at any frame, regardless of band width.             */
+    /* --p15-band sizes the moving image relative to the text width. */
+    /* Sweep direction: left → right (matches the Figma motion).     */
+    /* ============================================================ */
+    .p15-shimmer {
+      position: relative;
+      display: inline-block;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 18px;
+      letter-spacing: 0;
+      color: var(--p15-base);
+    }
+    .p15-shimmer::before {
+      content: attr(data-text);
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image: linear-gradient(
+        90deg,
+        transparent          0%,
+        transparent         40%,
+        var(--p15-highlight) 50%,
+        transparent         60%,
+        transparent        100%
+      );
+      background-size: var(--p15-band) 100%;
+      background-repeat: no-repeat;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      animation: p15-shimmer var(--p15-dur) var(--p15-ease) infinite;
+    }
+    @keyframes p15-shimmer {
+      0%   { background-position: 100% 0; }
+      100% { background-position: 0% 0; }
+    }
+
+    /* ============================================================ */
+    /* P16 — Tabs with sliding active indicator                      */
+    /* ============================================================ */
+    .p16-tabs {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px;
+      border-radius: 48px;
+      background: var(--p16-bar-bg);
+    }
+    .p16-tab {
+      position: relative;
+      appearance: none;
+      box-sizing: border-box;
+      border: 1px solid transparent;
+      background: transparent;
+      height: 30px;
+      padding: 4px 12px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.4;
+      color: var(--p16-text-muted);
+      cursor: pointer;
+      border-radius: 48px;
+      z-index: 1;
+      transition:
+        color        var(--p16-dur) var(--p16-ease),
+        border-color var(--p16-dur) var(--p16-ease);
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+    }
+    .p16-tab:not([aria-selected="true"]) {
+      border-color: var(--p16-inactive-border);
+    }
+    .p16-tab:not([aria-selected="true"]):hover {
+      color: var(--p16-text-active);
+    }
+    .p16-tab[aria-selected="true"] {
+      color: var(--p16-text-active);
+    }
+    .p16-tab:focus-visible {
+      outline: 2px solid var(--text);
+      outline-offset: 2px;
+    }
+    .p16-indicator {
+      position: absolute;
+      top: 3px;
+      left: 0;
+      height: 30px;
+      width: 0;
+      background: var(--p16-pill-bg);
+      border-radius: 48px;
+      transform: translateX(0);
+      transition:
+        transform var(--p16-dur) var(--p16-ease),
+        width     var(--p16-dur) var(--p16-ease);
+      will-change: transform, width;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ============================================================ */
+    /* P17 — Tooltip with appear-only delay                          */
+    /* ============================================================ */
+    /* The wrap keeps hover "sticky" — the pointer can drift from the
+       trigger onto the tooltip without the tooltip flickering closed. */
+    .p17-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    /* The trigger reuses the page-wide .btn visuals; this selector
+       only exists so the tooltip's :focus-visible sibling rule can
+       keep working. */
+    .p17-trigger { /* visuals inherited from .btn */ }
+    .p17-tooltip {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translate(-50%, 0) scale(var(--p17-scale-from));
+      transform-origin: 50% 100%;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: var(--p17-bg);
+      color: var(--p17-fg);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 18px;
+      white-space: nowrap;
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.06),
+        0 2px 6px 0 rgba(0, 0, 0, 0.05),
+        0 4px 42px 0 rgba(0, 0, 0, 0.06);
+      opacity: 0;
+      pointer-events: none;
+      /* No transition-delay here: when leaving hover the rule below
+         stops applying and the delay snaps back to 0, so the
+         disappear plays immediately. */
+      transition:
+        opacity   var(--p17-out-dur) var(--p17-out-ease),
+        transform var(--p17-out-dur) var(--p17-out-ease);
+    }
+    /* The 50ms delay is in the hover rule only. Hover on the wrap
+       (not just the trigger) so the tooltip stays visible if the
+       pointer drifts onto the tooltip itself before settling. */
+    .p17-wrap:hover .p17-tooltip,
+    .p17-trigger:focus-visible + .p17-tooltip {
+      opacity: 1;
+      transform: translate(-50%, 0) scale(1);
+      transition-duration: var(--p17-in-dur);
+      transition-timing-function: var(--p17-in-ease);
+      transition-delay: var(--p17-delay);
+    }
+
+    /* ============================================================ */
+    /* P18 — Primary + secondary text appear with stagger            */
+    /* ============================================================ */
+    .p18-text {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-align: center;
+    }
+    .p18-line {
+      opacity: 0;
+      transform: translateY(var(--p18-distance));
+      filter: blur(var(--p18-blur));
+      transition:
+        opacity   var(--p18-dur) var(--p18-ease),
+        transform var(--p18-dur) var(--p18-ease),
+        filter    var(--p18-dur) var(--p18-ease);
+      will-change: transform, opacity, filter;
+    }
+    .p18-line--primary {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .p18-line--secondary {
+      font-size: 13px;
+      color: var(--muted);
+      transition-delay: var(--p18-stagger);
+    }
+    .p18-text.is-shown .p18-line {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+    /* Second Animate click: fade out in place — no Y return, 200ms. */
+    .p18-text.is-hiding .p18-line {
+      opacity: 0;
+      transform: translateY(0);
+      filter: blur(0);
+      transition:
+        opacity 200ms ease,
+        transform 0s linear,
+        filter 0s linear;
+      transition-delay: 0s;
+    }
+
+    /* ============================================================ */
     /* Control panel                                                 */
     /* ============================================================ */
     body {
@@ -1663,12 +2235,25 @@
       .p9-char,
       .p10-check,
       .p11-avatar,
-      .p12-input {
+      .p12-input,
+      .p13-search__text-mirror,
+      .p13-search__fake-placeholder,
+      .p14-content,
+      .p15-shimmer,
+      .p16-indicator,
+      .p17-tooltip,
+      .p18-line {
         transform: none !important;
         filter: none !important;
       }
       .p10-check svg path {
         stroke-dashoffset: 0 !important;
+      }
+      .p15-shimmer {
+        color: var(--p15-base) !important;
+      }
+      .p15-shimmer::before {
+        display: none !important;
       }
     }
   </style>
@@ -1959,6 +2544,120 @@
         <button class="btn" data-proto="12">Animate</button>
       </div>
     </section>
+
+    <!-- ================================================== -->
+    <!-- 13. Functional input with clear transition         -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">13.pototype</p>
+      <div class="stage">
+        <div class="p13-search has-value" id="p13-search">
+          <span class="p13-search__icon" aria-hidden="true">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14 14L11.1 11.1M12.6667 7.33333C12.6667 10.2789 10.2789 12.6667 7.33333 12.6667C4.38781 12.6667 2 10.2789 2 7.33333C2 4.38781 4.38781 2 7.33333 2C10.2789 2 12.6667 4.38781 12.6667 7.33333Z"
+                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <input class="p13-search__input" id="p13-input"
+                 type="text" value="How do CSS transitions work?"
+                 placeholder="Search anything"
+                 autocomplete="off" spellcheck="false">
+          <div class="p13-search__text-mirror" aria-hidden="true">How do CSS transitions work?</div>
+          <div class="p13-search__fake-placeholder" aria-hidden="true">Search anything</div>
+          <div class="p13-search__clear-glow" aria-hidden="true"></div>
+          <button type="button" class="p13-search__clear" id="p13-clear" aria-label="Clear search">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd"
+                d="M8 16C12.4183 16 16 12.4183 16 8C16 3.58172 12.4183 0 8 0C3.58172 0 0 3.58172 0 8C0 12.4183 3.58172 16 8 16ZM10.6961 5.30392C10.9801 5.58794 10.9801 6.04842 10.6961 6.33244L9.02852 8L10.6961 9.66756C10.9801 9.95158 10.9801 10.4121 10.6961 10.6961C10.4121 10.9801 9.95158 10.9801 9.66756 10.6961L8 9.02852L6.33244 10.6961C6.04842 10.9801 5.58794 10.9801 5.30392 10.6961C5.0199 10.4121 5.0199 9.95158 5.30392 9.66756L6.97148 8L5.30392 6.33244C5.0199 6.04842 5.0199 5.58794 5.30392 5.30392C5.58794 5.0199 6.04842 5.0199 6.33244 5.30392L8 6.97148L9.66756 5.30392C9.95158 5.0199 10.4121 5.0199 10.6961 5.30392Z"
+                fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+        <button class="btn" data-proto="13">Reset text</button>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- 14. Skeleton loader → user row reveal               -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">14.pototype</p>
+      <div class="stage">
+        <div class="p14-card" id="p14-card">
+          <div class="p14-skeleton" aria-hidden="true">
+            <div class="p14-sk-avatar"></div>
+            <div class="p14-sk-lines">
+              <div class="p14-sk-name"></div>
+              <div class="p14-sk-email"></div>
+            </div>
+          </div>
+          <div class="p14-content">
+            <img class="p14-avatar"
+                 src="assets/avatars/avatar-1.webp"
+                 alt="" width="32" height="32"
+                 loading="lazy" decoding="async">
+            <div class="p14-text">
+              <span class="p14-name">Jane Cooper</span>
+              <span class="p14-email">jane.cooper@example.com</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn" data-proto="14">Animate</button>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- 15. Beautiful shimmer on text                       -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">15.pototype</p>
+      <div class="stage">
+        <span class="p15-shimmer" id="p15-shimmer" data-text="Planning next moves">Planning next moves</span>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- 16. Tabs with sliding active indicator              -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">16.pototype</p>
+      <div class="stage">
+        <div class="p16-tabs" id="p16-tabs" role="tablist" aria-label="Mode">
+          <span class="p16-indicator" aria-hidden="true"></span>
+          <button type="button" class="p16-tab" role="tab" aria-selected="true">Plan</button>
+          <button type="button" class="p16-tab" role="tab" aria-selected="false">Debug</button>
+          <button type="button" class="p16-tab" role="tab" aria-selected="false">Ask</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- 17. Tooltip with appear-only delay                  -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">17.pototype</p>
+      <div class="stage">
+        <span class="p17-wrap">
+          <button type="button" class="btn p17-trigger" id="p17-trigger"
+            aria-describedby="p17-tooltip-text">Hover me</button>
+          <span class="p17-tooltip" id="p17-tooltip-text" role="tooltip">Tooltip text</span>
+        </span>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- 18. Primary + secondary text appear with stagger   -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">18.pototype</p>
+      <div class="stage">
+        <div class="p18-text" id="p18-text">
+          <strong class="p18-line p18-line--primary">Pull request opened</strong>
+          <span class="p18-line p18-line--secondary">Review requested from 3 teammates</span>
+        </div>
+        <button class="btn" data-proto="18">Animate</button>
+      </div>
+    </section>
   </main>
 
   <!-- ================================================== -->
@@ -2189,6 +2888,89 @@
         <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p12-shake-ease" spellcheck="false" aria-label="Ease value"></div>
       </section>
 
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">13. Input clear with dissolve</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Outer dur (ms)</span><input type="number" data-var="--p13-clear-dur" data-unit="ms" min="200" max="3000" step="50" value="1000"></div>
+        <div class="cp-row"><span class="cp-label">Text out dur (ms)</span><input type="number" data-var="--p13-text-out-dur" data-unit="ms" min="100" max="2000" step="20" value="400"></div>
+        <div class="cp-row"><span class="cp-label">Text in dur (ms)</span><input type="number" data-var="--p13-text-in-dur" data-unit="ms" min="100" max="2000" step="20" value="400"></div>
+        <div class="cp-row"><span class="cp-label">Text out distance (px)</span><input type="number" data-var="--p13-text-out-fly" data-unit="px" min="0" max="80" step="1" value="12"></div>
+        <div class="cp-row"><span class="cp-label">Text in distance (px)</span><input type="number" data-var="--p13-text-in-fly" data-unit="px" min="0" max="80" step="1" value="12"></div>
+        <div class="cp-row"><span class="cp-label">Text out ease</span><select class="cp-ease" data-var="--p13-text-out-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p13-text-out-ease" spellcheck="false" aria-label="Text out ease value"></div>
+        <div class="cp-row"><span class="cp-label">Text in ease</span><select class="cp-ease" data-var="--p13-text-in-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p13-text-in-ease" spellcheck="false" aria-label="Text in ease value"></div>
+        <div class="cp-row"><span class="cp-label">Blur (px)</span><input type="number" data-var="--p13-blur" data-unit="px" min="0" max="30" step="0.5" value="2"></div>
+        <div class="cp-row"><span class="cp-label">Glow delay (ms)</span><input type="number" data-var="--p13-glow-delay" data-unit="ms" min="0" max="1000" step="10" value="50"></div>
+        <div class="cp-row"><span class="cp-label">Glow opacity</span><input type="number" data-var="--p13-glow-opacity" data-unit="" min="0" max="1" step="0.02" value="0.42"></div>
+        <div class="cp-row"><span class="cp-label">Glow peak at</span><input type="number" data-var="--p13-glow-peak-at" data-unit="" min="0.05" max="0.6" step="0.01" value="0.15"></div>
+        <div class="cp-row"><span class="cp-label">Glow spread</span><input type="number" data-var="--p13-glow-spread" data-unit="" min="0.5" max="2" step="0.05" value="1.5"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">14. Skeleton loader and reveal</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Pulse dur (ms)</span><input type="number" data-var="--p14-pulse-dur" data-unit="ms" min="200" max="2000" step="20" value="1000"></div>
+        <div class="cp-row"><span class="cp-label">Pulse count</span><input type="number" data-var="--p14-pulse-count" data-unit="" min="1" max="10" step="1" value="1"></div>
+        <div class="cp-row"><span class="cp-label">Pulse min</span><input type="number" data-var="--p14-pulse-min" data-unit="" min="0" max="1" step="0.05" value="0.5"></div>
+        <div class="cp-row"><span class="cp-label">Reveal dur (ms)</span><input type="number" data-var="--p14-reveal-dur" data-unit="ms" min="0" max="2000" step="10" value="400"></div>
+        <div class="cp-row"><span class="cp-label">Reveal blur (px)</span><input type="number" data-var="--p14-reveal-blur" data-unit="px" min="0" max="20" step="0.5" value="2"></div>
+        <div class="cp-row"><span class="cp-label">Reveal ease</span><select class="cp-ease" data-var="--p14-reveal-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p14-reveal-ease" spellcheck="false" aria-label="Reveal ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">15. Shimmer text</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Duration (ms)</span><input type="number" data-var="--p15-dur" data-unit="ms" min="200" max="6000" step="50" value="2000"></div>
+        <div class="cp-row"><span class="cp-label">Band (%)</span><input type="number" data-var="--p15-band" data-unit="%" min="100" max="500" step="10" value="400"></div>
+        <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p15-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p15-ease" spellcheck="false" aria-label="Ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">16. Tabs sliding</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Duration (ms)</span><input type="number" data-var="--p16-dur" data-unit="ms" min="0" max="2000" step="10" value="200"></div>
+        <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p16-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p16-ease" spellcheck="false" aria-label="Ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">17. Tooltip open/close</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Appear dur (ms)</span><input type="number" data-var="--p17-in-dur" data-unit="ms" min="0" max="2000" step="10" value="150"></div>
+        <div class="cp-row"><span class="cp-label">Disappear dur (ms)</span><input type="number" data-var="--p17-out-dur" data-unit="ms" min="0" max="2000" step="10" value="50"></div>
+        <div class="cp-row"><span class="cp-label">Scale from</span><input type="number" data-var="--p17-scale-from" data-unit="" min="0.5" max="1.2" step="0.01" value="0.98"></div>
+        <div class="cp-row"><span class="cp-label">Appear delay (ms)</span><input type="number" data-var="--p17-delay" data-unit="ms" min="0" max="500" step="5" value="80"></div>
+        <div class="cp-row"><span class="cp-label">Appear ease</span><select class="cp-ease" data-var="--p17-in-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p17-in-ease" spellcheck="false" aria-label="Appear ease value"></div>
+        <div class="cp-row"><span class="cp-label">Disappear ease</span><select class="cp-ease" data-var="--p17-out-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p17-out-ease" spellcheck="false" aria-label="Disappear ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">18. Texts reveal</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Duration (ms)</span><input type="number" data-var="--p18-dur" data-unit="ms" min="0" max="2000" step="10" value="600"></div>
+        <div class="cp-row"><span class="cp-label">Distance (px)</span><input type="number" data-var="--p18-distance" data-unit="px" min="0" max="60" step="1" value="12"></div>
+        <div class="cp-row"><span class="cp-label">Stagger (ms)</span><input type="number" data-var="--p18-stagger" data-unit="ms" min="0" max="1000" step="10" value="40"></div>
+        <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p18-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p18-ease" spellcheck="false" aria-label="Ease value"></div>
+      </section>
+
     </div>
   </aside>
 
@@ -2331,6 +3113,386 @@
           p12ClearError();
         });
       }
+
+      // --- Prototype 13: Functional input with clear transition --
+      // Slim monochrome port of the AI-search clear effect from
+      // /Users/jakub/Dropbox/Work 2023+/cursor/ease/border-beam/AI seach.html.
+      // Each word in the value gets a soft greyscale streak under
+      // it; the whole text mirror flies up with blur + fade while
+      // the placeholder enters from above with mirrored math.
+      const p13DefaultText = "How do CSS transitions work?";
+      const p13State = (function initP13() {
+        const wrap   = document.getElementById("p13-search");
+        const input  = document.getElementById("p13-input");
+        const clear  = document.getElementById("p13-clear");
+        if (!wrap || !input || !clear) return null;
+
+        const mirror = wrap.querySelector(".p13-search__text-mirror");
+        const fakePh = wrap.querySelector(".p13-search__fake-placeholder");
+        const glow   = wrap.querySelector(".p13-search__clear-glow");
+        const fontSpec = "400 14px Inter, sans-serif";
+
+        // Reusable canvas context for word-width measurement. We
+        // don't paint to the canvas — we only sample text metrics
+        // so per-word ellipse positions match what the browser
+        // actually renders.
+        const measureCanvas = document.createElement("canvas");
+        const measureCtx = measureCanvas.getContext("2d");
+        measureCtx.font = fontSpec;
+
+        // Pure-black palette (replaces the rainbow in the
+        // reference). Single entry — every layer multiplies black
+        // onto the input with a low per-layer alpha so the overall
+        // darkening stays subtle.
+        const PALETTE = [
+          [0, 0, 0],
+        ];
+
+        let isClearing = false;
+
+        function updateMirror() {
+          mirror.textContent = input.value.replace(/ /g, "\u00a0");
+        }
+        function syncHasValue() {
+          const has = input.value.length > 0;
+          wrap.classList.toggle("has-value", has);
+          if (has) updateMirror();
+        }
+        function readNum(name, fb) {
+          const v = parseFloat(
+            getComputedStyle(document.documentElement).getPropertyValue(name)
+          );
+          return isNaN(v) ? fb : v;
+        }
+
+        // Build the radial-gradient stack for the per-word streaks.
+        // We measure each word's width in pixels via the canvas
+        // context, convert the centre to a % of the input width,
+        // and emit a small cluster of soft greyscale ellipses just
+        // below the baseline. Spread is a single multiplier so the
+        // CP can scale all words at once.
+        function buildLayers(text) {
+          const inputW = wrap.clientWidth || 320;
+          const padLeft = 38;
+          const segments = text.split(/(\s+)/);
+          const spread = readNum("--p13-glow-spread", 1.5);
+          const pLen = PALETTE.length;
+          const layers = [];
+          let x = 0;
+          for (const seg of segments) {
+            const w = measureCtx.measureText(seg).width;
+            if (seg.trim()) {
+              const cxPx = padLeft + x + w / 2;
+              const hw = Math.max(w * 0.45, 8) * spread;
+              const stops = [
+                { dx: 0,         rw: hw * 0.8,  rh: 7,   a: 0.22 },
+                { dx: hw * 0.45, rw: hw * 0.55, rh: 8,   a: 0.18 },
+                { dx: -hw * 0.4, rw: hw * 0.65, rh: 6,   a: 0.16 },
+                { dx: hw * 0.15, rw: hw * 0.9,  rh: 5,   a: 0.14 },
+              ];
+              for (let i = 0; i < stops.length; i++) {
+                const l = stops[i];
+                const lx = ((cxPx + l.dx) / inputW * 100).toFixed(2);
+                const [r, g, b] = PALETTE[i % pLen];
+                layers.push(
+                  "radial-gradient(ellipse " + Math.max(l.rw, 2).toFixed(1) +
+                  "px " + l.rh + "px at " + lx +
+                  "% 100%, rgba(" + r + "," + g + "," + b + "," +
+                  l.a.toFixed(3) + "), transparent)"
+                );
+              }
+            }
+            x += w;
+          }
+          return layers.length ? layers.join(", ") : "";
+        }
+
+        function readEase(name, fb) {
+          const v = getComputedStyle(document.documentElement)
+            .getPropertyValue(name).trim();
+          return v || fb;
+        }
+
+        // Parse a CSS cubic-bezier() string into an easing fn(t).
+        function makeCubicBezierEase(easeStr) {
+          const m = easeStr.match(
+            /cubic-bezier\s*\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/i
+          );
+          if (!m) return function (t) { return t; };
+          const x1 = parseFloat(m[1]), y1 = parseFloat(m[2]);
+          const x2 = parseFloat(m[3]), y2 = parseFloat(m[4]);
+          const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+          const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+          function sampleX(s) { return ((ax * s + bx) * s + cx) * s; }
+          function sampleY(s) { return ((ay * s + by) * s + cy) * s; }
+          function derX(s) { return (3 * ax * s + 2 * bx) * s + cx; }
+          return function (t) {
+            if (t <= 0) return 0;
+            if (t >= 1) return 1;
+            let s = t;
+            for (let i = 0; i < 8; i++) {
+              const dx = sampleX(s) - t;
+              if (Math.abs(dx) < 1e-6) break;
+              const d = derX(s);
+              if (d === 0) break;
+              s -= dx / d;
+            }
+            return sampleY(s);
+          };
+        }
+
+        function clearWithAnimation() {
+          if (isClearing) return;
+          if (!input.value) return;
+          isClearing = true;
+          const keepInputFocus = document.activeElement === input;
+          // If the input was focused before the clear, restore focus
+          // immediately. The clear button uses preventDefault on
+          // mousedown/pointerdown to keep focus, but we re-focus
+          // defensively in case any browser still moves it.
+          if (keepInputFocus && document.activeElement !== input) {
+            input.focus({ preventScroll: true });
+          }
+
+          updateMirror();
+          const bg = buildLayers(mirror.textContent);
+          const peakAt = readNum("--p13-glow-peak-at", 0.15);
+          const glowOpacity = readNum("--p13-glow-opacity", 0.42);
+          const clearDur = readNum("--p13-clear-dur", 1000);
+          const textOutDur = readNum("--p13-text-out-dur", 400);
+          const textInDur  = readNum("--p13-text-in-dur", 400);
+          const outFlyPx   = readNum("--p13-text-out-fly", 12);
+          const inFlyPx    = readNum("--p13-text-in-fly", 12);
+          const blurPx     = readNum("--p13-blur", 2);
+          const glowDelay  = readNum("--p13-glow-delay", 50);
+          const easeOut = makeCubicBezierEase(
+            readEase("--p13-text-out-ease", "cubic-bezier(0.22, 1, 0.36, 1)")
+          );
+          const easeIn = makeCubicBezierEase(
+            readEase("--p13-text-in-ease", "cubic-bezier(0.22, 1, 0.36, 1)")
+          );
+
+          // Snap the input to empty before the animation starts so
+          // the actual <input> glyphs don't double-render with the
+          // mirror that's about to fly up.
+          input.value = "";
+          wrap.classList.remove("has-value");
+          wrap.classList.add("is-clearing");
+
+          // Prime the placeholder above the field; it'll fall in.
+          fakePh.style.transform = "translateY(-" + inFlyPx + "px)";
+          fakePh.style.opacity = "0.9";
+          fakePh.style.filter = "blur(" + blurPx + "px)";
+
+          glow.style.background = bg;
+          glow.style.opacity = "0";
+
+          const start = performance.now();
+          (function tick(now) {
+            const elapsed = now - start;
+            const p = Math.min(1, elapsed / clearDur);
+            const tp = Math.min(1, elapsed / textOutDur);
+            const e = easeOut(tp);
+
+            // Mirror falls down + blurs + fades. Matches the
+            // border-beam/AI-search template: the cleared text
+            // exits downward, while the placeholder falls in from
+            // above, so both elements travel in the same direction.
+            mirror.style.transform = "translateY(" + (e * outFlyPx).toFixed(1) + "px)";
+            mirror.style.opacity = (1 - e).toFixed(3);
+            mirror.style.filter = "blur(" + (e * blurPx).toFixed(1) + "px)";
+
+            // Fake placeholder mirrors the math from above.
+            const pp = Math.min(1, elapsed / textInDur);
+            const pe = easeIn(pp);
+            fakePh.style.transform = "translateY(" + (-inFlyPx + pe * inFlyPx).toFixed(1) + "px)";
+            fakePh.style.opacity = (0.9 + pe * 0.1).toFixed(3);
+            fakePh.style.filter = "blur(" + (blurPx - pe * blurPx).toFixed(1) + "px)";
+
+            // Glow stays at 0 for glowDelay ms so the text starts
+            // its fall on its own. After the delay, the rise/fall
+            // envelope is rescaled into the remaining window — the
+            // glow rises to its peak (peakAt fraction of the
+            // post-delay window) and fades over the rest.
+            let g = 0;
+            if (elapsed > glowDelay) {
+              const remaining = Math.max(1, clearDur - glowDelay);
+              const gp = Math.min(1, (elapsed - glowDelay) / remaining);
+              g = gp < peakAt
+                ? gp / peakAt
+                : 1 - (gp - peakAt) / (1 - peakAt);
+            }
+            glow.style.opacity = (g * glowOpacity).toFixed(3);
+
+            if (p < 1) {
+              requestAnimationFrame(tick);
+            } else {
+              wrap.classList.remove("is-clearing");
+              mirror.style.transform = "";
+              mirror.style.opacity = "";
+              mirror.style.filter = "";
+              mirror.textContent = "";
+              fakePh.style.transform = "";
+              fakePh.style.opacity = "";
+              fakePh.style.filter = "";
+              glow.style.opacity = "0";
+              glow.style.background = "";
+              isClearing = false;
+              if (keepInputFocus) {
+                requestAnimationFrame(function () {
+                  input.focus({ preventScroll: true });
+                });
+              }
+            }
+          })(performance.now());
+        }
+
+        function reset() {
+          // Used by the "Reset text" Animate button so the demo can
+          // be replayed: drop any in-flight cleanup, reseed the
+          // value, and re-prime the visible state.
+          isClearing = false;
+          wrap.classList.remove("is-clearing");
+          mirror.style.cssText = "";
+          fakePh.style.cssText = "";
+          glow.style.cssText = "";
+          input.value = p13DefaultText;
+          syncHasValue();
+        }
+
+        input.addEventListener("input", syncHasValue);
+        // Keep focus on the text input when the clear button is
+        // clicked so users can continue typing immediately.
+        // pointerdown fires before mousedown; both are intercepted
+        // so the button never receives focus, regardless of how
+        // the browser sequences the focus change.
+        function preserveInputFocus(e) {
+          if (document.activeElement === input) e.preventDefault();
+        }
+        clear.addEventListener("pointerdown", preserveInputFocus);
+        clear.addEventListener("mousedown", preserveInputFocus);
+        clear.addEventListener("click", function (e) {
+          // Some browsers still shift focus on click for buttons even
+          // after mousedown preventDefault — refocus synchronously
+          // here as a final guard before the async animation begins.
+          const wasFocused = document.activeElement === input ||
+                             wrap.contains(document.activeElement);
+          clearWithAnimation();
+          if (wasFocused) input.focus({ preventScroll: true });
+        });
+        // Initial sync so .has-value tracks the pre-seeded value.
+        syncHasValue();
+
+        return { reset, clearWithAnimation };
+      })();
+
+      // --- Prototype 14: Skeleton loader → user row reveal ----
+      // Pulse animation runs N times via animation-iteration-count;
+      // we listen for animationend (filtered to the last iteration
+      // by elapsed time) and flip the wrapper to the revealed
+      // state. A setTimeout fallback covers browsers that
+      // suppress animationend after a class swap.
+      const p14Card = document.getElementById("p14-card");
+      let p14ResetTimer = null;
+      function p14Replay() {
+        if (!p14Card) return;
+        if (p14ResetTimer) {
+          window.clearTimeout(p14ResetTimer);
+          p14ResetTimer = null;
+        }
+        const skeleton = p14Card.querySelector(".p14-skeleton");
+        // Reset to the pre-reveal state without animating: the
+        // reverse transition (revealed → skeleton) is suppressed
+        // by .is-resetting so --p14-reveal-dur only controls the
+        // forward skeleton → content swap.
+        p14Card.classList.add("is-resetting");
+        p14Card.classList.remove("is-revealed");
+        skeleton.classList.remove("is-pulsing");
+        // Force reflow so the next class-add restarts the keyframe
+        // from offset 0 instead of inheriting the cancelled state,
+        // and so the .is-resetting state is committed before we
+        // remove it on the next line.
+        // eslint-disable-next-line no-unused-expressions
+        skeleton.offsetWidth;
+        p14Card.classList.remove("is-resetting");
+        skeleton.classList.add("is-pulsing");
+        const dur   = readMs("--p14-pulse-dur", 1000);
+        const count = parseFloat(
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--p14-pulse-count")
+        ) || 1;
+        const total = dur * count;
+        p14ResetTimer = window.setTimeout(function () {
+          p14ResetTimer = null;
+          if (!p14Card) return;
+          // Single atomic class change: the .is-revealed CSS rule
+          // cancels the pulse animation AND flips opacity/filter on
+          // both layers in one cascade evaluation, so skeleton
+          // fade+blur-out and content fade+blur-in start on the
+          // same frame. Don't remove .is-pulsing here — letting
+          // the cascade do it avoids a double-phase style recalc.
+          p14Card.classList.add("is-revealed");
+        }, total);
+      }
+
+      // --- Prototype 16: Tabs with sliding active indicator -----
+      // Reads the active tab's offsetLeft / offsetWidth and writes
+      // the result inline on .p16-indicator so the CSS transition
+      // does the heavy lifting. Re-measures on resize so a CP
+      // duration tweak (which doesn't change layout) doesn't
+      // desync but a viewport change does.
+      (function initP16() {
+        const root = document.getElementById("p16-tabs");
+        if (!root) return;
+        const indicator = root.querySelector(".p16-indicator");
+        const tabs = Array.prototype.slice.call(
+          root.querySelectorAll(".p16-tab")
+        );
+        if (!indicator || !tabs.length) return;
+
+        function moveIndicatorTo(tab, animate) {
+          const left = tab.offsetLeft;
+          const width = tab.offsetWidth;
+          if (!animate) {
+            const prev = indicator.style.transition;
+            indicator.style.transition = "none";
+            indicator.style.transform = "translateX(" + left + "px)";
+            indicator.style.width = width + "px";
+            // Force a paint with no transition, then restore it.
+            // eslint-disable-next-line no-unused-expressions
+            indicator.offsetWidth;
+            indicator.style.transition = prev;
+          } else {
+            indicator.style.transform = "translateX(" + left + "px)";
+            indicator.style.width = width + "px";
+          }
+        }
+        function getActiveTab() {
+          return tabs.find(function (t) {
+            return t.getAttribute("aria-selected") === "true";
+          }) || tabs[0];
+        }
+        function selectTab(next) {
+          tabs.forEach(function (t) {
+            t.setAttribute("aria-selected", t === next ? "true" : "false");
+          });
+          moveIndicatorTo(next, true);
+        }
+        tabs.forEach(function (t) {
+          t.addEventListener("click", function () { selectTab(t); });
+        });
+        // Position the indicator on first paint without animating.
+        // Wait one frame so layout has settled and offsetLeft is stable.
+        requestAnimationFrame(function () {
+          moveIndicatorTo(getActiveTab(), false);
+        });
+        window.addEventListener("resize", function () {
+          moveIndicatorTo(getActiveTab(), false);
+        });
+      })();
+
+      // --- Prototype 18: Stagger reveal ----------------------
+      const p18Text = document.getElementById("p18-text");
 
       document.addEventListener("click", function (e) {
         const btn = e.target.closest("button[data-proto]");
@@ -2536,6 +3698,36 @@
               p12RevertTimer = null;
               p12ClearError();
             }, shakeMs + holdMs);
+            break;
+          }
+          case "13": {
+            // "Reset text" — restore the original sample so the
+            // user can click the × again and replay the clear
+            // animation without typing anything.
+            if (p13State) p13State.reset();
+            break;
+          }
+          case "14": {
+            p14Replay();
+            break;
+          }
+          case "18": {
+            if (!p18Text) break;
+            if (p18Text.classList.contains("is-shown")) {
+              p18Text.classList.add("is-hiding");
+              p18Text.classList.remove("is-shown");
+              clearTimeout(p18Text._hideT);
+              p18Text._hideT = window.setTimeout(function () {
+                p18Text.classList.remove("is-hiding");
+              }, 200);
+              break;
+            }
+            p18Text.classList.remove("is-hiding");
+            clearTimeout(p18Text._hideT);
+            p18Text.classList.remove("is-shown");
+            // eslint-disable-next-line no-unused-expressions
+            p18Text.offsetHeight;
+            p18Text.classList.add("is-shown");
             break;
           }
         }

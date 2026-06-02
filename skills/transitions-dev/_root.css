@@ -91,4 +91,52 @@
   --shake-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --revert-hold: 3000ms;
   --revert-dur: 280ms;
+  /* Input clear with dissolve */
+  --clear-dur: 1000ms;
+  --clear-out-dur: 400ms;
+  --clear-in-dur: 400ms;
+  --clear-out-fly: 12px;
+  --clear-in-fly: 12px;
+  --clear-out-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --clear-in-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --clear-blur: 2px;
+  --glow-delay: 50ms;
+  --glow-peak-at: 0.15;
+  --glow-opacity: 0.42;
+  --glow-spread: 1.5;
+  /* Skeleton loader and reveal */
+  --pulse-dur: 1000ms;
+  --pulse-count: 1;
+  --pulse-min: 0.5;
+  --reveal-dur: 400ms;
+  --reveal-blur: 2px;
+  --reveal-ease: ease-in-out;
+  /* Shimmer text */
+  --shimmer-dur: 2000ms;
+  --shimmer-base: #7c7c7c;
+  --shimmer-highlight: #0d0d0d;
+  --shimmer-band: 400%;
+  --shimmer-ease: linear;
+  /* Tabs sliding */
+  --tabs-dur: 200ms;
+  --tabs-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --tabs-text-muted: rgba(15, 15, 15, 0.6);
+  --tabs-text-active: #0f0f0f;
+  --tabs-bar-bg: #eeeeee;
+  --tabs-pill-bg: #ffffff;
+  /* Tooltip open/close */
+  --tt-in-dur: 150ms;
+  --tt-out-dur: 50ms;
+  --tt-scale: 0.98;
+  --tt-delay: 80ms;
+  --tt-in-ease: ease-out;
+  --tt-out-ease: ease-out;
+  --tt-bg: #ffffff;
+  --tt-fg: #2f2f2f;
+  /* Texts reveal */
+  --stagger-dur: 600ms;
+  --stagger-distance: 12px;
+  --stagger-stagger: 40ms;
+  --stagger-blur: 3px;
+  --stagger-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }

@@ -1208,13 +1208,21 @@
       flex-shrink: 0;
     }
 
+    /* Every transform value below carries a trailing translateZ(0)
+       to pre-promote the compositor layer. Safari has a long-
+       standing quirk where the .surface box-shadow on a scale-
+       animated element paints with a delay — WebKit defers the
+       layer's paint until the transform settles, so the shadow
+       snaps in ~150-200 ms after the open animation starts.
+       translateZ(0) forces the layer to be created with paint
+       ready from frame 1 so the shadow rides in with the rest. */
     .p2-dropdown {
       width: 234px;
       height: 136px;
       position: relative;
       padding: 8px;
       transform-origin: var(--p2-origin);
-      transform: scale(var(--p2-pre-scale));
+      transform: scale(var(--p2-pre-scale)) translateZ(0);
       opacity: 0;
       pointer-events: none;
       transition:
@@ -1222,10 +1230,10 @@
         opacity var(--p2-open-dur) var(--p2-ease);
     }
     .p2-dropdown.is-open {
-      transform: scale(1); opacity: 1; pointer-events: auto;
+      transform: scale(1) translateZ(0); opacity: 1; pointer-events: auto;
     }
     .p2-dropdown.is-closing {
-      transform: scale(var(--p2-closing-scale));
+      transform: scale(var(--p2-closing-scale)) translateZ(0);
       opacity: 0;
       pointer-events: none;
       transition:
@@ -1463,6 +1471,11 @@
     }
 
     /* ─── Prototype 7 — Modal open/close ─────────────────────── */
+    /* Same Safari shadow-paint quirk as .p2-dropdown above — see
+       that block for the full explanation. translateZ(0) on each
+       transform pre-promotes the compositor layer so the
+       box-shadow rides in with the scale animation instead of
+       snapping in late. */
     .p7-dropdown {
       width: 261px;
       height: 172px;
@@ -1472,7 +1485,7 @@
       position: relative;
       overflow: hidden;
       transform-origin: center;
-      transform: scale(var(--p7-scale));
+      transform: scale(var(--p7-scale)) translateZ(0);
       opacity: 0;
       pointer-events: none;
       transition:
@@ -1481,10 +1494,10 @@
       will-change: transform, opacity;
     }
     .p7-dropdown.is-open {
-      transform: scale(1); opacity: 1; pointer-events: auto;
+      transform: scale(1) translateZ(0); opacity: 1; pointer-events: auto;
     }
     .p7-dropdown.is-closing {
-      transform: scale(var(--p7-scale-close));
+      transform: scale(var(--p7-scale-close)) translateZ(0);
       opacity: 0;
       pointer-events: none;
       transition:
