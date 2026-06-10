@@ -171,41 +171,73 @@
       /* Prototype transition knobs (copied per prototype)          */
       /* ========================================================== */
 
+      /* ---- Motion tokens ---------------------------------------- */
+      /* Durations */
+      --duration-stagger:   40ms;   /* stagger offset */
+      --duration-micro:     80ms;   /* tooltip/path delay, shake segment */
+      --duration-quick:     150ms;  /* modal/dropdown close, text swap, tooltip in */
+      --duration-fast:      250ms;  /* icon swap, dropdown/modal open, tabs, page slide */
+      --duration-medium:    350ms;  /* panel close */
+      --duration-slow:      400ms;  /* panel open, reveal */
+      --duration-very-slow: 500ms;  /* emphasis, badge appear, text reveal, success check */
+      /* Easings */
+      --ease-smooth-out:    cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-in-out:        ease-in-out;
+      --ease-out:           ease-out;
+      --ease-linear:        linear;
+      --ease-bounce:        cubic-bezier(0.34, 1.36, 0.64, 1);
+      --ease-bounce-strong: cubic-bezier(0.34, 3.85, 0.64, 1);
+      /* Distances */
+      --distance-micro:  4px;
+      --distance-small:  6px;
+      --distance-base:   8px;
+      --distance-medium: 12px;
+      --distance-large:  30px;
+      /* Scales */
+      --scale-large:  0.96;
+      --scale-medium: 0.97;
+      --scale-small:  0.98;
+      --scale-tiny:   0.99;
+      /* Blur */
+      --blur-small:  2px;
+      --blur-medium: 3px;
+      --blur-large:  8px;
+
       /* P1 — Notification badge */
       --p1-pos-open-dur: 260ms;
-      --p1-scale-open-dur: 500ms;
+      --p1-scale-open-dur: var(--duration-very-slow);
       --p1-scale-close-dur: 180ms;
       --p1-opacity-open-dur: 400ms;
       --p1-opacity-close-dur: 180ms;
-      --p1-blur: 2px;
+      --p1-blur: var(--blur-small);
       --p1-distance-x: -8.2px;
       --p1-distance-y: 12.4px;
       --p1-bounce: 1.36;
-      --p1-ease-pos-open: cubic-bezier(0.22, 1, 0.36, 1);
-      --p1-ease-scale-open: cubic-bezier(0.34, 1.36, 0.64, 1);
+      --p1-ease-pos-open: var(--ease-smooth-out);
+      --p1-ease-scale-open: var(--ease-bounce);
       --p1-ease-close: cubic-bezier(0.4, 0, 0.2, 1);
 
       /* P2 — Menu dropdown */
-      --p2-open-dur: 250ms;
-      --p2-close-dur: 150ms;
-      --p2-pre-scale: 0.97;
-      --p2-closing-scale: 0.99;
+      --p2-open-dur: var(--duration-fast);
+      --p2-close-dur: var(--duration-quick);
+      --p2-pre-scale: var(--scale-medium);
+      --p2-closing-scale: var(--scale-tiny);
       /* Origin-aware: anchor the scale where the trigger sits so the
          menu visually "grows" from the trigger (top center = button
          sits directly above the menu). */
       --p2-origin: top center;
-      --p2-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --p2-ease: var(--ease-smooth-out);
 
       /* P3 — Panel reveal */
-      --p3-open-dur: 400ms;
-      --p3-close-dur: 350ms;
+      --p3-open-dur: var(--duration-slow);
+      --p3-close-dur: var(--duration-medium);
       --p3-panel-height: 187px;
       /* Movement trajectory = 50% of the panel height. The panel
          also fades opacity 0 ↔ 1 AND cross-blurs 2px ↔ 0 over the
          same timing, so the shortened travel still reads as a full
          open / close. */
       --p3-translate-y: calc(var(--p3-panel-height) * 0.5);
-      --p3-blur: 2px;
+      --p3-blur: var(--blur-small);
       /* Gutter inside clip so box-shadow isn’t cropped.
          Top needs enough room for the 42px-blur shadow (blur 42 − offset 4 ≈ 38px reach);
          sides/bottom stay slim so the stack still fits the 260px stage. */
@@ -218,7 +250,7 @@
       /* Vertical offset when panel is open. Positive = lift the panel
          higher in the stage; negative = push it lower. */
       --p3-open-lift: -28px;
-      --p3-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --p3-ease: var(--ease-smooth-out);
       /* Figma 213:1375 — Light Mode / Shadow 25.
          Left/right/bottom of the panel are flush with the stage, where
          `.card-stage::after` already draws a ring — so we only draw
@@ -235,27 +267,27 @@
 
       /* P4 — Card resize */
       --p4-dur: 300ms;
-      --p4-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --p4-ease: var(--ease-smooth-out);
 
       /* P5 — Hamburger ↔ Close */
-      --p5-dur: 200ms;
-      --p5-blur: 2px;
+      --p5-dur: var(--duration-fast);
+      --p5-blur: var(--blur-small);
       --p5-start-scale: 0.25;
-      --p5-ease: ease-in-out;
+      --p5-ease: var(--ease-in-out);
 
       /* P6 — Text enter/exit */
-      --p6-dur: 150ms;
+      --p6-dur: var(--duration-quick);
       --p6-enter-delay: 0ms;
-      --p6-translate-y: 4px;
-      --p6-blur: 2px;
-      --p6-ease: ease-in-out;
+      --p6-translate-y: var(--distance-micro);
+      --p6-blur: var(--blur-small);
+      --p6-ease: var(--ease-in-out);
 
       /* P7 — Modal open/close */
-      --p7-open-dur: 250ms;
-      --p7-close-dur: 150ms;
-      --p7-scale: 0.96;
-      --p7-scale-close: 0.96;
-      --p7-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --p7-open-dur: var(--duration-fast);
+      --p7-close-dur: var(--duration-quick);
+      --p7-scale: var(--scale-large);
+      --p7-scale-close: var(--scale-large);
+      --p7-ease: var(--ease-smooth-out);
 
       /* Detail-modal motion tokens. Defaults to the P7 modal timing
          so desktop is unchanged. Mobile overrides these to the P3
@@ -266,20 +298,20 @@
       --proto-modal-ease:      var(--p7-ease);
 
       /* P8 — Page slide */
-      --p8-slide-dur: 200ms;
-      --p8-fade-dur: 200ms;
-      --p8-distance: 8px;
-      --p8-blur: 3px;
+      --p8-slide-dur: var(--duration-fast);
+      --p8-fade-dur: var(--duration-fast);
+      --p8-distance: var(--distance-base);
+      --p8-blur: var(--blur-medium);
       --p8-stagger: 0ms;
       --p8-exit-enabled: 1;
-      --p8-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
-      --p8-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --p8-slide-ease: var(--ease-smooth-out);
+      --p8-fade-ease: var(--ease-smooth-out);
 
       /* P9 — Number pop-in */
-      --p9-dur: 500ms;
-      --p9-distance: 8px;
+      --p9-dur: var(--duration-very-slow);
+      --p9-distance: var(--distance-base);
       --p9-stagger: 70ms;
-      --p9-blur: 2px;
+      --p9-blur: var(--blur-small);
       --p9-bounce: 1.45;
       --p9-ease: cubic-bezier(0.34, 1.45, 0.64, 1);
       --p9-dir-x: 0;
@@ -290,24 +322,24 @@
          blur, Y-bob, stroke-draw). Exit deliberately uses only 3
          (fade, blur, stroke-undraw) so the disappearance reads as a
          soft fade-away rather than a full reverse of the entrance. */
-      --p10-opacity-dur: 550ms;
-      --p10-rotate-dur: 550ms;
+      --p10-opacity-dur: var(--duration-very-slow);
+      --p10-rotate-dur: var(--duration-very-slow);
       --p10-rotate-from: 80deg;
-      --p10-bob-dur:     450ms;
+      --p10-bob-dur:     var(--duration-very-slow);
       --p10-y-amount:    40px;
-      --p10-blur-dur:    500ms;
+      --p10-blur-dur:    var(--duration-very-slow);
       --p10-blur-from:   10px;
       /* Exit uses its own (softer) blur amount so the disappearance
          reads as a gentle fade rather than a full reverse of entry. */
       --p10-blur-out-from: 4px;
-      --p10-path-dur:    550ms;
-      --p10-path-delay:  80ms;
-      --p10-out-dur:     500ms;
-      --p10-ease-out:     cubic-bezier(0.22, 1, 0.36, 1);
-      --p10-ease-opacity: cubic-bezier(0.22, 1, 0.36, 1);
-      --p10-ease-rotate:  cubic-bezier(0.22, 1, 0.36, 1);
+      --p10-path-dur:    var(--duration-very-slow);
+      --p10-path-delay:  var(--duration-micro);
+      --p10-out-dur:     var(--duration-very-slow);
+      --p10-ease-out:     var(--ease-smooth-out);
+      --p10-ease-opacity: var(--ease-smooth-out);
+      --p10-ease-rotate:  var(--ease-smooth-out);
       --p10-ease-bob:     cubic-bezier(0.34, 1.35, 0.64, 1);
-      --p10-ease-path:    cubic-bezier(0.22, 1, 0.36, 1);
+      --p10-ease-path:    var(--ease-smooth-out);
 
       /* P11 — Avatar group hover spring.
          Each neighbor at distance d from the hovered avatar lifts by
@@ -315,8 +347,8 @@
          (clean) and the return uses --p11-ease-out (bouncy spring). */
       --p11-lift:    -4px;
       --p11-dur:     320ms;
-      --p11-ease-in:  cubic-bezier(0.22, 1, 0.36, 1);
-      --p11-ease-out: cubic-bezier(0.34, 3.85, 0.64, 1);
+      --p11-ease-in:  var(--ease-smooth-out);
+      --p11-ease-out: var(--ease-bounce-strong);
       --p11-scale:   1.05;
       --p11-falloff: 0.45;
 
@@ -325,11 +357,11 @@
          keyframe stop (80 + 80 + 60 + 60 = 280ms total). After the
          shake we hold --p12-revert-hold then fade border + message
          back to neutral over --p12-revert-dur. */
-      --p12-shake-distance:  6px;
+      --p12-shake-distance:  var(--distance-small);
       --p12-shake-overshoot: 4px;
-      --p12-shake-dur-a:     80ms;
+      --p12-shake-dur-a:     var(--duration-micro);
       --p12-shake-dur-b:     60ms;
-      --p12-shake-ease:      cubic-bezier(0.22, 1, 0.36, 1);
+      --p12-shake-ease:      var(--ease-smooth-out);
       --p12-error-border:    #e23014;
       --p12-error-text:      #d62b11;
       --p12-revert-hold:     3000ms;
@@ -339,13 +371,13 @@
          The text mirror flies down + blurs; placeholder mirrors that
          from above; greyscale-multiply glow ignites under each word. */
       --p13-clear-dur:       1000ms;
-      --p13-text-out-dur:    400ms;
-      --p13-text-in-dur:     400ms;
-      --p13-text-out-fly:    12px;
-      --p13-text-in-fly:     12px;
-      --p13-text-out-ease:   cubic-bezier(0.22, 1, 0.36, 1);
-      --p13-text-in-ease:    cubic-bezier(0.22, 1, 0.36, 1);
-      --p13-blur:            2px;
+      --p13-text-out-dur:    var(--duration-slow);
+      --p13-text-in-dur:     var(--duration-slow);
+      --p13-text-out-fly:    var(--distance-medium);
+      --p13-text-in-fly:     var(--distance-medium);
+      --p13-text-out-ease:   var(--ease-smooth-out);
+      --p13-text-in-ease:    var(--ease-smooth-out);
+      --p13-blur:            var(--blur-small);
       --p13-glow-delay:      50ms;
       --p13-glow-peak-at:    0.15;
       --p13-glow-opacity:    0.42;
@@ -357,9 +389,9 @@
       --p14-pulse-dur:       1000ms;
       --p14-pulse-count:     1;
       --p14-pulse-min:       0.5;
-      --p14-reveal-dur:      400ms;
-      --p14-reveal-blur:     2px;
-      --p14-reveal-ease:     ease-in-out;
+      --p14-reveal-dur:      var(--duration-slow);
+      --p14-reveal-blur:     var(--blur-small);
+      --p14-reveal-ease:     var(--ease-in-out);
       --p14-skeleton-color:  #eeeeee;
 
       /* P15 — Beautiful shimmer on text.
@@ -369,38 +401,38 @@
       --p15-base:            #7c7c7c;
       --p15-highlight:       #0d0d0d;
       --p15-band:            400%;
-      --p15-ease:            linear;
+      --p15-ease:            var(--ease-linear);
 
       /* P16 — Tabs with sliding active indicator.
-         Light spec (Figma): bar #eee, active pill #fff, active text
-         #0f0f0f, inactive text #0f0f0f @ 0.6 → 1.0 on hover. No
+         Light spec (Figma): bar #f1f1f1, active pill #fff, active text
+         #0f0f0f, inactive text #0f0f0f @ 0.8 → 1.0 on hover. No
          border on inactive tabs. */
-      --p16-dur:             200ms;
-      --p16-ease:            cubic-bezier(0.22, 1, 0.36, 1);
-      --p16-text-muted:      rgba(15, 15, 15, 0.6);
+      --p16-dur:             var(--duration-fast);
+      --p16-ease:            var(--ease-smooth-out);
+      --p16-text-muted:      rgba(15, 15, 15, 0.8);
       --p16-text-active:     #0f0f0f;
-      --p16-bar-bg:          #eeeeee;
+      --p16-bar-bg:          #f1f1f1;
       --p16-pill-bg:         #ffffff;
 
       /* P17 — Tooltip with appear-only delay.
          Independent in/out durations + eases; --p17-delay only applies
          on the hover/focus rule so leaving snaps the delay back to 0.
          Light spec (Figma): bg #fff, text #2f2f2f. */
-      --p17-in-dur:          150ms;
+      --p17-in-dur:          var(--duration-quick);
       --p17-out-dur:         50ms;
-      --p17-scale-from:      0.98;
-      --p17-delay:           80ms;
-      --p17-in-ease:         ease-out;
-      --p17-out-ease:        ease-out;
+      --p17-scale-from:      var(--scale-small);
+      --p17-delay:           var(--duration-micro);
+      --p17-in-ease:         var(--ease-out);
+      --p17-out-ease:        var(--ease-out);
       --p17-bg:              #ffffff;
       --p17-fg:              #2f2f2f;
 
       /* P18 — Primary + secondary text appear with stagger. */
-      --p18-dur:             600ms;
-      --p18-distance:        12px;
-      --p18-stagger:         40ms;
-      --p18-blur:            3px;
-      --p18-ease:            cubic-bezier(0.22, 1, 0.36, 1);
+      --p18-dur:             var(--duration-very-slow);
+      --p18-distance:        var(--distance-medium);
+      --p18-stagger:         var(--duration-stagger);
+      --p18-blur:            var(--blur-medium);
+      --p18-ease:            var(--ease-in-out);
     }
 
     html[data-theme="dark"] {
@@ -473,12 +505,12 @@
 
       /* P16 — Tabs: bar #1c1c1c, active pill is the LIGHTER #494949
          (reverse contrast vs. light mode), active text #efefef,
-         inactive text #efefef @ 0.5. No border on inactive tabs.
+         inactive text #c1c1c1 @ 0.8. No border on inactive tabs.
          Values from Figma. */
-      --p16-text-muted:      rgba(239, 239, 239, 0.5);
-      --p16-text-active:     #efefef;
-      --p16-bar-bg:          #1c1c1c;
-      --p16-pill-bg:         #494949;
+      --p16-text-muted:      rgba(193, 193, 193, 0.8);
+      --p16-text-active:     #ffffff;
+      --p16-bar-bg:          #202020;
+      --p16-pill-bg:         #454545;
 
       /* P17 — Tooltip flips to a dark surface; bg #222 sits one
          tone above the page background, text #f0f0f0. */
@@ -515,6 +547,15 @@
       -webkit-text-size-adjust: 100%;
       -moz-text-size-adjust: 100%;
       text-size-adjust: 100%;
+      /* Kill the grey/blue tap flash mobile browsers paint over
+         links and buttons. Inherited, so it cascades to every
+         interactive element on the page. */
+      -webkit-tap-highlight-color: transparent;
+      /* Always reserve the classic-scrollbar gutter so locking body
+         scroll when the modal opens (overflow: hidden) doesn't widen
+         the page and shift content sideways — the jumpiness seen in
+         browsers that render space-consuming scrollbars. */
+      scrollbar-gutter: stable;
     }
 
     /* ─── Skip link ───────────────────────────────────────────── */
@@ -713,7 +754,7 @@
       flex-direction: column;
       align-items: center;
       padding-top: 48px;
-      padding-bottom: 53px;
+      padding-bottom: 40px;
       text-align: center;
     }
 
@@ -792,6 +833,11 @@
       justify-content: center;
       gap: 24px;
       align-items: start;
+    }
+    /* The class-level `display: grid` outranks the UA `[hidden]` rule,
+       so an inactive view panel must be hidden explicitly. */
+    .cards[hidden] {
+      display: none;
     }
 
     /* ─── Card ────────────────────────────────────────────────── */
@@ -2853,6 +2899,97 @@
       pointer-events: none;
     }
 
+    /* ─── Header view switcher (Transitions / Motion tokens) ────
+       Reuses the P16 sliding-pill pattern and its --p16-* tokens so
+       the header switcher matches the in-grid "Tabs sliding" demo,
+       but keeps its own classes so the two stay independent. The pill
+       (.view-tabs-indicator) sits behind the labels; JS writes its
+       transform/width inline and CSS owns the tween. */
+    .view-tabs {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin: 40px auto 0;
+      padding: 3px;
+      border-radius: 48px;
+      background: var(--p16-bar-bg);
+    }
+    .view-tab {
+      position: relative;
+      appearance: none;
+      box-sizing: border-box;
+      border: 0;
+      background: transparent;
+      height: 30px;
+      padding: 4px 12px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.4;
+      color: var(--p16-text-muted);
+      cursor: pointer;
+      border-radius: 48px;
+      z-index: 1;
+      transition: color var(--p16-dur) var(--p16-ease);
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+    }
+    .view-tab:not([aria-selected="true"]):hover {
+      color: var(--p16-text-active);
+    }
+    .view-tab[aria-selected="true"] {
+      color: var(--p16-text-active);
+    }
+    .view-tab:focus-visible {
+      outline: 2px solid var(--text);
+      outline-offset: 2px;
+    }
+    .view-tabs-indicator {
+      position: absolute;
+      top: 3px;
+      left: 0;
+      height: 30px;
+      width: 0;
+      background: var(--p16-pill-bg);
+      border-radius: 48px;
+      transform: translateX(0);
+      transition:
+        transform var(--p16-dur) var(--p16-ease),
+        width     var(--p16-dur) var(--p16-ease);
+      will-change: transform, width;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Motion-token card: reuses the .card / .card-stage / .card-meta
+       shell but the stage holds a single centered illustration and no
+       Animate / Copy controls. */
+    /* Inline SVG illustrations (exported from Figma node 537:778). Each
+       <svg> carries its own intrinsic width/height (the Figma pixel
+       size) so it renders at the same scale as in Figma; max-width keeps
+       it from overflowing the stage on narrow cards while height:auto
+       preserves the aspect ratio. The neutral ramp is driven by CSS
+       custom properties so it follows the site's theme toggle (not the
+       OS); the blue/indigo accents stay fixed. Children inherit these
+       vars from the <svg>. */
+    .token-illu {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      --n-faint: #c9cdd4;
+      --n-mid: #d4d4d4;
+      --n-strong: #565656;
+    }
+    /* Invert the neutral ramp for the dark stage (#131313) so the
+       "emphasis" step stays high-contrast and faint steps recede
+       instead of vanishing. Accents are legible on both stages. */
+    html[data-theme="dark"] .token-illu {
+      --n-faint: #3a3d44;
+      --n-mid: #565b66;
+      --n-strong: #c9cdd4;
+    }
+
     /* ─── Prototype 17 — Tooltip with appear-only delay ────────
        The wrap keeps hover "sticky"; pointer can drift onto the
        tooltip without flicker. transition-delay is set ONLY in
@@ -3615,9 +3752,14 @@
         Collection of the most essential transitions for web apps that<br />
         you can just copy and paste into any project.
       </p>
+      <div class="view-tabs" data-view-tabs role="tablist" aria-label="View">
+        <span class="view-tabs-indicator" aria-hidden="true"></span>
+        <button type="button" class="view-tab" role="tab" aria-selected="true" data-view="transitions">Transitions</button>
+        <button type="button" class="view-tab" role="tab" aria-selected="false" data-view="tokens">Motion tokens</button>
+      </div>
     </header>
 
-    <section class="cards" aria-label="Transition prototypes">
+    <section class="cards" data-view-panel="transitions" aria-label="Transition prototypes">
 
       <!-- 1. Card resize -->
       <article class="card" data-proto-card>
@@ -4215,6 +4357,113 @@
           <div class="card-subtitle">Appear-only delay, instant exit</div>
         </div>
         <button type="button" class="card-copy" aria-label="Copy Tooltip open/close CSS" data-copy-key="p17">
+          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </article>
+
+    </section>
+
+    <!-- Motion tokens view — same card shell, one card per token type,
+         each showing a centered illustration instead of a live preview.
+         Hidden until the "Motion tokens" header tab is selected. -->
+    <section class="cards" data-view-panel="tokens" aria-label="Motion tokens" hidden>
+
+      <!-- 1. Duration -->
+      <article class="card" data-proto-card>
+        <div class="card-stage">
+<svg class="token-illu" role="img" aria-hidden="true" overflow="visible" width="174.12" height="55.2495" viewBox="0 0 174.12 55.2495" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M17.9261 30.5612C26.1583 30.5612 32.8317 23.8877 32.8317 15.6556C32.8317 7.42347 26.1583 0.75 17.9261 0.75C9.69398 0.75 3.02051 7.42347 3.02051 15.6556C3.02051 23.8877 9.69398 30.5612 17.9261 30.5612Z" stroke="var(--n-mid)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3.41 3.41"/><path d="M64.7718 30.5612C73.004 30.5612 79.6774 23.8877 79.6774 15.6556C79.6774 7.42347 73.004 0.75 64.7718 0.75C56.5397 0.75 49.8662 7.42347 49.8662 15.6556C49.8662 23.8877 56.5397 30.5612 64.7718 30.5612Z" stroke="var(--n-mid)" stroke-width="1.5"/><path d="M111.618 30.5612C119.851 30.5612 126.524 23.8877 126.524 15.6556C126.524 7.42347 119.851 0.75 111.618 0.75C103.386 0.75 96.7129 7.42347 96.7129 15.6556C96.7129 23.8877 103.386 30.5612 111.618 30.5612Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M158.464 30.5612C166.696 30.5612 173.37 23.8877 173.37 15.6556C173.37 7.42347 166.696 0.75 158.464 0.75C150.232 0.75 143.559 7.42347 143.559 15.6556C143.559 23.8877 150.232 30.5612 158.464 30.5612Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M0 49.7266C0 51.9357 1.79086 53.7266 4 53.7266C6.20914 53.7266 8 51.9357 8 49.7266C8 47.5174 6.20914 45.7266 4 45.7266C1.79086 45.7266 0 47.5174 0 49.7266ZM173.53 50.2569C173.823 49.964 173.823 49.4891 173.53 49.1962L168.757 44.4233C168.464 44.1304 167.99 44.1304 167.697 44.4233C167.404 44.7162 167.404 45.191 167.697 45.4839L171.939 49.7266L167.697 53.9692C167.404 54.2621 167.404 54.737 167.697 55.0299C167.99 55.3228 168.464 55.3228 168.757 55.0299L173.53 50.2569ZM4 49.7266V50.4766H173V49.7266V48.9766H4V49.7266Z" fill="var(--n-faint)"/></g></svg>
+        </div>
+        <div class="card-meta">
+          <div class="card-title">Duration</div>
+          <div class="card-subtitle">How long the motion plays</div>
+        </div>
+        <button type="button" class="card-copy" aria-label="Copy Duration token CSS" data-copy-key="tok-duration">
+          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </article>
+
+      <!-- 2. Easing -->
+      <article class="card" data-proto-card>
+        <div class="card-stage">
+<svg class="token-illu" role="img" aria-hidden="true" overflow="visible" width="177.5" height="56.5" viewBox="0 0 177.5 56.5" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M6.25 55.75C9.28757 55.75 11.75 53.2876 11.75 50.25C11.75 47.2124 9.28757 44.75 6.25 44.75C3.21243 44.75 0.75 47.2124 0.75 50.25C0.75 53.2876 3.21243 55.75 6.25 55.75Z" stroke="var(--n-mid)" stroke-width="1.5"/><path d="M29.35 35.95C32.9951 35.95 35.95 32.9951 35.95 29.35C35.95 25.7049 32.9951 22.75 29.35 22.75C25.7049 22.75 22.75 25.7049 22.75 29.35C22.75 32.9951 25.7049 35.95 29.35 35.95Z" stroke="var(--n-mid)" stroke-width="1.5"/><g><path d="M57.95 21.65C62.2026 21.65 65.65 18.2026 65.65 13.95C65.65 9.69741 62.2026 6.25 57.95 6.25C53.6974 6.25 50.25 9.69741 50.25 13.95C50.25 18.2026 53.6974 21.65 57.95 21.65Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M57.95 21.65C62.2026 21.65 65.65 18.2026 65.65 13.95C65.65 9.69741 62.2026 6.25 57.95 6.25C53.6974 6.25 50.25 9.69741 50.25 13.95C50.25 18.2026 53.6974 21.65 57.95 21.65Z" stroke="var(--n-strong)" stroke-width="1.5"/></g><g><path d="M90.95 16.15C95.2026 16.15 98.65 12.7026 98.65 8.45C98.65 4.19741 95.2026 0.75 90.95 0.75C86.6974 0.75 83.25 4.19741 83.25 8.45C83.25 12.7026 86.6974 16.15 90.95 16.15Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M90.95 16.15C95.2026 16.15 98.65 12.7026 98.65 8.45C98.65 4.19741 95.2026 0.75 90.95 0.75C86.6974 0.75 83.25 4.19741 83.25 8.45C83.25 12.7026 86.6974 16.15 90.95 16.15Z" stroke="var(--n-strong)" stroke-width="1.5"/></g><g><path d="M123.95 21.65C128.203 21.65 131.65 18.2026 131.65 13.95C131.65 9.69741 128.203 6.25 123.95 6.25C119.697 6.25 116.25 9.69741 116.25 13.95C116.25 18.2026 119.697 21.65 123.95 21.65Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M123.95 21.65C128.203 21.65 131.65 18.2026 131.65 13.95C131.65 9.69741 128.203 6.25 123.95 6.25C119.697 6.25 116.25 9.69741 116.25 13.95C116.25 18.2026 119.697 21.65 123.95 21.65Z" stroke="var(--n-strong)" stroke-width="1.5"/></g><path d="M150.35 35.95C153.995 35.95 156.95 32.9951 156.95 29.35C156.95 25.7049 153.995 22.75 150.35 22.75C146.705 22.75 143.75 25.7049 143.75 29.35C143.75 32.9951 146.705 35.95 150.35 35.95Z" stroke="var(--n-mid)" stroke-width="1.5"/><path d="M171.25 55.75C174.288 55.75 176.75 53.2876 176.75 50.25C176.75 47.2124 174.288 44.75 171.25 44.75C168.212 44.75 165.75 47.2124 165.75 50.25C165.75 53.2876 168.212 55.75 171.25 55.75Z" stroke="var(--n-mid)" stroke-width="1.5"/></g></svg>
+        </div>
+        <div class="card-meta">
+          <div class="card-title">Easing</div>
+          <div class="card-subtitle">The acceleration curve</div>
+        </div>
+        <button type="button" class="card-copy" aria-label="Copy Easing token CSS" data-copy-key="tok-easing">
+          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </article>
+
+      <!-- 3. Distance -->
+      <article class="card" data-proto-card>
+        <div class="card-stage">
+<svg class="token-illu" role="img" aria-hidden="true" overflow="visible" width="188.591" height="57.261" viewBox="0 0 188.591 57.261" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M186.463 0.517899C186.335 0.124056 185.912 -0.0912114 185.518 0.037086L179.1 2.12781C178.706 2.25611 178.491 2.67939 178.619 3.07323C178.747 3.46708 179.17 3.68234 179.564 3.55405L185.269 1.69562L187.128 7.40056C187.256 7.7944 187.679 8.00967 188.073 7.88137C188.467 7.75307 188.682 7.32979 188.554 6.93595L186.463 0.517899ZM15.2401 40.1025C15.4662 39.7555 15.3682 39.2908 15.0211 39.0647C14.674 38.8386 14.2094 38.9367 13.9833 39.2838L14.6117 39.6931L15.2401 40.1025ZM16.8597 34.9851C16.625 35.3263 16.7113 35.7933 17.0526 36.028C17.3938 36.2628 17.8608 36.1765 18.0955 35.8352L17.4776 35.4101L16.8597 34.9851ZM18.8016 34.8162C19.0386 34.4765 18.9554 34.009 18.6157 33.7719C18.276 33.5349 17.8085 33.6181 17.5715 33.9578L18.1865 34.387L18.8016 34.8162ZM20.3893 30.0348C20.1429 30.3678 20.213 30.8374 20.5459 31.0839C20.8789 31.3303 21.3485 31.2602 21.595 30.9273L20.9922 30.4811L20.3893 30.0348ZM22.3293 29.9433C22.5783 29.6124 22.5119 29.1421 22.1809 28.8931C21.85 28.6441 21.3797 28.7105 21.1307 29.0415L21.73 29.4924L22.3293 29.9433ZM24.3092 24.9683C24.0484 25.2901 24.0977 25.7624 24.4195 26.0233C24.7413 26.2841 25.2136 26.2347 25.4744 25.913L24.8918 25.4406L24.3092 24.9683ZM26.2508 24.9645C26.5147 24.6453 26.4699 24.1725 26.1507 23.9086C25.8314 23.6447 25.3587 23.6895 25.0947 24.0088L25.6728 24.4866L26.2508 24.9645ZM28.2819 20.3102C28.0048 20.618 28.0297 21.0923 28.3376 21.3694C28.6454 21.6465 29.1196 21.6216 29.3968 21.3137L28.8393 20.8119L28.2819 20.3102ZM30.2719 20.3536C30.5529 20.0492 30.5339 19.5747 30.2296 19.2938C29.9253 19.0128 29.4508 19.0317 29.1698 19.3361L29.7208 19.8448L30.2719 20.3536ZM32.6766 15.7326C32.3795 16.0213 32.3727 16.4961 32.6613 16.7932C32.9499 17.0903 33.4248 17.0971 33.7219 16.8085L33.1992 16.2706L32.6766 15.7326ZM34.5718 15.9946C34.8731 15.7103 34.8869 15.2357 34.6026 14.9344C34.3183 14.6331 33.8437 14.6193 33.5424 14.9036L34.0571 15.4491L34.5718 15.9946ZM37.3746 11.527C37.054 11.7893 37.0068 12.2618 37.2691 12.5824C37.5314 12.903 38.0039 12.9502 38.3245 12.6879L37.8495 12.1075L37.3746 11.527ZM39.2762 11.9245C39.6019 11.6685 39.6584 11.197 39.4024 10.8714C39.1465 10.5457 38.675 10.4892 38.3493 10.7452L38.8127 11.3348L39.2762 11.9245ZM42.4163 7.82486C42.069 8.05054 41.9703 8.51506 42.196 8.8624C42.4217 9.20973 42.8862 9.30836 43.2335 9.08268L42.8249 8.45377L42.4163 7.82486ZM44.2879 8.41698C44.6411 8.20052 44.7519 7.73876 44.5354 7.3856C44.319 7.03245 43.8572 6.92164 43.5041 7.1381L43.896 7.77754L44.2879 8.41698ZM47.9093 4.76823C47.5334 4.94218 47.3697 5.38793 47.5436 5.76385C47.7175 6.13977 48.1633 6.30351 48.5392 6.12957L48.2243 5.4489L47.9093 4.76823ZM49.6825 5.62388C50.0642 5.46288 50.243 5.02297 50.082 4.64133C49.921 4.25969 49.4811 4.08083 49.0995 4.24184L49.391 4.93286L49.6825 5.62388ZM53.8742 2.61947C53.4731 2.72281 53.2317 3.13175 53.3351 3.53286C53.4384 3.93398 53.8473 4.17538 54.2484 4.07204L54.0613 3.34575L53.8742 2.61947ZM55.4492 3.78872C55.8542 3.70194 56.1122 3.30325 56.0254 2.89823C55.9386 2.49321 55.54 2.23523 55.1349 2.32201L55.2921 3.05537L55.4492 3.78872ZM60.169 1.67772C59.7552 1.69512 59.4338 2.04471 59.4512 2.45856C59.4686 2.8724 59.8182 3.19379 60.232 3.1764L60.2005 2.42706L60.169 1.67772ZM61.4483 3.15173C61.8625 3.15232 62.1988 2.81701 62.1994 2.40279C62.1999 1.98858 61.8646 1.65232 61.4504 1.65173L61.4494 2.40173L61.4483 3.15173ZM66.5134 2.08864C66.105 2.01909 65.7177 2.29373 65.6481 2.70206C65.5786 3.1104 65.8532 3.4978 66.2615 3.56734L66.3875 2.82799L66.5134 2.08864ZM67.455 3.79505C67.8603 3.88063 68.2582 3.62147 68.3438 3.21619C68.4294 2.81091 68.1702 2.413 67.7649 2.32741L67.61 3.06123L67.455 3.79505ZM72.6368 3.73507C72.2477 3.59296 71.8171 3.79316 71.675 4.18223C71.5329 4.57131 71.7331 5.00192 72.1221 5.14403L72.3795 4.43955L72.6368 3.73507ZM73.2676 5.58321C73.652 5.73751 74.0887 5.55099 74.243 5.16659C74.3973 4.78219 74.2108 4.34548 73.8264 4.19118L73.547 4.88719L73.2676 5.58321ZM78.4002 6.33381C78.0347 6.13884 77.5804 6.27705 77.3855 6.6425C77.1905 7.00796 77.3287 7.46228 77.6941 7.65725L78.0472 6.99553L78.4002 6.33381ZM78.7814 8.25389C79.1423 8.45732 79.5997 8.32974 79.8031 7.96893C80.0065 7.60811 79.879 7.1507 79.5181 6.94726L79.1498 7.60057L78.7814 8.25389ZM83.7932 9.59224C83.4493 9.36141 82.9834 9.4531 82.7525 9.79703C82.5217 10.141 82.6134 10.6069 82.9573 10.8377L83.3753 10.215L83.7932 9.59224ZM83.988 11.5419C84.3281 11.7784 84.7955 11.6943 85.0319 11.3542C85.2683 11.0141 85.1843 10.5467 84.8442 10.3103L84.4161 10.9261L83.988 11.5419ZM88.8736 13.2828C88.5466 13.0286 88.0754 13.0876 87.8212 13.4146C87.567 13.7416 87.6259 14.2128 87.9529 14.467L88.4133 13.8749L88.8736 13.2828ZM88.9314 15.2365C89.2556 15.4943 89.7274 15.4405 89.9852 15.1162C90.243 14.792 90.1892 14.3202 89.865 14.0624L89.3982 14.6495L88.9314 15.2365ZM93.7207 17.2453C93.4056 16.9765 92.9322 17.0141 92.6634 17.3293C92.3946 17.6444 92.4322 18.1178 92.7473 18.3866L93.234 17.816L93.7207 17.2453ZM93.6914 19.1973C94.0048 19.4681 94.4784 19.4337 94.7492 19.1203C95.0201 18.8069 94.9856 18.3333 94.6723 18.0624L94.1818 18.6298L93.6914 19.1973ZM98.4144 21.3652C98.1061 21.0885 97.632 21.114 97.3553 21.4223C97.0786 21.7305 97.1041 22.2047 97.4123 22.4814L97.9134 21.9233L98.4144 21.3652ZM98.3376 23.3146C98.6451 23.5922 99.1193 23.568 99.3969 23.2606C99.6745 22.9532 99.6504 22.4789 99.3429 22.2013L98.8403 22.7579L98.3376 23.3146ZM103.03 25.5529C102.724 25.2738 102.249 25.2957 101.97 25.6018C101.691 25.9079 101.713 26.3822 102.019 26.6613L102.525 26.1071L103.03 25.5529ZM102.94 27.5006C103.246 27.7795 103.721 27.7574 104 27.4512C104.279 27.1449 104.256 26.6706 103.95 26.3917L103.445 26.9461L102.94 27.5006ZM107.639 29.7275C107.331 29.4514 106.856 29.4779 106.58 29.7866C106.304 30.0954 106.331 30.5695 106.639 30.8457L107.139 30.2866L107.639 29.7275ZM107.571 31.6756C107.881 31.9504 108.355 31.922 108.63 31.6121C108.905 31.3022 108.876 30.8282 108.566 30.5533L108.069 31.1145L107.571 31.6756ZM112.315 33.8031C111.998 33.536 111.525 33.5762 111.258 33.8928C110.991 34.2094 111.031 34.6826 111.348 34.9497L111.831 34.3764L112.315 33.8031ZM112.31 35.7544C112.629 36.0188 113.101 35.9747 113.366 35.6558C113.63 35.337 113.586 34.8642 113.267 34.5998L112.788 35.1771L112.31 35.7544ZM117.133 37.6732C116.802 37.4232 116.332 37.4881 116.082 37.8183C115.832 38.1485 115.897 38.6189 116.227 38.869L116.68 38.2711L117.133 37.6732ZM117.245 39.6287C117.578 39.8741 118.048 39.8025 118.293 39.4688C118.539 39.1351 118.467 38.6656 118.133 38.4202L117.689 39.0245L117.245 39.6287ZM122.187 41.1996C121.837 40.9783 121.374 41.0827 121.153 41.4328C120.931 41.7829 121.036 42.2462 121.386 42.4675L121.787 41.8335L122.187 41.1996ZM122.476 43.1397C122.831 43.3533 123.291 43.2386 123.505 42.8837C123.718 42.5288 123.604 42.0679 123.249 41.8544L122.862 42.4971L122.476 43.1397ZM127.562 44.1599C127.187 43.9856 126.741 44.149 126.566 44.5247C126.392 44.9005 126.556 45.3464 126.931 45.5207L127.247 44.8403L127.562 44.1599ZM128.098 46.0391C128.479 46.201 128.92 46.0232 129.082 45.6419C129.243 45.2607 129.066 44.8204 128.684 44.6585L128.391 45.3488L128.098 46.0391ZM133.276 46.2185C132.874 46.1174 132.466 46.3611 132.365 46.7627C132.264 47.1644 132.508 47.572 132.91 47.6731L133.093 46.9458L133.276 46.2185ZM134.153 47.9568C134.559 48.0398 134.955 47.7781 135.038 47.3722C135.121 46.9664 134.859 46.5702 134.454 46.4872L134.303 47.222L134.153 47.9568ZM139.238 46.9881C138.823 46.987 138.487 47.3219 138.486 47.7361C138.485 48.1503 138.82 48.487 139.234 48.4881L139.236 47.7381L139.238 46.9881ZM140.527 48.4571C140.941 48.4361 141.259 48.0838 141.238 47.6701C141.217 47.2564 140.865 46.938 140.451 46.959L140.489 47.708L140.527 48.4571ZM145.21 46.2117C144.809 46.3177 144.57 46.7282 144.676 47.1286C144.782 47.529 145.193 47.7678 145.593 47.6618L145.401 46.9368L145.21 46.2117ZM146.789 47.3146C147.184 47.1898 147.403 46.7684 147.278 46.3735C147.153 45.9785 146.732 45.7596 146.337 45.8844L146.563 46.5995L146.789 47.3146ZM150.822 44.0054C150.454 44.1971 150.312 44.6501 150.504 45.0173C150.695 45.3845 151.149 45.5268 151.516 45.3351L151.169 44.6702L150.822 44.0054ZM152.585 44.7518C152.945 44.5469 153.071 44.089 152.866 43.729C152.661 43.369 152.203 43.2432 151.843 43.4481L152.214 44.0999L152.585 44.7518ZM155.957 40.719C155.627 40.9691 155.562 41.4395 155.812 41.7697C156.062 42.0999 156.533 42.1649 156.863 41.9148L156.41 41.3169L155.957 40.719ZM157.808 41.1796C158.131 40.9211 158.184 40.4491 157.926 40.1255C157.667 39.8019 157.195 39.7491 156.872 40.0076L157.34 40.5936L157.808 41.1796ZM160.591 36.725C160.293 37.0127 160.284 37.4876 160.572 37.7855C160.86 38.0834 161.335 38.0915 161.633 37.8038L161.112 37.2644L160.591 36.725ZM162.532 36.9173C162.824 36.6236 162.823 36.1487 162.529 35.8566C162.236 35.5645 161.761 35.5657 161.469 35.8593L162.001 36.3883L162.532 36.9173ZM164.747 32.327C164.475 32.6395 164.508 33.1132 164.821 33.3851C165.133 33.657 165.607 33.6241 165.879 33.3117L165.313 32.8193L164.747 32.327ZM166.725 32.3236C166.992 32.007 166.952 31.5339 166.636 31.2668C166.319 30.9997 165.846 31.0398 165.579 31.3564L166.152 31.84L166.725 32.3236ZM168.626 27.5444C168.376 27.8742 168.44 28.3447 168.77 28.5954C169.1 28.846 169.57 28.7818 169.821 28.4521L169.224 27.9982L168.626 27.5444ZM170.56 27.4675C170.807 27.135 170.738 26.6652 170.405 26.4182C170.073 26.1713 169.603 26.2407 169.356 26.5732L169.958 27.0204L170.56 27.4675ZM172.311 22.4114C172.078 22.7539 172.167 23.2204 172.509 23.4534C172.852 23.6865 173.318 23.5977 173.551 23.2553L172.931 22.8334L172.311 22.4114ZM174.241 22.2322C174.471 21.8877 174.378 21.422 174.034 21.192C173.689 20.962 173.223 21.0548 172.993 21.3993L173.617 21.8157L174.241 22.2322ZM175.591 17.3718C175.372 17.7233 175.479 18.1859 175.83 18.4052C176.182 18.6244 176.644 18.5173 176.864 18.1659L176.227 17.7688L175.591 17.3718ZM177.526 17.0958C177.743 16.7428 177.632 16.2809 177.279 16.0642C176.926 15.8475 176.464 15.958 176.248 16.311L176.887 16.7034L177.526 17.0958ZM178.876 11.8923C178.669 12.251 178.792 12.7097 179.151 12.9168C179.51 13.1239 179.968 13.001 180.176 12.6422L179.526 12.2673L178.876 11.8923ZM180.76 11.6233C180.965 11.2634 180.84 10.8054 180.48 10.6003C180.12 10.3952 179.662 10.5207 179.457 10.8806L180.108 11.2519L180.76 11.6233ZM181.8 6.66338C181.603 7.02751 181.738 7.48275 182.102 7.68019C182.466 7.87763 182.921 7.74249 183.119 7.37836L182.459 7.02087L181.8 6.66338ZM183.714 6.2743C183.909 5.90918 183.772 5.45462 183.407 5.25901C183.042 5.0634 182.587 5.20082 182.392 5.56593L183.053 5.92011L183.714 6.2743ZM184.78 1.00077C184.592 1.36955 184.738 1.82141 185.107 2.01002C185.475 2.19863 185.927 2.05257 186.116 1.68379L185.448 1.34228L184.78 1.00077ZM14.25 40.2502L14.8796 40.6577C14.9999 40.4718 15.1201 40.2868 15.2401 40.1025L14.6117 39.6931L13.9833 39.2838C13.8624 39.4693 13.7415 39.6556 13.6204 39.8427L14.25 40.2502ZM17.4776 35.4101L18.0955 35.8352C18.3314 35.4924 18.5668 35.1527 18.8016 34.8162L18.1865 34.387L17.5715 33.9578C17.3347 34.2971 17.0975 34.6395 16.8597 34.9851L17.4776 35.4101ZM20.9922 30.4811L21.595 30.9273C21.8403 30.5959 22.0851 30.2679 22.3293 29.9433L21.73 29.4924L21.1307 29.0415C20.8841 29.3692 20.637 29.7003 20.3893 30.0348L20.9922 30.4811ZM24.8918 25.4406L25.4744 25.913C25.7339 25.5929 25.9927 25.2768 26.2508 24.9645L25.6728 24.4866L25.0947 24.0088C24.8335 24.3248 24.5717 24.6446 24.3092 24.9683L24.8918 25.4406ZM28.8393 20.8119L29.3968 21.3137C29.6893 20.9886 29.981 20.6686 30.2719 20.3536L29.7208 19.8448L29.1698 19.3361C28.8746 19.6558 28.5786 19.9805 28.2819 20.3102L28.8393 20.8119ZM33.1992 16.2706L33.7219 16.8085C34.006 16.5325 34.2893 16.2612 34.5718 15.9946L34.0571 15.4491L33.5424 14.9036C33.2545 15.1752 32.9659 15.4516 32.6766 15.7326L33.1992 16.2706ZM37.8495 12.1075L38.3245 12.6879C38.6428 12.4274 38.96 12.173 39.2762 11.9245L38.8127 11.3348L38.3493 10.7452C38.0253 10.9998 37.7004 11.2604 37.3746 11.527L37.8495 12.1075ZM42.8249 8.45377L43.2335 9.08268C43.5864 8.85344 43.9378 8.63158 44.2879 8.41698L43.896 7.77754L43.5041 7.1381C43.1425 7.35968 42.78 7.58857 42.4163 7.82486L42.8249 8.45377ZM48.2243 5.4489L48.5392 6.12957C48.9219 5.95249 49.303 5.78399 49.6825 5.62388L49.391 4.93286L49.0995 4.24184C48.704 4.40866 48.3073 4.58408 47.9093 4.76823L48.2243 5.4489ZM54.0613 3.34575L54.2484 4.07204C54.6504 3.96849 55.0506 3.87412 55.4492 3.78872L55.2921 3.05537L55.1349 2.32201C54.7162 2.41174 54.2959 2.51082 53.8742 2.61947L54.0613 3.34575ZM60.2005 2.42706L60.232 3.1764C60.639 3.1593 61.0444 3.15116 61.4483 3.15173L61.4494 2.40173L61.4504 1.65173C61.0249 1.65113 60.5978 1.65971 60.169 1.67772L60.2005 2.42706ZM66.3875 2.82799L66.2615 3.56734C66.6606 3.63532 67.0584 3.7113 67.455 3.79505L67.61 3.06123L67.7649 2.32741C67.3494 2.23966 66.9322 2.15997 66.5134 2.08864L66.3875 2.82799ZM72.3795 4.43955L72.1221 5.14403C72.505 5.28386 72.8868 5.43033 73.2676 5.58321L73.547 4.88719L73.8264 4.19118C73.4313 4.03257 73.0348 3.88044 72.6368 3.73507L72.3795 4.43955ZM78.0472 6.99553L77.6941 7.65725C78.0574 7.85103 78.4198 8.04998 78.7814 8.25389L79.1498 7.60057L79.5181 6.94726C79.1467 6.73781 78.774 6.53324 78.4002 6.33381L78.0472 6.99553ZM83.3753 10.215L82.9573 10.8377C83.3015 11.0687 83.6451 11.3035 83.988 11.5419L84.4161 10.9261L84.8442 10.3103C84.4948 10.0674 84.1445 9.82796 83.7932 9.59224L83.3753 10.215ZM88.4133 13.8749L87.9529 14.467C88.2796 14.721 88.6057 14.9775 88.9314 15.2365L89.3982 14.6495L89.865 14.0624C89.5352 13.8002 89.2048 13.5403 88.8736 13.2828L88.4133 13.8749ZM93.234 17.816L92.7473 18.3866C93.0624 18.6553 93.377 18.9256 93.6914 19.1973L94.1818 18.6298L94.6723 18.0624C94.3556 17.7887 94.0384 17.5163 93.7207 17.2453L93.234 17.816ZM97.9134 21.9233L97.4123 22.4814C97.721 22.7585 98.0294 23.0363 98.3376 23.3146L98.8403 22.7579L99.3429 22.2013C99.0338 21.9221 98.7243 21.6434 98.4144 21.3652L97.9134 21.9233ZM102.525 26.1071L102.019 26.6613C102.326 26.9413 102.633 27.2211 102.94 27.5006L103.445 26.9461L103.95 26.3917C103.644 26.1124 103.337 25.8328 103.03 25.5529L102.525 26.1071ZM107.139 30.2866L106.639 30.8457C106.95 31.1234 107.261 31.4001 107.571 31.6756L108.069 31.1145L108.566 30.5533C108.258 30.2793 107.948 30.004 107.639 29.7275L107.139 30.2866ZM111.831 34.3764L111.348 34.9497C111.668 35.22 111.989 35.4883 112.31 35.7544L112.788 35.1771L113.267 34.5998C112.95 34.3365 112.632 34.0709 112.315 33.8031L111.831 34.3764ZM116.68 38.2711L116.227 38.869C116.566 39.1256 116.905 39.379 117.245 39.6287L117.689 39.0245L118.133 38.4202C117.8 38.1749 117.466 37.9258 117.133 37.6732L116.68 38.2711ZM121.787 41.8335L121.386 42.4675C121.749 42.6967 122.112 42.9208 122.476 43.1397L122.862 42.4971L123.249 41.8544C122.895 41.6414 122.541 41.4231 122.187 41.1996L121.787 41.8335ZM127.247 44.8403L126.931 45.5207C127.319 45.7006 127.708 45.8735 128.098 46.0391L128.391 45.3488L128.684 44.6585C128.31 44.4995 127.936 44.3332 127.562 44.1599L127.247 44.8403ZM133.093 46.9458L132.91 47.6731C133.323 47.7771 133.737 47.8718 134.153 47.9568L134.303 47.222L134.454 46.4872C134.06 46.4068 133.668 46.3171 133.276 46.2185L133.093 46.9458ZM139.236 47.7381L139.234 48.4881C139.663 48.4892 140.095 48.479 140.527 48.4571L140.489 47.708L140.451 46.959C140.045 46.9795 139.641 46.9891 139.238 46.9881L139.236 47.7381ZM145.401 46.9368L145.593 47.6618C145.991 47.5566 146.389 47.441 146.789 47.3146L146.563 46.5995L146.337 45.8844C145.96 46.0036 145.584 46.1127 145.21 46.2117L145.401 46.9368ZM151.169 44.6702L151.516 45.3351C151.871 45.1494 152.228 44.9551 152.585 44.7518L152.214 44.0999L151.843 43.4481C151.501 43.6426 151.161 43.8283 150.822 44.0054L151.169 44.6702ZM156.41 41.3169L156.863 41.9148C157.177 41.6768 157.492 41.4318 157.808 41.1796L157.34 40.5936L156.872 40.0076C156.566 40.2519 156.261 40.489 155.957 40.719L156.41 41.3169ZM161.112 37.2644L161.633 37.8038C161.932 37.5148 162.232 37.2193 162.532 36.9173L162.001 36.3883L161.469 35.8593C161.175 36.1545 160.882 36.443 160.591 36.725L161.112 37.2644ZM165.313 32.8193L165.879 33.3117C166.16 32.9882 166.443 32.6589 166.725 32.3236L166.152 31.84L165.579 31.3564C165.301 31.6859 165.024 32.0094 164.747 32.327L165.313 32.8193ZM169.224 27.9982L169.821 28.4521C170.067 28.1284 170.313 27.8002 170.56 27.4675L169.958 27.0204L169.356 26.5732C169.112 26.9015 168.869 27.2252 168.626 27.5444L169.224 27.9982ZM172.931 22.8334L173.551 23.2553C173.781 22.9182 174.01 22.5772 174.241 22.2322L173.617 21.8157L172.993 21.3993C172.765 21.7406 172.538 22.078 172.311 22.4114L172.931 22.8334ZM176.227 17.7688L176.864 18.1659C177.084 17.8128 177.305 17.4561 177.526 17.0958L176.887 16.7034L176.248 16.311C176.028 16.6682 175.809 17.0219 175.591 17.3718L176.227 17.7688ZM179.526 12.2673L180.176 12.6422C180.37 12.3054 180.565 11.9657 180.76 11.6233L180.108 11.2519L179.457 10.8806C179.263 11.2206 179.07 11.5579 178.876 11.8923L179.526 12.2673ZM182.459 7.02087L183.119 7.37836C183.317 7.01322 183.515 6.6452 183.714 6.2743L183.053 5.92011L182.392 5.56593C182.194 5.93465 181.997 6.30046 181.8 6.66338L182.459 7.02087ZM185.448 1.34228L186.116 1.68379C186.217 1.48666 186.318 1.2888 186.419 1.09019L185.75 0.750203L185.081 0.410216C184.981 0.607813 184.881 0.804664 184.78 1.00077L185.448 1.34228Z" fill="var(--n-mid)"/><path d="M8.56691 56.511C12.8841 56.511 16.3838 53.0112 16.3838 48.6941C16.3838 44.3769 12.8841 40.8772 8.56691 40.8772C4.24975 40.8772 0.75 44.3769 0.75 48.6941C0.75 53.0112 4.24975 56.511 8.56691 56.511Z" stroke="var(--n-strong)" stroke-width="1.5"/></g></svg>
+        </div>
+        <div class="card-meta">
+          <div class="card-title">Distance</div>
+          <div class="card-subtitle">How far elements travel</div>
+        </div>
+        <button type="button" class="card-copy" aria-label="Copy Distance token CSS" data-copy-key="tok-distance">
+          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </article>
+
+      <!-- 4. Blur -->
+      <article class="card" data-proto-card>
+        <div class="card-stage">
+<svg class="token-illu" role="img" aria-hidden="true" overflow="visible" width="107.336" height="109.678" viewBox="0 0 107.336 109.678" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M42.3555 6.47084C43.9353 6.47084 45.216 5.19019 45.216 3.61042C45.216 2.03065 43.9353 0.75 42.3555 0.75C40.7758 0.75 39.4951 2.03065 39.4951 3.61042C39.4951 5.19019 40.7758 6.47084 42.3555 6.47084Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M64.9796 6.47084C66.5593 6.47084 67.84 5.19019 67.84 3.61042C67.84 2.03065 66.5593 0.75 64.9796 0.75C63.3998 0.75 62.1191 2.03065 62.1191 3.61042C62.1191 5.19019 63.3998 6.47084 64.9796 6.47084Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M20.2528 27.5329C23.2687 27.5329 25.7136 25.088 25.7136 22.0721C25.7136 19.0562 23.2687 16.6113 20.2528 16.6113C17.2369 16.6113 14.792 19.0562 14.792 22.0721C14.792 25.088 17.2369 27.5329 20.2528 27.5329Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M42.3563 27.5329C45.3722 27.5329 47.8171 25.088 47.8171 22.0721C47.8171 19.0562 45.3722 16.6113 42.3563 16.6113C39.3404 16.6113 36.8955 19.0562 36.8955 22.0721C36.8955 25.088 39.3404 27.5329 42.3563 27.5329Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M64.9794 27.5329C67.9953 27.5329 70.4402 25.088 70.4402 22.0721C70.4402 19.0562 67.9953 16.6113 64.9794 16.6113C61.9634 16.6113 59.5186 19.0562 59.5186 22.0721C59.5186 25.088 61.9634 27.5329 64.9794 27.5329Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M87.0829 27.5329C90.0988 27.5329 92.5437 25.088 92.5437 22.0721C92.5437 19.0562 90.0988 16.6113 87.0829 16.6113C84.067 16.6113 81.6221 19.0562 81.6221 22.0721C81.6221 25.088 84.067 27.5329 87.0829 27.5329Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M3.61042 47.8165C5.19019 47.8165 6.47084 46.5359 6.47084 44.9561C6.47084 43.3764 5.19019 42.0957 3.61042 42.0957C2.03065 42.0957 0.75 43.3764 0.75 44.9561C0.75 46.5359 2.03065 47.8165 3.61042 47.8165Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M20.2528 50.4177C23.2687 50.4177 25.7136 47.9728 25.7136 44.9569C25.7136 41.941 23.2687 39.4961 20.2528 39.4961C17.2369 39.4961 14.792 41.941 14.792 44.9569C14.792 47.9728 17.2369 50.4177 20.2528 50.4177Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M42.3561 53.0169C46.8082 53.0169 50.4173 49.4078 50.4173 44.9557C50.4173 40.5036 46.8082 36.8945 42.3561 36.8945C37.904 36.8945 34.2949 40.5036 34.2949 44.9557C34.2949 49.4078 37.904 53.0169 42.3561 53.0169Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M64.9792 53.0169C69.4312 53.0169 73.0403 49.4078 73.0403 44.9557C73.0403 40.5036 69.4312 36.8945 64.9792 36.8945C60.5271 36.8945 56.918 40.5036 56.918 44.9557C56.918 49.4078 60.5271 53.0169 64.9792 53.0169Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M87.0827 50.4176C90.0987 50.4176 92.5435 47.9727 92.5435 44.9567C92.5435 41.9408 90.0987 39.4959 87.0827 39.4959C84.0668 39.4959 81.6219 41.9408 81.6219 44.9567C81.6219 47.9727 84.0668 50.4176 87.0827 50.4176Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M103.726 47.8165C105.305 47.8165 106.586 46.5359 106.586 44.9561C106.586 43.3764 105.305 42.0957 103.726 42.0957C102.146 42.0957 100.865 43.3764 100.865 44.9561C100.865 46.5359 102.146 47.8165 103.726 47.8165Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M3.61042 69.922C5.19019 69.922 6.47084 68.6414 6.47084 67.0616C6.47084 65.4818 5.19019 64.2012 3.61042 64.2012C2.03065 64.2012 0.75 65.4818 0.75 67.0616C0.75 68.6414 2.03065 69.922 3.61042 69.922Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M20.2528 72.5212C23.2687 72.5212 25.7136 70.0763 25.7136 67.0604C25.7136 64.0445 23.2687 61.5996 20.2528 61.5996C17.2369 61.5996 14.792 64.0445 14.792 67.0604C14.792 70.0763 17.2369 72.5212 20.2528 72.5212Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M42.3561 75.1224C46.8082 75.1224 50.4173 71.5133 50.4173 67.0612C50.4173 62.6091 46.8082 59 42.3561 59C37.904 59 34.2949 62.6091 34.2949 67.0612C34.2949 71.5133 37.904 75.1224 42.3561 75.1224Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M64.9792 75.1224C69.4312 75.1224 73.0403 71.5133 73.0403 67.0612C73.0403 62.6091 69.4312 59 64.9792 59C60.5271 59 56.918 62.6091 56.918 67.0612C56.918 71.5133 60.5271 75.1224 64.9792 75.1224Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M87.0827 72.5212C90.0987 72.5212 92.5435 70.0763 92.5435 67.0604C92.5435 64.0444 90.0987 61.5996 87.0827 61.5996C84.0668 61.5996 81.6219 64.0444 81.6219 67.0604C81.6219 70.0763 84.0668 72.5212 87.0827 72.5212Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M103.726 69.922C105.305 69.922 106.586 68.6414 106.586 67.0616C106.586 65.4818 105.305 64.2012 103.726 64.2012C102.146 64.2012 100.865 65.4818 100.865 67.0616C100.865 68.6414 102.146 69.922 103.726 69.922Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M20.2528 94.6247C23.2687 94.6247 25.7136 92.1798 25.7136 89.1639C25.7136 86.148 23.2687 83.7031 20.2528 83.7031C17.2369 83.7031 14.792 86.148 14.792 89.1639C14.792 92.1798 17.2369 94.6247 20.2528 94.6247Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M42.3563 94.6247C45.3722 94.6247 47.8171 92.1798 47.8171 89.1639C47.8171 86.148 45.3722 83.7031 42.3563 83.7031C39.3404 83.7031 36.8955 86.148 36.8955 89.1639C36.8955 92.1798 39.3404 94.6247 42.3563 94.6247Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M64.9791 94.6248C67.995 94.6248 70.4399 92.1799 70.4399 89.164C70.4399 86.1481 67.995 83.7032 64.9791 83.7032C61.9632 83.7032 59.5183 86.1481 59.5183 89.164C59.5183 92.1799 61.9632 94.6248 64.9791 94.6248Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M87.0827 94.6248C90.0987 94.6248 92.5435 92.1799 92.5435 89.164C92.5435 86.1481 90.0987 83.7032 87.0827 83.7032C84.0668 83.7032 81.6219 86.1481 81.6219 89.164C81.6219 92.1799 84.0668 94.6248 87.0827 94.6248Z" stroke="var(--n-mid)" stroke-width="1.5"/><path d="M42.3555 108.928C43.9353 108.928 45.216 107.647 45.216 106.067C45.216 104.488 43.9353 103.207 42.3555 103.207C40.7758 103.207 39.4951 104.488 39.4951 106.067C39.4951 107.647 40.7758 108.928 42.3555 108.928Z" stroke="var(--n-faint)" stroke-width="1.5"/><path d="M64.9796 108.928C66.5593 108.928 67.84 107.647 67.84 106.067C67.84 104.488 66.5593 103.207 64.9796 103.207C63.3998 103.207 62.1191 104.488 62.1191 106.067C62.1191 107.647 63.3998 108.928 64.9796 108.928Z" stroke="var(--n-faint)" stroke-width="1.5"/></g></svg>
+        </div>
+        <div class="card-meta">
+          <div class="card-title">Blur</div>
+          <div class="card-subtitle">Motion blur during movement</div>
+        </div>
+        <button type="button" class="card-copy" aria-label="Copy Blur token CSS" data-copy-key="tok-blur">
+          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </article>
+
+      <!-- 5. Scale -->
+      <article class="card" data-proto-card>
+        <div class="card-stage">
+<svg class="token-illu" role="img" aria-hidden="true" overflow="visible" width="188.5" height="58.7794" viewBox="0 0 188.5 58.7794" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M4.11937 32.7583C5.98023 32.7583 7.48875 31.2498 7.48875 29.3889C7.48875 27.5281 5.98023 26.0195 4.11937 26.0195C2.25852 26.0195 0.75 27.5281 0.75 29.3889C0.75 31.2498 2.25852 32.7583 4.11937 32.7583Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M41.1831 36.8018C45.277 36.8018 48.5958 33.4831 48.5958 29.3892C48.5958 25.2953 45.277 21.9766 41.1831 21.9766C37.0893 21.9766 33.7705 25.2953 33.7705 29.3892C33.7705 33.4831 37.0893 36.8018 41.1831 36.8018Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M88.3536 44.5529C96.7274 44.5529 103.516 37.7645 103.516 29.3907C103.516 21.0169 96.7274 14.2285 88.3536 14.2285C79.9797 14.2285 73.1914 21.0169 73.1914 29.3907C73.1914 37.7645 79.9797 44.5529 88.3536 44.5529Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M159.11 58.0294C174.928 58.0294 187.75 45.2069 187.75 29.3897C187.75 13.5724 174.928 0.75 159.11 0.75C143.293 0.75 130.471 13.5724 130.471 29.3897C130.471 45.2069 143.293 58.0294 159.11 58.0294Z" stroke="var(--n-strong)" stroke-width="1.5"/><path d="M6.64551 25.6827L145.632 2.93945" stroke="var(--n-mid)" stroke-width="1.5" stroke-dasharray="4 6"/><path d="M7.15137 33.0957L143.948 54.9966" stroke="var(--n-mid)" stroke-width="1.5" stroke-dasharray="4 6"/></g></svg>
+        </div>
+        <div class="card-meta">
+          <div class="card-title">Scale</div>
+          <div class="card-subtitle">Size change on enter and exit</div>
+        </div>
+        <button type="button" class="card-copy" aria-label="Copy Scale token CSS" data-copy-key="tok-scale">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -5216,6 +5465,112 @@ export function StaggerReveal({ primary, secondary }) {
         <span    className="t-stagger-line t-stagger-line--2">{secondary}</span>
       </div>
     </>
+  );
+}
+</script>
+
+  <!-- ─── Motion-token React templates ─────────────────────────── -->
+  <script type="text/plain" data-react-key="tok-duration">// Motion token — Duration
+// A small, consistent time scale shared across components (ms).
+export const duration = {
+  fast: 150,   // hovers, text/icon swaps, tooltips
+  base: 200,   // default for most state changes
+  slow: 300,   // card resize, layout shifts
+  reveal: 400, // entrances: panels, skeleton reveal
+};
+
+// Usage — drive transitions from the token instead of magic numbers.
+export function Button({ children }) {
+  return (
+    <button style={{ transition: `transform ${duration.base}ms ease` }}>
+      {children}
+    </button>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="tok-easing">// Motion token — Easing
+// One "smooth decel" curve covers most UI motion; a springy curve
+// adds bounce for playful accents.
+export const easing = {
+  out: "cubic-bezier(0.22, 1, 0.36, 1)",       // default: enter / settle
+  inOut: "ease-in-out",                         // symmetric swaps
+  spring: "cubic-bezier(0.34, 1.45, 0.64, 1)",  // bouncy pop
+};
+
+export function Card({ children }) {
+  return (
+    <div style={{ transition: `transform 200ms ${easing.out}` }}>
+      {children}
+    </div>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="tok-distance">// Motion token — Distance
+// How far an element travels. Keep it small — subtle offsets read as
+// "settling into place", not flying across the screen.
+export const distance = {
+  sm: 4,  // micro: hover lift, text swap
+  md: 8,  // default: slides, number pop-in
+  lg: 12, // pronounced: staggered reveals
+};
+
+// Travel in, then settle to 0 once `shown` is true.
+export function SlideIn({ shown, children }) {
+  return (
+    <div
+      style={{
+        transform: `translateY(${shown ? 0 : distance.md}px)`,
+        transition: "transform 200ms ease",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="tok-blur">// Motion token — Blur
+// Motion blur applied while an element moves, then cleared to 0 at rest.
+export const blur = {
+  base: 2, // standard motion blur
+  lg: 3,   // longer-travel slides
+};
+
+export function BlurIn({ shown, children }) {
+  return (
+    <div
+      style={{
+        filter: `blur(${shown ? 0 : blur.base}px)`,
+        transition: "filter 200ms ease",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="tok-scale">// Motion token — Scale
+// Size change on enter/exit. Surfaces grow in from just under 1;
+// hovered elements lift just over 1.
+export const scale = {
+  in: 0.96,    // modal / dropdown / tooltip enter
+  hover: 1.05, // hover emphasis
+};
+
+export function Surface({ open, children }) {
+  return (
+    <div
+      style={{
+        transform: `scale(${open ? 1 : scale.in})`,
+        opacity: open ? 1 : 0,
+        transition: "transform 200ms ease, opacity 200ms ease",
+      }}
+    >
+      {children}
+    </div>
   );
 }
 </script>
@@ -6484,6 +6839,105 @@ export function StaggerReveal({ primary, secondary }) {
             "@media (prefers-reduced-motion: reduce) {\n" +
             "  .t-stagger-line { transition: none !important; }\n" +
             "}"
+        },
+
+        /* ── Motion tokens ─────────────────────────────────────────
+           These entries describe a *token*, not a single component, so
+           they carry no `vars` map (nothing to resolve from :root) and
+           no `usage` block — the token scale + a usage example live
+           directly in `css`. buildSnippet / buildReactSnippet detect the
+           empty `vars` and skip the auto-generated :root block. */
+        "tok-duration": {
+          name: "Duration",
+          css:
+            "/* Motion token — Duration\n" +
+            "   How long a transition runs. Transitions.dev keeps a small,\n" +
+            "   consistent time scale so motion feels coherent across the UI. */\n" +
+            ":root {\n" +
+            "  --duration-fast:   150ms; /* hovers, text/icon swaps, tooltips */\n" +
+            "  --duration-base:   200ms; /* default for most state changes */\n" +
+            "  --duration-slow:   300ms; /* card resize, layout shifts */\n" +
+            "  --duration-reveal: 400ms; /* entrances: panels, skeleton reveal */\n" +
+            "}\n" +
+            "\n" +
+            "/* Apply it like any other value. */\n" +
+            ".button {\n" +
+            "  transition: transform var(--duration-base) ease;\n" +
+            "}"
+        },
+
+        "tok-easing": {
+          name: "Easing",
+          css:
+            "/* Motion token — Easing\n" +
+            "   The acceleration curve. One \"smooth decel\" curve covers most\n" +
+            "   UI motion; a springy curve adds bounce for playful accents. */\n" +
+            ":root {\n" +
+            "  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);   /* default: enter / settle */\n" +
+            "  --ease-in-out: ease-in-out;                       /* symmetric swaps */\n" +
+            "  --ease-spring: cubic-bezier(0.34, 1.45, 0.64, 1); /* bouncy pop */\n" +
+            "}\n" +
+            "\n" +
+            ".card {\n" +
+            "  transition: transform 200ms var(--ease-out);\n" +
+            "}"
+        },
+
+        "tok-distance": {
+          name: "Distance",
+          css:
+            "/* Motion token — Distance\n" +
+            "   How far an element travels. Keep it small — subtle offsets\n" +
+            "   read as \"settling into place\", not flying across the screen. */\n" +
+            ":root {\n" +
+            "  --distance-sm:  4px; /* micro: hover lift, text swap */\n" +
+            "  --distance-md:  8px; /* default: slides, number pop-in */\n" +
+            "  --distance-lg: 12px; /* pronounced: staggered reveals */\n" +
+            "}\n" +
+            "\n" +
+            "/* Travel in, then settle to 0 on the resting/active state. */\n" +
+            ".item {\n" +
+            "  transform: translateY(var(--distance-md));\n" +
+            "  transition: transform 200ms ease;\n" +
+            "}\n" +
+            ".item.is-in { transform: translateY(0); }"
+        },
+
+        "tok-blur": {
+          name: "Blur",
+          css:
+            "/* Motion token — Blur\n" +
+            "   Motion blur applied while an element moves, then cleared to 0\n" +
+            "   at rest. Softens fast travel and sells the sense of speed. */\n" +
+            ":root {\n" +
+            "  --blur-base: 2px; /* standard motion blur */\n" +
+            "  --blur-lg:   3px; /* longer-travel slides */\n" +
+            "}\n" +
+            "\n" +
+            ".item {\n" +
+            "  filter: blur(var(--blur-base));\n" +
+            "  transition: filter 200ms ease;\n" +
+            "}\n" +
+            ".item.is-in { filter: blur(0); }"
+        },
+
+        "tok-scale": {
+          name: "Scale",
+          css:
+            "/* Motion token — Scale\n" +
+            "   Size change on enter/exit. Surfaces grow in from just under 1;\n" +
+            "   hovered elements lift just over 1. */\n" +
+            ":root {\n" +
+            "  --scale-in:    0.96; /* modal / dropdown / tooltip enter */\n" +
+            "  --scale-hover: 1.05; /* hover emphasis */\n" +
+            "}\n" +
+            "\n" +
+            ".surface {\n" +
+            "  transform: scale(var(--scale-in));\n" +
+            "  opacity: 0;\n" +
+            "  transition: transform 200ms ease, opacity 200ms ease;\n" +
+            "}\n" +
+            ".surface.is-open { transform: scale(1); opacity: 1; }"
         }
       };
 
@@ -6491,15 +6945,20 @@ export function StaggerReveal({ primary, secondary }) {
         var tpl = PROTO_TEMPLATES[key];
         if (!tpl) return "";
         var cs = getComputedStyle(document.documentElement);
-        var rootLines = tpl.vars.map(function (pair) {
-          return "  " + pair[0] + ": " + cs.getPropertyValue(pair[1]).trim() + ";";
-        }).join("\n");
-        return [
-          "/* Transitions.dev — " + tpl.name + " */",
-          "/*\n  Usage:\n" + tpl.usage + "\n*/",
-          ":root {\n" + rootLines + "\n}",
-          tpl.css
-        ].join("\n\n");
+        var parts = ["/* Transitions.dev — " + tpl.name + " */"];
+        if (tpl.usage) {
+          parts.push("/*\n  Usage:\n" + tpl.usage + "\n*/");
+        }
+        // Motion-token templates carry no `vars` — their :root block and
+        // usage example live inside `css`, so skip the auto-generated one.
+        if (tpl.vars && tpl.vars.length) {
+          var rootLines = tpl.vars.map(function (pair) {
+            return "  " + pair[0] + ": " + cs.getPropertyValue(pair[1]).trim() + ";";
+          }).join("\n");
+          parts.push(":root {\n" + rootLines + "\n}");
+        }
+        parts.push(tpl.css);
+        return parts.join("\n\n");
       }
 
       // ── React snippet lookup (sourced from inline <script type="text/plain">) ──
@@ -6525,7 +6984,7 @@ export function StaggerReveal({ primary, secondary }) {
         // resolved from the page) so the React file is fully
         // self-contained — no companion stylesheet required.
         var cssBody = "";
-        if (tpl) {
+        if (tpl && tpl.vars && tpl.vars.length) {
           var cs = getComputedStyle(document.documentElement);
           var rootLines = tpl.vars
             .map(function (pair) {
@@ -7582,6 +8041,78 @@ export function StaggerReveal({ primary, secondary }) {
         });
       })();
 
+      /* Header view switcher: Transitions ↔ Motion tokens.
+         Reuses the P16 sliding-pill logic for the indicator and also
+         toggles which card grid (.cards[data-view-panel]) is visible
+         via the `hidden` attribute, keyed off the tab's data-view. */
+      (function initViewTabs() {
+        var bar = document.querySelector("[data-view-tabs]");
+        if (!bar) return;
+        var indicator = bar.querySelector(".view-tabs-indicator");
+        var tabs = Array.prototype.slice.call(
+          bar.querySelectorAll(".view-tab")
+        );
+        if (!indicator || !tabs.length) return;
+        var panels = Array.prototype.slice.call(
+          document.querySelectorAll("[data-view-panel]")
+        );
+
+        function moveTo(tab, animate) {
+          var left = tab.offsetLeft;
+          var width = tab.offsetWidth;
+          if (!animate) {
+            var prev = indicator.style.transition;
+            indicator.style.transition = "none";
+            indicator.style.transform = "translateX(" + left + "px)";
+            indicator.style.width = width + "px";
+            // eslint-disable-next-line no-unused-expressions
+            indicator.offsetWidth;
+            indicator.style.transition = prev;
+          } else {
+            indicator.style.transform = "translateX(" + left + "px)";
+            indicator.style.width = width + "px";
+          }
+        }
+        function getActive() {
+          return tabs.find(function (t) {
+            return t.getAttribute("aria-selected") === "true";
+          }) || tabs[0];
+        }
+        function showPanel(view) {
+          panels.forEach(function (panel) {
+            panel.hidden = panel.getAttribute("data-view-panel") !== view;
+          });
+        }
+
+        tabs.forEach(function (t) {
+          t.addEventListener("click", function () {
+            tabs.forEach(function (other) {
+              other.setAttribute(
+                "aria-selected", other === t ? "true" : "false"
+              );
+            });
+            moveTo(t, true);
+            showPanel(t.getAttribute("data-view"));
+          });
+        });
+
+        // Snap to the active tab once layout settles; re-snap after the
+        // web font loads (label widths shift) and on resize.
+        window.requestAnimationFrame(function () {
+          moveTo(getActive(), false);
+        });
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(function () {
+            moveTo(getActive(), false);
+          });
+        }
+        window.addEventListener("resize", function () {
+          moveTo(getActive(), false);
+        });
+
+        showPanel(getActive().getAttribute("data-view"));
+      })();
+
       /* Build the hover tooltip for every copy button once on load.
          The tooltip reads "Cop" + a swap slot that holds both "y"
          and "ied" stacked on top of each other; toggling
@@ -7590,6 +8121,36 @@ export function StaggerReveal({ primary, secondary }) {
       (function initCopyTooltips() {
         var buttons = document.querySelectorAll(".card-copy");
         if (!buttons.length) return;
+
+        // Off-screen, always-laid-out measuring host at the body level.
+        // Cloning the tooltip here lets us measure label widths even when
+        // the button's own panel is hidden (display:none), so tooltips on
+        // the initially-hidden Motion tokens cards size correctly too.
+        var measurer = document.createElement("div");
+        measurer.setAttribute("aria-hidden", "true");
+        measurer.style.cssText =
+          "position:absolute; left:-9999px; top:0; visibility:hidden; " +
+          "pointer-events:none;";
+        document.body.appendChild(measurer);
+
+        function measureLabels(tt) {
+          var clone = tt.cloneNode(true);
+          clone.style.visibility = "hidden";
+          clone.style.opacity = "0";
+          clone.style.display = "inline-flex";
+          measurer.appendChild(clone);
+          var widths = [];
+          Array.prototype.forEach.call(
+            clone.querySelectorAll(".tt-label"),
+            function (lbl) {
+              lbl.style.position = "static";
+              lbl.style.display = "inline-block";
+              widths.push(lbl.getBoundingClientRect().width);
+            }
+          );
+          measurer.removeChild(clone);
+          return widths;
+        }
 
         buttons.forEach(function (btn) {
           if (btn.querySelector(".card-copy-tooltip")) return;
@@ -7608,35 +8169,18 @@ export function StaggerReveal({ primary, secondary }) {
             '</span>';
           btn.appendChild(tt);
 
-          // Measure each label in its natural (non-absolute) flow so
-          // the swap container can animate between the two widths.
+          // Measure label widths via an off-screen clone (see measurer
+          // below). Measuring the live tooltip fails for buttons inside
+          // a hidden panel (e.g. the Motion tokens grid starts
+          // display:none), where getBoundingClientRect() returns 0 and
+          // would pin the swap width to 0px — collapsing the tooltip.
           var swap = tt.querySelector(".tt-swap");
-          var labels = swap.querySelectorAll(".tt-label");
-          var prevVis = tt.style.visibility;
-          var prevOp = tt.style.opacity;
-          // Make the tooltip laid out but invisible during measurement.
-          tt.style.visibility = "hidden";
-          tt.style.opacity = "0";
-          tt.style.display = "inline-flex";
-
-          var widths = [];
-          labels.forEach(function (lbl) {
-            var prevPos = lbl.style.position;
-            var prevDisp = lbl.style.display;
-            lbl.style.position = "static";
-            lbl.style.display = "inline-block";
-            widths.push(lbl.getBoundingClientRect().width);
-            lbl.style.position = prevPos;
-            lbl.style.display = prevDisp;
-          });
-
-          tt.style.visibility = prevVis;
-          tt.style.opacity = prevOp;
-          tt.style.display = "";
-
+          var widths = measureLabels(tt);
           swap.style.setProperty("--tt-w-a", widths[0] + "px");
           swap.style.setProperty("--tt-w-b", widths[1] + "px");
         });
+
+        if (measurer.parentNode) measurer.parentNode.removeChild(measurer);
       })();
 
       /* Touch-only devices don't receive the `:hover` animation on the

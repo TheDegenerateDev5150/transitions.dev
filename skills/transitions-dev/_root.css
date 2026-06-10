@@ -48,8 +48,8 @@
   --panel-blur: 2px;
   --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
   /* Page side-by-side */
-  --page-slide-dur: 200ms;
-  --page-fade-dur: 200ms;
+  --page-slide-dur: 250ms;
+  --page-fade-dur: 250ms;
   --page-slide-distance: 8px;
   --page-blur: 3px;
   --page-stagger: 0ms;
@@ -57,19 +57,19 @@
   --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --page-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
   /* Icon swap */
-  --icon-swap-dur: 200ms;
+  --icon-swap-dur: 250ms;
   --icon-swap-blur: 2px;
   --icon-swap-start-scale: 0.25;
   --icon-swap-ease: ease-in-out;
   /* Success check */
-  --check-opacity-dur: 550ms;
-  --check-rotate-dur: 550ms;
+  --check-opacity-dur: 500ms;
+  --check-rotate-dur: 500ms;
   --check-rotate-from: 80deg;
-  --check-bob-dur: 450ms;
+  --check-bob-dur: 500ms;
   --check-y-amount: 40px;
   --check-blur-dur: 500ms;
   --check-blur-from: 10px;
-  --check-path-dur: 550ms;
+  --check-path-dur: 500ms;
   --check-path-delay: 80ms;
   --check-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --check-ease-opacity: cubic-bezier(0.22, 1, 0.36, 1);
@@ -118,11 +118,11 @@
   --shimmer-band: 400%;
   --shimmer-ease: linear;
   /* Tabs sliding */
-  --tabs-dur: 200ms;
+  --tabs-dur: 250ms;
   --tabs-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --tabs-text-muted: rgba(15, 15, 15, 0.6);
+  --tabs-text-muted: rgba(15, 15, 15, 0.8);
   --tabs-text-active: #0f0f0f;
-  --tabs-bar-bg: #eeeeee;
+  --tabs-bar-bg: #f1f1f1;
   --tabs-pill-bg: #ffffff;
   /* Tooltip open/close */
   --tt-in-dur: 150ms;
@@ -134,9 +134,9 @@
   --tt-bg: #ffffff;
   --tt-fg: #2f2f2f;
   /* Texts reveal */
-  --stagger-dur: 600ms;
+  --stagger-dur: 500ms;
   --stagger-distance: 12px;
   --stagger-stagger: 40ms;
   --stagger-blur: 3px;
-  --stagger-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --stagger-ease: ease-in-out;
 }

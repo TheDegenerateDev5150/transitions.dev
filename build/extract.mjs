@@ -82,6 +82,20 @@ while ((m = declRe.exec(rootBlock)) !== null) {
   defaults.set(m[1].trim(), m[2].trim().replace(/\s+/g, " "));
 }
 
+// ── Parse the motion-token layer ──────────────────────────────────
+// The --pX-* defaults now reference shared motion tokens
+// (--duration-*, --ease-*, --distance-*, --scale-*, --blur-*). The
+// skill must stay self-contained, so we resolve those var() refs back
+// to their literal ms/px values when rendering. Token values live once
+// in index.html; this keeps the skill output literal.
+const tokenRe =
+  /(--(?:duration|ease|distance|scale|blur)-[a-z-]+)\s*:\s*([^;]+);/gi;
+const tokens = new Map();
+let tk;
+while ((tk = tokenRe.exec(rootBlock)) !== null) {
+  tokens.set(tk[1].trim(), tk[2].trim().replace(/\s+/g, " "));
+}
+
 // ── Curated metadata: ordering, file names, decision-rule copy ────
 // The README's published order (card → number → badge → text → menu →
 // modal → panel → page → icon) is the canonical taxonomy users see, so
@@ -252,6 +266,12 @@ const DEFAULT_REWRITES = [
 function rewriteDefault(value) {
   let out = value;
   for (const [re, rep] of DEFAULT_REWRITES) out = out.replace(re, rep);
+  // Resolve motion-token references to their literal values so the
+  // generated skill stays self-contained (no var(--duration-*) leaks).
+  out = out.replace(
+    /var\(\s*(--[\w-]+)\s*(?:,[^)]*)?\)/g,
+    (whole, name) => tokens.get(name) ?? whole
+  );
   return out;
 }
 

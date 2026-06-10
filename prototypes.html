@@ -36,18 +36,50 @@
       /* Prototype transition knobs (read by the control panel)     */
       /* ========================================================== */
 
+      /* ---- Motion tokens ---------------------------------------- */
+      /* Durations */
+      --duration-stagger:   40ms;   /* stagger offset */
+      --duration-micro:     80ms;   /* tooltip/path delay, shake segment */
+      --duration-quick:     150ms;  /* modal/dropdown close, text swap, tooltip in */
+      --duration-fast:      250ms;  /* icon swap, dropdown/modal open, tabs, page slide */
+      --duration-medium:    350ms;  /* panel close */
+      --duration-slow:      400ms;  /* panel open, reveal */
+      --duration-very-slow: 500ms;  /* emphasis, badge appear, text reveal, success check */
+      /* Easings */
+      --ease-smooth-out:    cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-in-out:        ease-in-out;
+      --ease-out:           ease-out;
+      --ease-linear:        linear;
+      --ease-bounce:        cubic-bezier(0.34, 1.36, 0.64, 1);
+      --ease-bounce-strong: cubic-bezier(0.34, 3.85, 0.64, 1);
+      /* Distances */
+      --distance-micro:  4px;
+      --distance-small:  6px;
+      --distance-base:   8px;
+      --distance-medium: 12px;
+      --distance-large:  30px;
+      /* Scales */
+      --scale-large:  0.96;
+      --scale-medium: 0.97;
+      --scale-small:  0.98;
+      --scale-tiny:   0.99;
+      /* Blur */
+      --blur-small:  2px;
+      --blur-medium: 3px;
+      --blur-large:  8px;
+
       /* P1 — Notification badge */
       --p1-pos-open-dur: 260ms;
-      --p1-scale-open-dur: 500ms;
+      --p1-scale-open-dur: var(--duration-very-slow);
       --p1-scale-close-dur: 180ms;
       --p1-opacity-open-dur: 400ms;
       --p1-opacity-close-dur: 180ms;
-      --p1-blur: 2px;
+      --p1-blur: var(--blur-small);
       --p1-distance-x: -8.2px;
       --p1-distance-y: 12.4px;
       --p1-bounce: 1.36;
-      --p1-ease-pos-open: cubic-bezier(0.22, 1, 0.36, 1);
-      --p1-ease-scale-open: cubic-bezier(0.34, 1.36, 0.64, 1);
+      --p1-ease-pos-open: var(--ease-smooth-out);
+      --p1-ease-scale-open: var(--ease-bounce);
       --p1-ease-close: cubic-bezier(0.4, 0, 0.2, 1);
 
       /* P2 — Dropdown.
@@ -55,27 +87,27 @@
          origin-aware: the anchor point should sit where the trigger is
          (e.g. "top center" when the trigger button is above the menu,
          "top right" when it opens from a right-aligned button, etc.). */
-      --p2-open-dur: 250ms;
-      --p2-close-dur: 150ms;
-      --p2-pre-scale: 0.97;
-      --p2-closing-scale: 0.99;
+      --p2-open-dur: var(--duration-fast);
+      --p2-close-dur: var(--duration-quick);
+      --p2-pre-scale: var(--scale-medium);
+      --p2-closing-scale: var(--scale-tiny);
       --p2-origin: top center;
-      --p2-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --p2-ease: var(--ease-smooth-out);
 
       /* P3 — Panel (Figma 213:1375 "Dropdown", 296×187) */
-      --p3-open-dur: 400ms;
-      --p3-close-dur: 350ms;
+      --p3-open-dur: var(--duration-slow);
+      --p3-close-dur: var(--duration-medium);
       --p3-panel-height: 187px;
       /* Movement trajectory = 50% of the panel height. The panel
          also fades opacity 0 ↔ 1 AND cross-blurs 2px ↔ 0 over the
          same timing, so the shortened travel still reads as a full
          open / close. */
       --p3-translate-y: calc(var(--p3-panel-height) * 0.5);
-      --p3-blur: 2px;
+      --p3-blur: var(--blur-small);
       /* Gutter inside the clip so box-shadow is not clipped by overflow:hidden */
       --p3-clip-pad: 14px;
       --p3-open-lift: 30px;
-      --p3-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --p3-ease: var(--ease-smooth-out);
       --p3-surface-bg: #ffffff;
       --p3-surface-shadow:
         0 0 0 1px rgba(0, 0, 0, 0.06),
@@ -84,19 +116,19 @@
 
       /* P4 — Card resize */
       --p4-dur: 300ms;
-      --p4-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --p4-ease: var(--ease-smooth-out);
 
       /* P5 — Hamburger ↔ Close */
-      --p5-dur: 200ms;
-      --p5-blur: 2px;
+      --p5-dur: var(--duration-fast);
+      --p5-blur: var(--blur-small);
       --p5-start-scale: 0.25;
-      --p5-ease: ease-in-out;
+      --p5-ease: var(--ease-in-out);
 
       /* P6 — Text enter/exit */
-      --p6-dur: 150ms;
-      --p6-translate-y: 4px;
-      --p6-blur: 2px;
-      --p6-ease: ease-in-out;
+      --p6-dur: var(--duration-quick);
+      --p6-translate-y: var(--distance-micro);
+      --p6-blur: var(--blur-small);
+      --p6-ease: var(--ease-in-out);
       /* Offset between the exit phase finishing and the enter phase
          starting. 0 = back-to-back (old default). Positive values add
          a gap so the stage briefly sits empty. Negative values pull
@@ -104,33 +136,33 @@
       --p6-enter-delay: 0ms;
 
       /* P7 — Modal open/close (scale + opacity, Figma skeleton 261×172) */
-      --p7-open-dur: 250ms;
-      --p7-close-dur: 150ms;
-      --p7-scale: 0.96;
-      --p7-scale-close: 0.96;
-      --p7-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --p7-open-dur: var(--duration-fast);
+      --p7-close-dur: var(--duration-quick);
+      --p7-scale: var(--scale-large);
+      --p7-scale-close: var(--scale-large);
+      --p7-ease: var(--ease-smooth-out);
       --p7-shadow:
         0 0 0 1px rgba(0, 0, 0, 0.06),
         0 2px 6px 0 rgba(0, 0, 0, 0.05),
         0 4px 42px 0 rgba(0, 0, 0, 0.06);
 
       /* P8 — Page slide */
-      --p8-slide-dur: 200ms;
-      --p8-fade-dur: 200ms;
-      --p8-distance: 8px;
-      --p8-blur: 3px;
+      --p8-slide-dur: var(--duration-fast);
+      --p8-fade-dur: var(--duration-fast);
+      --p8-distance: var(--distance-base);
+      --p8-blur: var(--blur-medium);
       --p8-stagger: 0ms;
       /* Exit animation multiplier (1 = slide+blur the outgoing page,
          0 = fade it out in place). */
       --p8-exit-enabled: 1;
-      --p8-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
-      --p8-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --p8-slide-ease: var(--ease-smooth-out);
+      --p8-fade-ease: var(--ease-smooth-out);
 
       /* P9 — Number pop-in */
-      --p9-dur: 500ms;
-      --p9-distance: 8px;
+      --p9-dur: var(--duration-very-slow);
+      --p9-distance: var(--distance-base);
       --p9-stagger: 70ms;
-      --p9-blur: 2px;
+      --p9-blur: var(--blur-small);
       --p9-bounce: 1.45;
       --p9-ease: cubic-bezier(0.34, 1.45, 0.64, 1);
       /* Direction multipliers: where each digit starts relative to its
@@ -141,28 +173,28 @@
       --p9-dir-y: 1;
 
       /* P10 — Success check (appear/disappear) */
-      --p10-opacity-dur: 550ms;
-      --p10-rotate-dur:  550ms;
+      --p10-opacity-dur: var(--duration-very-slow);
+      --p10-rotate-dur:  var(--duration-very-slow);
       --p10-rotate-from: 80deg;
       /* Bob is a single Y rise from --p10-y-amount below rest up
          to rest, using --p10-ease-bob to add overshoot via a
          subtle-bounce cubic-bezier (the cubic itself produces the
          "lands and settles" feel — no manual keyframe overshoot). */
-      --p10-bob-dur:    450ms;
+      --p10-bob-dur:    var(--duration-very-slow);
       --p10-y-amount:   40px;
-      --p10-blur-dur:    500ms;
+      --p10-blur-dur:    var(--duration-very-slow);
       --p10-blur-from:   10px;
       /* Exit uses its own (softer) blur amount so the disappearance
          reads as a gentle fade rather than a full reverse of entry. */
       --p10-blur-out-from: 4px;
-      --p10-path-dur:    550ms;
-      --p10-path-delay:  80ms;
-      --p10-out-dur:     500ms;
-      --p10-ease-out:    cubic-bezier(0.22, 1, 0.36, 1); /* exit + entry blur */
-      --p10-ease-opacity: cubic-bezier(0.22, 1, 0.36, 1);
-      --p10-ease-rotate:  cubic-bezier(0.22, 1, 0.36, 1);
+      --p10-path-dur:    var(--duration-very-slow);
+      --p10-path-delay:  var(--duration-micro);
+      --p10-out-dur:     var(--duration-very-slow);
+      --p10-ease-out:    var(--ease-smooth-out); /* exit + entry blur */
+      --p10-ease-opacity: var(--ease-smooth-out);
+      --p10-ease-rotate:  var(--ease-smooth-out);
       --p10-ease-bob:     cubic-bezier(0.34, 1.35, 0.64, 1); /* subtle overshoot via the curve, not via keyframes */
-      --p10-ease-path:    cubic-bezier(0.22, 1, 0.36, 1); /* SVG check stroke-draw */
+      --p10-ease-path:    var(--ease-smooth-out); /* SVG check stroke-draw */
 
       /* P11 — Avatar group hover spring.
          Each neighbor at distance d from the hovered avatar lifts by
@@ -181,8 +213,8 @@
          group "settles" with a gentle spring. JS swaps the
          transition-timing-function per phase before each shift
          write so a single transition-property handles both. */
-      --p11-ease-in:  cubic-bezier(0.22, 1, 0.36, 1);
-      --p11-ease-out: cubic-bezier(0.34, 3.85, 0.64, 1);
+      --p11-ease-in:  var(--ease-smooth-out);
+      --p11-ease-out: var(--ease-bounce-strong);
       /* --p11-bounce drives the Y of the second cubic-bezier control
          point on --p11-ease-out (the return-to-rest ease). The CP
          "Bounce" knob rewrites --p11-ease-out via the template
@@ -204,11 +236,11 @@
          error state for --p12-revert-hold then fade back to neutral
          over --p12-revert-dur, so the demo self-resets without the
          user needing to type. */
-      --p12-shake-distance:  6px;
+      --p12-shake-distance:  var(--distance-small);
       --p12-shake-overshoot: 4px;
-      --p12-shake-dur-a:     80ms;
+      --p12-shake-dur-a:     var(--duration-micro);
       --p12-shake-dur-b:     60ms;
-      --p12-shake-ease:      cubic-bezier(0.22, 1, 0.36, 1);
+      --p12-shake-ease:      var(--ease-smooth-out);
       --p12-error-border:    #e23014;
       --p12-error-text:      #d62b11;
       --p12-revert-hold:     3000ms;
@@ -226,13 +258,13 @@
          placeholder entrance independently. --p13-clear-dur is the outer
          envelope (covers the glow's fade-in/out tail). */
       --p13-clear-dur:       1000ms;
-      --p13-text-out-dur:    400ms;
-      --p13-text-in-dur:     400ms;
-      --p13-text-out-fly:    12px;
-      --p13-text-in-fly:     12px;
-      --p13-text-out-ease:   cubic-bezier(0.22, 1, 0.36, 1);
-      --p13-text-in-ease:    cubic-bezier(0.22, 1, 0.36, 1);
-      --p13-blur:            2px;
+      --p13-text-out-dur:    var(--duration-slow);
+      --p13-text-in-dur:     var(--duration-slow);
+      --p13-text-out-fly:    var(--distance-medium);
+      --p13-text-in-fly:     var(--distance-medium);
+      --p13-text-out-ease:   var(--ease-smooth-out);
+      --p13-text-in-ease:    var(--ease-smooth-out);
+      --p13-blur:            var(--blur-small);
       /* --p13-glow-delay holds the per-word streak completely
          invisible for the first N ms so the text begins falling
          on its own and only then does the streak ignite. */
@@ -249,9 +281,9 @@
       --p14-pulse-dur:       1000ms;
       --p14-pulse-count:     1;
       --p14-pulse-min:       0.5;
-      --p14-reveal-dur:      400ms;
-      --p14-reveal-blur:     2px;
-      --p14-reveal-ease:     ease-in-out;
+      --p14-reveal-dur:      var(--duration-slow);
+      --p14-reveal-blur:     var(--blur-small);
+      --p14-reveal-ease:     var(--ease-in-out);
       --p14-skeleton-color:  #eeeeee;
 
       /* P15 — Beautiful shimmer on text.
@@ -265,7 +297,7 @@
       --p15-base:            #7c7c7c;
       --p15-highlight:       #0d0d0d;
       --p15-band:            400%;
-      --p15-ease:            linear;
+      --p15-ease:            var(--ease-linear);
 
       /* P16 — Tabs with sliding active indicator.
          Per Figma: 36px outer pill on #eee, 30px-tall inner tabs
@@ -274,8 +306,8 @@
          width writes from JS. Inactive tabs carry a 1px #efefef
          outline so the segmented look reads on the gray bar even
          while the white indicator is mid-flight. */
-      --p16-dur:             200ms;
-      --p16-ease:            cubic-bezier(0.22, 1, 0.36, 1);
+      --p16-dur:             var(--duration-fast);
+      --p16-ease:            var(--ease-smooth-out);
       --p16-text-muted:      rgba(15, 15, 15, 0.8);
       --p16-text-active:     #0f0f0f;
       --p16-bar-bg:          #eeeeee;
@@ -287,12 +319,12 @@
          the :hover/:focus rule, so leaving the trigger snaps the
          delay back to 0 and the fade-out plays immediately.
          Pure CSS — no JS. */
-      --p17-in-dur:          150ms;
+      --p17-in-dur:          var(--duration-quick);
       --p17-out-dur:         50ms;
-      --p17-scale-from:      0.98;
-      --p17-delay:           80ms;
-      --p17-in-ease:         ease-out;
-      --p17-out-ease:        ease-out;
+      --p17-scale-from:      var(--scale-small);
+      --p17-delay:           var(--duration-micro);
+      --p17-in-ease:         var(--ease-out);
+      --p17-out-ease:        var(--ease-out);
       --p17-bg:              #ffffff;
       --p17-fg:              #17181c;
 
@@ -300,11 +332,11 @@
          Both lines rise from --p18-distance with --p18-dur; the
          secondary line is held back by --p18-stagger so the eye
          locks onto the primary first. */
-      --p18-dur:             600ms;
-      --p18-distance:        12px;
-      --p18-stagger:         40ms;
-      --p18-blur:            3px;
-      --p18-ease:            cubic-bezier(0.22, 1, 0.36, 1);
+      --p18-dur:             var(--duration-very-slow);
+      --p18-distance:        var(--distance-medium);
+      --p18-stagger:         var(--duration-stagger);
+      --p18-blur:            var(--blur-medium);
+      --p18-ease:            var(--ease-in-out);
     }
 
     * {
@@ -2799,8 +2831,8 @@
           <span class="cp-section-title">8. Page slide</span>
           <button type="button" class="cp-export">Export</button>
         </header>
-        <div class="cp-row"><span class="cp-label">Slide (ms)</span><input type="number" data-var="--p8-slide-dur" data-unit="ms" min="0" max="2000" step="10" value="200"></div>
-        <div class="cp-row"><span class="cp-label">Fade (ms)</span><input type="number" data-var="--p8-fade-dur" data-unit="ms" min="0" max="2000" step="10" value="200"></div>
+        <div class="cp-row"><span class="cp-label">Slide (ms)</span><input type="number" data-var="--p8-slide-dur" data-unit="ms" min="0" max="2000" step="10" value="250"></div>
+        <div class="cp-row"><span class="cp-label">Fade (ms)</span><input type="number" data-var="--p8-fade-dur" data-unit="ms" min="0" max="2000" step="10" value="250"></div>
         <div class="cp-row"><span class="cp-label">Distance (px)</span><input type="number" data-var="--p8-distance" data-unit="px" min="0" max="100" step="1" value="8"></div>
         <div class="cp-row"><span class="cp-label">Blur (px)</span><input type="number" data-var="--p8-blur" data-unit="px" min="0" max="20" step="0.5" value="3"></div>
         <div class="cp-row"><span class="cp-label">Stagger (ms)</span><input type="number" data-var="--p8-stagger" data-unit="ms" min="0" max="1000" step="10" value="0"></div>
@@ -2822,7 +2854,7 @@
           <span class="cp-section-title">9. Hamburger ↔ Close</span>
           <button type="button" class="cp-export">Export</button>
         </header>
-        <div class="cp-row"><span class="cp-label">Duration (ms)</span><input type="number" data-var="--p5-dur" data-unit="ms" min="0" max="2000" step="10" value="200"></div>
+        <div class="cp-row"><span class="cp-label">Duration (ms)</span><input type="number" data-var="--p5-dur" data-unit="ms" min="0" max="2000" step="10" value="250"></div>
         <div class="cp-row"><span class="cp-label">Blur (px)</span><input type="number" data-var="--p5-blur" data-unit="px" min="0" max="20" step="0.5" value="2"></div>
         <div class="cp-row"><span class="cp-label">Start scale</span><input type="number" data-var="--p5-start-scale" data-unit="" min="0" max="1.5" step="0.05" value="0.25"></div>
         <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p5-ease"></select></div>
@@ -2834,15 +2866,15 @@
           <span class="cp-section-title">10. Success check</span>
           <button type="button" class="cp-export">Export</button>
         </header>
-        <div class="cp-row"><span class="cp-label">Opacity (ms)</span><input type="number" data-var="--p10-opacity-dur" data-unit="ms" min="0" max="2000" step="10" value="550"></div>
-        <div class="cp-row"><span class="cp-label">Rotate (ms)</span><input type="number" data-var="--p10-rotate-dur" data-unit="ms" min="0" max="2000" step="10" value="550"></div>
+        <div class="cp-row"><span class="cp-label">Opacity (ms)</span><input type="number" data-var="--p10-opacity-dur" data-unit="ms" min="0" max="2000" step="10" value="500"></div>
+        <div class="cp-row"><span class="cp-label">Rotate (ms)</span><input type="number" data-var="--p10-rotate-dur" data-unit="ms" min="0" max="2000" step="10" value="500"></div>
         <div class="cp-row"><span class="cp-label">Rotate from (deg)</span><input type="number" data-var="--p10-rotate-from" data-unit="deg" min="-180" max="180" step="1" value="80"></div>
-        <div class="cp-row"><span class="cp-label">Y bob (ms)</span><input type="number" data-var="--p10-bob-dur" data-unit="ms" min="0" max="2000" step="10" value="450"></div>
+        <div class="cp-row"><span class="cp-label">Y bob (ms)</span><input type="number" data-var="--p10-bob-dur" data-unit="ms" min="0" max="2000" step="10" value="500"></div>
         <div class="cp-row"><span class="cp-label">Y amount (px)</span><input type="number" data-var="--p10-y-amount" data-unit="px" min="0" max="80" step="0.5" value="40"></div>
         <div class="cp-row"><span class="cp-label">Blur (ms)</span><input type="number" data-var="--p10-blur-dur" data-unit="ms" min="0" max="2000" step="10" value="500"></div>
         <div class="cp-row"><span class="cp-label">Blur from (px)</span><input type="number" data-var="--p10-blur-from" data-unit="px" min="0" max="80" step="1" value="10"></div>
         <div class="cp-row"><span class="cp-label">Blur out (px)</span><input type="number" data-var="--p10-blur-out-from" data-unit="px" min="0" max="80" step="1" value="4"></div>
-        <div class="cp-row"><span class="cp-label">Path (ms)</span><input type="number" data-var="--p10-path-dur" data-unit="ms" min="0" max="2000" step="10" value="550"></div>
+        <div class="cp-row"><span class="cp-label">Path (ms)</span><input type="number" data-var="--p10-path-dur" data-unit="ms" min="0" max="2000" step="10" value="500"></div>
         <div class="cp-row"><span class="cp-label">Path delay (ms)</span><input type="number" data-var="--p10-path-delay" data-unit="ms" min="0" max="1000" step="10" value="80"></div>
         <div class="cp-row"><span class="cp-label">Out (ms)</span><input type="number" data-var="--p10-out-dur" data-unit="ms" min="0" max="2000" step="10" value="500"></div>
         <div class="cp-row"><span class="cp-label">Out ease</span><select class="cp-ease" data-var="--p10-ease-out"></select></div>
@@ -2939,7 +2971,7 @@
           <span class="cp-section-title">16. Tabs sliding</span>
           <button type="button" class="cp-export">Export</button>
         </header>
-        <div class="cp-row"><span class="cp-label">Duration (ms)</span><input type="number" data-var="--p16-dur" data-unit="ms" min="0" max="2000" step="10" value="200"></div>
+        <div class="cp-row"><span class="cp-label">Duration (ms)</span><input type="number" data-var="--p16-dur" data-unit="ms" min="0" max="2000" step="10" value="250"></div>
         <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p16-ease"></select></div>
         <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p16-ease" spellcheck="false" aria-label="Ease value"></div>
       </section>
@@ -2964,7 +2996,7 @@
           <span class="cp-section-title">18. Texts reveal</span>
           <button type="button" class="cp-export">Export</button>
         </header>
-        <div class="cp-row"><span class="cp-label">Duration (ms)</span><input type="number" data-var="--p18-dur" data-unit="ms" min="0" max="2000" step="10" value="600"></div>
+        <div class="cp-row"><span class="cp-label">Duration (ms)</span><input type="number" data-var="--p18-dur" data-unit="ms" min="0" max="2000" step="10" value="500"></div>
         <div class="cp-row"><span class="cp-label">Distance (px)</span><input type="number" data-var="--p18-distance" data-unit="px" min="0" max="60" step="1" value="12"></div>
         <div class="cp-row"><span class="cp-label">Stagger (ms)</span><input type="number" data-var="--p18-stagger" data-unit="ms" min="0" max="1000" step="10" value="40"></div>
         <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p18-ease"></select></div>
