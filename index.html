@@ -5473,16 +5473,19 @@ export function StaggerReveal({ primary, secondary }) {
   <script type="text/plain" data-react-key="tok-duration">// Motion token — Duration
 // A small, consistent time scale shared across components (ms).
 export const duration = {
-  fast: 150,   // hovers, text/icon swaps, tooltips
-  base: 200,   // default for most state changes
-  slow: 300,   // card resize, layout shifts
-  reveal: 400, // entrances: panels, skeleton reveal
+  stagger: 40,   // per-item stagger offset
+  micro: 80,     // tooltip delay, shake segment
+  quick: 150,    // modal/dropdown close, text swap, tooltip in
+  fast: 250,     // icon swap, dropdown/modal open, tabs, page slide
+  medium: 350,   // panel close
+  slow: 400,     // panel open, skeleton reveal
+  verySlow: 500, // emphasis, badge appear, text reveal
 };
 
 // Usage — drive transitions from the token instead of magic numbers.
 export function Button({ children }) {
   return (
-    <button style={{ transition: `transform ${duration.base}ms ease` }}>
+    <button style={{ transition: `transform ${duration.fast}ms ease` }}>
       {children}
     </button>
   );
@@ -5490,17 +5493,20 @@ export function Button({ children }) {
 </script>
 
   <script type="text/plain" data-react-key="tok-easing">// Motion token — Easing
-// One "smooth decel" curve covers most UI motion; a springy curve
-// adds bounce for playful accents.
+// A smooth decel curve covers most UI motion; bouncy curves add
+// overshoot for playful accents.
 export const easing = {
-  out: "cubic-bezier(0.22, 1, 0.36, 1)",       // default: enter / settle
-  inOut: "ease-in-out",                         // symmetric swaps
-  spring: "cubic-bezier(0.34, 1.45, 0.64, 1)",  // bouncy pop
+  smoothOut: "cubic-bezier(0.22, 1, 0.36, 1)",       // modal/dropdown/panel, page slide, resize
+  inOut: "ease-in-out",                               // icon swap, text swap, text reveal
+  out: "ease-out",                                    // tooltip open / close
+  linear: "linear",                                   // shimmer, skeleton pulse, spinner
+  bounce: "cubic-bezier(0.34, 1.36, 0.64, 1)",        // badge pop open
+  bounceStrong: "cubic-bezier(0.34, 3.85, 0.64, 1)",  // bouncy hover-out
 };
 
 export function Card({ children }) {
   return (
-    <div style={{ transition: `transform 200ms ${easing.out}` }}>
+    <div style={{ transition: `transform 250ms ${easing.smoothOut}` }}>
       {children}
     </div>
   );
@@ -5511,9 +5517,11 @@ export function Card({ children }) {
 // How far an element travels. Keep it small — subtle offsets read as
 // "settling into place", not flying across the screen.
 export const distance = {
-  sm: 4,  // micro: hover lift, text swap
-  md: 8,  // default: slides, number pop-in
-  lg: 12, // pronounced: staggered reveals
+  micro: 4,   // text swap
+  small: 6,   // error shake (small segment)
+  base: 8,    // badge diagonal reveal, page slide, error shake (large)
+  medium: 12, // text reveal
+  large: 30,  // check badge appear
 };
 
 // Travel in, then settle to 0 once `shown` is true.
@@ -5521,8 +5529,8 @@ export function SlideIn({ shown, children }) {
   return (
     <div
       style={{
-        transform: `translateY(${shown ? 0 : distance.md}px)`,
-        transition: "transform 200ms ease",
+        transform: `translateY(${shown ? 0 : distance.base}px)`,
+        transition: "transform 250ms ease",
       }}
     >
       {children}
@@ -5534,16 +5542,17 @@ export function SlideIn({ shown, children }) {
   <script type="text/plain" data-react-key="tok-blur">// Motion token — Blur
 // Motion blur applied while an element moves, then cleared to 0 at rest.
 export const blur = {
-  base: 2, // standard motion blur
-  lg: 3,   // longer-travel slides
+  small: 2,  // panel reveal, icon swap, text swap, skeleton, number pop-in
+  medium: 3, // page slide, text reveal
+  large: 8,  // success check open
 };
 
 export function BlurIn({ shown, children }) {
   return (
     <div
       style={{
-        filter: `blur(${shown ? 0 : blur.base}px)`,
-        transition: "filter 200ms ease",
+        filter: `blur(${shown ? 0 : blur.small}px)`,
+        transition: "filter 250ms ease",
       }}
     >
       {children}
@@ -5553,20 +5562,21 @@ export function BlurIn({ shown, children }) {
 </script>
 
   <script type="text/plain" data-react-key="tok-scale">// Motion token — Scale
-// Size change on enter/exit. Surfaces grow in from just under 1;
-// hovered elements lift just over 1.
+// Size change on enter/exit. Surfaces grow in from just under 1.
 export const scale = {
-  in: 0.96,    // modal / dropdown / tooltip enter
-  hover: 1.05, // hover emphasis
+  large: 0.96,  // modal open / close
+  medium: 0.97, // dropdown open
+  small: 0.98,  // tooltip open
+  tiny: 0.99,   // dropdown close
 };
 
 export function Surface({ open, children }) {
   return (
     <div
       style={{
-        transform: `scale(${open ? 1 : scale.in})`,
+        transform: `scale(${open ? 1 : scale.large})`,
         opacity: open ? 1 : 0,
-        transition: "transform 200ms ease, opacity 200ms ease",
+        transition: "transform 250ms ease, opacity 250ms ease",
       }}
     >
       {children}
@@ -6854,15 +6864,18 @@ export function Surface({ open, children }) {
             "   How long a transition runs. Transitions.dev keeps a small,\n" +
             "   consistent time scale so motion feels coherent across the UI. */\n" +
             ":root {\n" +
-            "  --duration-fast:   150ms; /* hovers, text/icon swaps, tooltips */\n" +
-            "  --duration-base:   200ms; /* default for most state changes */\n" +
-            "  --duration-slow:   300ms; /* card resize, layout shifts */\n" +
-            "  --duration-reveal: 400ms; /* entrances: panels, skeleton reveal */\n" +
+            "  --duration-stagger:   40ms;  /* per-item stagger offset */\n" +
+            "  --duration-micro:     80ms;  /* tooltip delay, shake segment */\n" +
+            "  --duration-quick:     150ms; /* modal/dropdown close, text swap, tooltip in */\n" +
+            "  --duration-fast:      250ms; /* icon swap, dropdown/modal open, tabs, page slide */\n" +
+            "  --duration-medium:    350ms; /* panel close */\n" +
+            "  --duration-slow:      400ms; /* panel open, skeleton reveal */\n" +
+            "  --duration-very-slow: 500ms; /* emphasis, badge appear, text reveal */\n" +
             "}\n" +
             "\n" +
             "/* Apply it like any other value. */\n" +
             ".button {\n" +
-            "  transition: transform var(--duration-base) ease;\n" +
+            "  transition: transform var(--duration-fast) ease;\n" +
             "}"
         },
 
@@ -6870,16 +6883,19 @@ export function Surface({ open, children }) {
           name: "Easing",
           css:
             "/* Motion token — Easing\n" +
-            "   The acceleration curve. One \"smooth decel\" curve covers most\n" +
-            "   UI motion; a springy curve adds bounce for playful accents. */\n" +
+            "   The acceleration curve. A smooth decel curve covers most UI\n" +
+            "   motion; bouncy curves add overshoot for playful accents. */\n" +
             ":root {\n" +
-            "  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);   /* default: enter / settle */\n" +
-            "  --ease-in-out: ease-in-out;                       /* symmetric swaps */\n" +
-            "  --ease-spring: cubic-bezier(0.34, 1.45, 0.64, 1); /* bouncy pop */\n" +
+            "  --ease-smooth-out:    cubic-bezier(0.22, 1, 0.36, 1);    /* modal/dropdown/panel, page slide, resize */\n" +
+            "  --ease-in-out:        ease-in-out;                        /* icon swap, text swap, text reveal */\n" +
+            "  --ease-out:           ease-out;                           /* tooltip open / close */\n" +
+            "  --ease-linear:        linear;                             /* shimmer, skeleton pulse, spinner */\n" +
+            "  --ease-bounce:        cubic-bezier(0.34, 1.36, 0.64, 1);  /* badge pop open */\n" +
+            "  --ease-bounce-strong: cubic-bezier(0.34, 3.85, 0.64, 1);  /* bouncy hover-out */\n" +
             "}\n" +
             "\n" +
             ".card {\n" +
-            "  transition: transform 200ms var(--ease-out);\n" +
+            "  transition: transform var(--duration-fast) var(--ease-smooth-out);\n" +
             "}"
         },
 
@@ -6890,15 +6906,17 @@ export function Surface({ open, children }) {
             "   How far an element travels. Keep it small — subtle offsets\n" +
             "   read as \"settling into place\", not flying across the screen. */\n" +
             ":root {\n" +
-            "  --distance-sm:  4px; /* micro: hover lift, text swap */\n" +
-            "  --distance-md:  8px; /* default: slides, number pop-in */\n" +
-            "  --distance-lg: 12px; /* pronounced: staggered reveals */\n" +
+            "  --distance-micro:   4px; /* text swap */\n" +
+            "  --distance-small:   6px; /* error shake (small segment) */\n" +
+            "  --distance-base:    8px; /* badge diagonal reveal, page slide, error shake (large) */\n" +
+            "  --distance-medium: 12px; /* text reveal */\n" +
+            "  --distance-large:  30px; /* check badge appear */\n" +
             "}\n" +
             "\n" +
             "/* Travel in, then settle to 0 on the resting/active state. */\n" +
             ".item {\n" +
-            "  transform: translateY(var(--distance-md));\n" +
-            "  transition: transform 200ms ease;\n" +
+            "  transform: translateY(var(--distance-base));\n" +
+            "  transition: transform var(--duration-fast) ease;\n" +
             "}\n" +
             ".item.is-in { transform: translateY(0); }"
         },
@@ -6910,13 +6928,14 @@ export function Surface({ open, children }) {
             "   Motion blur applied while an element moves, then cleared to 0\n" +
             "   at rest. Softens fast travel and sells the sense of speed. */\n" +
             ":root {\n" +
-            "  --blur-base: 2px; /* standard motion blur */\n" +
-            "  --blur-lg:   3px; /* longer-travel slides */\n" +
+            "  --blur-small:  2px; /* panel reveal, icon swap, text swap, skeleton, number pop-in */\n" +
+            "  --blur-medium: 3px; /* page slide, text reveal */\n" +
+            "  --blur-large:  8px; /* success check open */\n" +
             "}\n" +
             "\n" +
             ".item {\n" +
-            "  filter: blur(var(--blur-base));\n" +
-            "  transition: filter 200ms ease;\n" +
+            "  filter: blur(var(--blur-small));\n" +
+            "  transition: filter var(--duration-fast) ease;\n" +
             "}\n" +
             ".item.is-in { filter: blur(0); }"
         },
@@ -6925,17 +6944,18 @@ export function Surface({ open, children }) {
           name: "Scale",
           css:
             "/* Motion token — Scale\n" +
-            "   Size change on enter/exit. Surfaces grow in from just under 1;\n" +
-            "   hovered elements lift just over 1. */\n" +
+            "   Size change on enter/exit. Surfaces grow in from just under 1. */\n" +
             ":root {\n" +
-            "  --scale-in:    0.96; /* modal / dropdown / tooltip enter */\n" +
-            "  --scale-hover: 1.05; /* hover emphasis */\n" +
+            "  --scale-large:  0.96; /* modal open / close */\n" +
+            "  --scale-medium: 0.97; /* dropdown open */\n" +
+            "  --scale-small:  0.98; /* tooltip open */\n" +
+            "  --scale-tiny:   0.99; /* dropdown close */\n" +
             "}\n" +
             "\n" +
             ".surface {\n" +
-            "  transform: scale(var(--scale-in));\n" +
+            "  transform: scale(var(--scale-large));\n" +
             "  opacity: 0;\n" +
-            "  transition: transform 200ms ease, opacity 200ms ease;\n" +
+            "  transition: transform var(--duration-fast) ease, opacity var(--duration-fast) ease;\n" +
             "}\n" +
             ".surface.is-open { transform: scale(1); opacity: 1; }"
         }
