@@ -30,7 +30,7 @@ Add more lines by adding `.t-stagger-line--N` with
 | `--stagger-distance` | `12px` | sourced from `--p18-distance` |
 | `--stagger-stagger` | `40ms` | sourced from `--p18-stagger` |
 | `--stagger-blur` | `3px` | sourced from `--p18-blur` |
-| `--stagger-ease` | `ease-in-out` | sourced from `--p18-ease` |
+| `--stagger-ease` | `cubic-bezier(0.22, 1, 0.36, 1)` | sourced from `--p18-ease` |
 
 The `:root` defaults below match the live tuning on [transitions.dev](https://transitions.dev). Drop them into your global stylesheet once — every transition in this skill reads from semantic names like these, so multiple transitions can share a single `:root` block.
 
@@ -40,7 +40,7 @@ The `:root` defaults below match the live tuning on [transitions.dev](https://tr
   --stagger-distance: 12px;
   --stagger-stagger: 40ms;
   --stagger-blur: 3px;
-  --stagger-ease: ease-in-out;
+  --stagger-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 ```
 
