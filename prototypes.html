@@ -337,6 +337,70 @@
       --p18-stagger:         var(--duration-stagger);
       --p18-blur:            var(--blur-medium);
       --p18-ease:            var(--ease-smooth-out);
+
+      /* P19 — Tilt card (hover 3D tilt + cursor-tracked glare).
+         The card follows the cursor 1:1 while hovered (short
+         --p19-follow-dur for a touch of smoothing) and eases back
+         to flat over --p19-return-dur on leave. rotateX/Y + glare
+         position are written live from JS into the vars below. */
+      --p19-max:             40;
+      --p19-speed-sens:      0;
+      --p19-perspective:     1000px;
+      --p19-return-dur:      1000ms;
+      --p19-return-ease:     var(--ease-smooth-out);
+      --p19-follow-dur:      400ms;
+      --p19-follow-ease:     var(--ease-smooth-out);
+      --p19-glare-opacity:   0.32;
+      --p19-glare-fade:      300ms;
+      --p19-glare-ease:      var(--ease-smooth-out);
+      --p19-rx:              0deg;
+      --p19-ry:              0deg;
+      --p19-gx:              50%;
+      --p19-gy:              50%;
+
+      /* P20 — Plus button morphs into a menu.
+         Surface morph uses --p20-open/close-dur + --p20-ease. Content
+         slide has separate in/out dist, duration and easing tokens. */
+      --p20-open-dur:        350ms;
+      --p20-close-dur:       250ms;
+      --p20-ease:            cubic-bezier(0.34, 1.25, 0.64, 1);
+      --p20-close-ease:      cubic-bezier(0.22, 1, 0.36, 1);
+      --p20-w-closed:        40px;
+      --p20-h-closed:        40px;
+      --p20-r-closed:        40px;
+      --p20-w-open:          183px;
+      --p20-h-open:          172px;
+      --p20-r-open:          20px;
+      --p20-r-open-dur:      350ms;
+      --p20-r-open-ease:     cubic-bezier(0.34, 1.25, 0.64, 1);
+      --p20-r-close-dur:     250ms;
+      --p20-r-close-ease:    cubic-bezier(0.22, 1, 0.36, 1);
+      --p20-fade-dur:        200ms;
+      --p20-fade-ease:       cubic-bezier(0.22, 1, 0.36, 1);
+      --p20-slide-in-shift:  40px;
+      --p20-slide-in-dur:    350ms;
+      --p20-slide-in-ease:   cubic-bezier(0.22, 1, 0.36, 1);
+      --p20-slide-out-shift: 40px;
+      --p20-slide-out-dur:   350ms;
+      --p20-slide-out-ease:  cubic-bezier(0.22, 1, 0.36, 1);
+      --p20-scale:           var(--scale-medium);
+      --p20-blur:            var(--blur-small);
+      --p20-rotate:          45deg;
+      /* Closing anticipation: the circular button nudges diagonally
+         (bottom-right) by this distance and settles back as the menu
+         collapses into it. */
+      --p20-close-anticip:      5px;
+      --p20-close-anticip-dur:  700ms;
+      --p20-close-anticip-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+      /* P21 — Accordion expand/collapse with animated chevron.
+         The panel animates grid-template-rows 0fr ↔ 1fr (clean
+         height transition, no JS measuring) while the chevron rotates
+         180deg and its stroke re-draws on each toggle. */
+      --p21-expand-dur:      250ms;
+      --p21-collapse-dur:    250ms;
+      --p21-chevron-dur:     250ms;
+      --p21-ease:            var(--ease-smooth-out);
     }
 
     * {
@@ -2253,6 +2317,388 @@
     }
 
     /* ============================================================ */
+    /* Prototype 19 — Tilt card (3D hover tilt + cursor glare)       */
+    /* ============================================================ */
+    /* Flat hit-area wrapper. The pointer is tracked on this element
+       (which never transforms), so the tilting card can't rotate its
+       own edges out from under the cursor — kills the edge flicker. */
+    .p19-tilt {
+      width: 192px;
+      height: 106px;
+    }
+    /* Visa "Ocean Blue" card (Figma 1964:935): 192×106, #6a6a6a,
+       12px radius. The whole card tilts toward the cursor with a
+       white glare sheen following the pointer. */
+    .p19-card {
+      position: relative;
+      width: 192px;
+      height: 106px;
+      border-radius: 12px;
+      background: #6a6a6a;
+      box-shadow:
+        0 2px 6px 0 rgba(0, 0, 0, 0.19),
+        0 4px 42px 0 rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+      cursor: pointer;
+      color: #ffffff;
+      transform:
+        perspective(var(--p19-perspective))
+        rotateX(var(--p19-rx))
+        rotateY(var(--p19-ry));
+      transform-style: preserve-3d;
+      /* Default (leave) transition: ease back to flat. While the
+         pointer moves, .is-tilting swaps in a short linear follow. */
+      transition: transform var(--p19-return-dur) var(--p19-return-ease);
+      will-change: transform;
+    }
+    .p19-card.is-tilting {
+      transition: transform var(--p19-follow-dur) var(--p19-follow-ease);
+    }
+    /* "Effects" gradient sheen (Figma Gousian Layer). */
+    .p19-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.14),
+        rgba(255, 255, 255, 0) 42%
+      );
+    }
+    .p19-card-body { position: absolute; inset: 0; }
+    .p19-card-body > * { position: absolute; white-space: nowrap; }
+    .p19-credit {
+      left: 13.76px;
+      top: 14.05px;
+      font-family: var(--font-sans);
+      font-size: 9.17px;
+      line-height: 13.755px;
+      opacity: 0.9;
+    }
+    .p19-visa {
+      right: 13.76px;
+      top: 11px;
+      font-family: var(--font-sans);
+      font-style: italic;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+    }
+    .p19-name {
+      left: 13.76px;
+      top: 64.76px;
+      font-family: var(--font-mono);
+      font-size: 9.17px;
+      line-height: 13.755px;
+    }
+    .p19-num {
+      left: 13.76px;
+      top: 78.52px;
+      font-family: var(--font-mono);
+      font-size: 9.17px;
+      line-height: 13.755px;
+    }
+    /* Cursor-tracked glare. Rather than one hard circle, several soft
+       *elliptical* light shapes of differing proportions and slight
+       offsets are layered at (and around) the pointer so the highlight
+       reads like real, diffuse light spilling across the surface — not
+       a perfect circle. A stretched hot core, a wider soft halo skewed
+       the other way, a broad ambient wash, and a small offset glint.
+       mix-blend-mode:screen lets them add like light on the dark card.
+       Position (gx/gy) updates instantly; opacity fades smoothly in/out
+       on hover and is never recentred on leave. */
+    .p19-glare {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      mix-blend-mode: screen;
+      background:
+        radial-gradient(circle 95px at var(--p19-gx) var(--p19-gy),
+          rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.06) 52%,
+          rgba(255, 255, 255, 0) 84%),
+        radial-gradient(circle 200px at var(--p19-gx) var(--p19-gy),
+          rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.04) 58%,
+          rgba(255, 255, 255, 0) 78%),
+        radial-gradient(circle 360px at var(--p19-gx) var(--p19-gy),
+          rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 88%),
+        radial-gradient(circle 55px
+          at calc(var(--p19-gx) + 14px) calc(var(--p19-gy) - 17px),
+          rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 74%);
+      transition: opacity var(--p19-glare-fade) var(--p19-glare-ease);
+    }
+    .p19-tilt.is-hover .p19-glare {
+      opacity: var(--p19-glare-opacity);
+    }
+
+    /* ============================================================ */
+    /* Prototype 20 — Plus button morphs into a menu                 */
+    /* ============================================================ */
+    /* Anchor reserves the open menu's footprint and pins the morph to
+       its bottom-right corner, so the surface grows up-and-left out of
+       the plus button (which stays put in the corner). */
+    .p20-anchor {
+      position: relative;
+      width: var(--p20-w-open);
+      height: var(--p20-h-open);
+    }
+    .p20-morph {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: var(--p20-w-closed);
+      height: var(--p20-h-closed);
+      border-radius: var(--p20-r-closed);
+      background: var(--modal-bg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      /* Base (closed / closing) timing uses the close duration + close
+         ease; the open state overrides with the open timing below. */
+      transition:
+        width var(--p20-close-dur) var(--p20-close-ease),
+        height var(--p20-close-dur) var(--p20-close-ease),
+        border-radius var(--p20-r-close-dur) var(--p20-r-close-ease);
+    }
+    .p20-morph[data-open="true"] {
+      width: var(--p20-w-open);
+      height: var(--p20-h-open);
+      border-radius: var(--p20-r-open);
+      transition:
+        width var(--p20-open-dur) var(--p20-ease),
+        height var(--p20-open-dur) var(--p20-ease),
+        border-radius var(--p20-r-open-dur) var(--p20-r-open-ease);
+    }
+    /* Close anticipation — JS adds .is-closing on close; the circular
+       button leans by --p20-close-anticip then settles back. */
+    .p20-morph.is-closing {
+      animation: p20-close-anticip
+        var(--p20-close-anticip-dur) var(--p20-close-anticip-ease);
+    }
+    @keyframes p20-close-anticip {
+      0%   { transform: translate(0, 0); }
+      35%  { transform: translate(var(--p20-close-anticip), var(--p20-close-anticip)); }
+      100% { transform: translate(0, 0); }
+    }
+    /* Plus is a fixed 40×40 button anchored bottom-right. On open the
+       button fades out, slides 20px left and blurs (small); the icon
+       itself scales down (medium) + rotates 45° into an × about its own
+       centre. Splitting the slide (button) from the scale/rotate (icon)
+       keeps the rotation pivot exactly at the icon centre. Close
+       reverses each. */
+    .p20-plus {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: var(--p20-w-closed);
+      height: var(--p20-h-closed);
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--btn-text);
+      cursor: pointer;
+      opacity: 1;
+      transform: translateX(0);
+      filter: blur(0);
+      -webkit-tap-highlight-color: transparent;
+      /* Closing: slide-out timing applies when returning to rest. */
+      transition:
+        opacity var(--p20-fade-dur) var(--p20-fade-ease),
+        transform var(--p20-slide-out-dur) var(--p20-slide-out-ease),
+        filter var(--p20-fade-dur) var(--p20-fade-ease);
+    }
+    /* Hover overlay: a 2% black wash over the circular button. Drawn as
+       a ::before so it doesn't touch the button's transform; circular to
+       match the closed 40px button. */
+    .p20-plus::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.02);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--p20-fade-dur) var(--p20-fade-ease);
+    }
+    .p20-plus:hover::before { opacity: 1; }
+    .p20-plus svg {
+      display: block;
+      position: relative;
+      transform: scale(1) rotate(0deg);
+      transform-origin: center;
+      transition: transform var(--p20-slide-out-dur) var(--p20-slide-out-ease);
+    }
+    .p20-morph[data-open="true"] .p20-plus {
+      opacity: 0;
+      transform: translateX(calc(-1 * var(--p20-slide-in-shift)));
+      filter: blur(var(--p20-blur));
+      pointer-events: none;
+      /* Opening: slide-in timing. */
+      transition:
+        opacity var(--p20-fade-dur) var(--p20-fade-ease),
+        transform var(--p20-slide-in-dur) var(--p20-slide-in-ease),
+        filter var(--p20-fade-dur) var(--p20-fade-ease);
+    }
+    .p20-morph[data-open="true"] .p20-plus svg {
+      transform: scale(var(--p20-scale)) rotate(var(--p20-rotate));
+      transition: transform var(--p20-slide-in-dur) var(--p20-slide-in-ease);
+    }
+    /* Menu content (Figma 1964:886): 4 grey bars, 14px tall, 4px
+       radius, 20px gap, inset 20px top / 23px left. */
+    .p20-menu {
+      position: absolute;
+      inset: 0;
+      padding: 20px 0 0 23px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      opacity: 0;
+      transform: translateX(var(--p20-slide-out-shift)) scale(var(--p20-scale));
+      filter: blur(var(--p20-blur));
+      pointer-events: none;
+      /* Closing: slide-out timing. */
+      transition:
+        opacity var(--p20-fade-dur) var(--p20-fade-ease),
+        transform var(--p20-slide-out-dur) var(--p20-slide-out-ease),
+        filter var(--p20-fade-dur) var(--p20-fade-ease);
+    }
+    .p20-morph[data-open="true"] .p20-menu {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      filter: blur(0);
+      pointer-events: auto;
+      /* Opening: slide-in timing, synced with the surface morph (no
+         delay) so the content expands together with the card. */
+      transition:
+        opacity var(--p20-fade-dur) var(--p20-fade-ease),
+        transform var(--p20-slide-in-dur) var(--p20-slide-in-ease),
+        filter var(--p20-fade-dur) var(--p20-fade-ease);
+    }
+    .p20-bar {
+      height: 14px;
+      border-radius: 4px;
+      background: #eeeeef;
+    }
+    .p20-menu .p20-bar:nth-child(1) { width: 77px; }
+    .p20-menu .p20-bar:nth-child(2) { width: 95px; }
+    .p20-menu .p20-bar:nth-child(3) { width: 68px; }
+    .p20-menu .p20-bar:nth-child(4) { width: 95px; }
+
+    /* ============================================================ */
+    /* Prototype 21 — Accordion expand/collapse + animated chevron   */
+    /* ============================================================ */
+    /* Accordion (Figma 1964:863 / 1964:911): 261px wide, single
+       "Appearance" item, 56px header, 12px radius, --shadow.
+       The container reserves the expanded height (166px) and top-aligns
+       the item, so the header keeps a fixed position whether the panel
+       is open or closed (no recentre / reflow on toggle). */
+    .p21-accordion {
+      width: 261px;
+      height: 166px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+    .p21-item {
+      background: var(--modal-bg);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .p21-head {
+      appearance: none;
+      width: 100%;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 22px 0 24px;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 13px;
+      line-height: 1.4;
+      color: #0f0f0f;
+      text-align: left;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .p21-chevron {
+      flex: 0 0 auto;
+      display: inline-flex;
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+    }
+    .p21-chevron svg { display: block; }
+    /* The chevron does NOT rotate — instead the path itself morphs from
+       a downward "v" to an upward "^" by animating the SVG `d` property.
+       Both paths share the same M/L/L command structure so the vertices
+       interpolate cleanly: the middle point travels top↔bottom while the
+       two ends move the opposite way. */
+    .p21-chevron path {
+      d: path("M4 6.5L8 10.5L12 6.5");
+      transition: d var(--p21-chevron-dur) var(--p21-ease);
+    }
+    .p21-item[data-open="true"] .p21-chevron path {
+      d: path("M4 9.5L8 5.5L12 9.5");
+    }
+    /* grid-template-rows 0fr → 1fr gives a clean height animation
+       with no JS measurement. The inner element clips the content. */
+    .p21-panel {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows var(--p21-collapse-dur) var(--p21-ease);
+    }
+    .p21-item[data-open="true"] .p21-panel {
+      grid-template-rows: 1fr;
+      transition: grid-template-rows var(--p21-expand-dur) var(--p21-ease);
+    }
+    .p21-panel-inner {
+      overflow: hidden;
+      opacity: 0;
+      filter: blur(var(--blur-small));
+      transition:
+        opacity var(--p21-collapse-dur) var(--p21-ease),
+        filter var(--p21-collapse-dur) var(--p21-ease);
+    }
+    .p21-item[data-open="true"] .p21-panel-inner {
+      opacity: 1;
+      filter: blur(0);
+      transition:
+        opacity var(--p21-expand-dur) var(--p21-ease),
+        filter var(--p21-expand-dur) var(--p21-ease);
+    }
+    /* Content rows: label bar (left) + value bar (right), 14px tall,
+       4px radius, 20px gap; 24px side / bottom padding. */
+    .p21-rows {
+      padding: 4px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .p21-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .p21-bar {
+      height: 14px;
+      border-radius: 4px;
+      background: #eeeeef;
+    }
+    .p21-row:nth-child(1) .p21-bar:nth-child(1) { width: 77px; }
+    .p21-row:nth-child(1) .p21-bar:nth-child(2) { width: 42px; }
+    .p21-row:nth-child(2) .p21-bar:nth-child(1) { width: 93px; }
+    .p21-row:nth-child(2) .p21-bar:nth-child(2) { width: 42px; }
+    .p21-row:nth-child(3) .p21-bar:nth-child(1) { width: 57px; }
+    .p21-row:nth-child(3) .p21-bar:nth-child(2) { width: 32px; }
+
+    /* ============================================================ */
     /* Reduced motion                                                */
     /* ============================================================ */
     @media (prefers-reduced-motion: reduce) {
@@ -2274,7 +2720,10 @@
       .p15-shimmer,
       .p16-indicator,
       .p17-tooltip,
-      .p18-line {
+      .p18-line,
+      .p19-card,
+      .p20-morph .p20-plus,
+      .p20-morph .p20-menu {
         transform: none !important;
         filter: none !important;
       }
@@ -2690,6 +3139,80 @@
         <button class="btn" data-proto="18">Animate</button>
       </div>
     </section>
+
+    <!-- ================================================== -->
+    <!-- 19. Card hover tilt (3D) + cursor glare             -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">19.pototype</p>
+      <div class="stage">
+        <div class="p19-tilt" id="p19-tilt">
+          <div class="p19-card" id="p19-card">
+            <div class="p19-card-body">
+              <span class="p19-credit">Credit</span>
+              <span class="p19-visa">VISA</span>
+              <span class="p19-name">John Smith</span>
+              <span class="p19-num">4111 - 1111 - 1111 - 1111</span>
+            </div>
+            <div class="p19-glare" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- 20. Plus button morphs into menu                    -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">20.pototype</p>
+      <div class="stage">
+        <div class="p20-anchor">
+          <div class="p20-morph" id="p20-morph" data-open="false">
+            <div class="p20-menu" role="menu" aria-hidden="true">
+              <span class="p20-bar" role="menuitem"></span>
+              <span class="p20-bar" role="menuitem"></span>
+              <span class="p20-bar" role="menuitem"></span>
+              <span class="p20-bar" role="menuitem"></span>
+            </div>
+            <button type="button" class="p20-plus" id="p20-plus" aria-label="Open menu" aria-expanded="false">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- 21. Accordion expand/collapse + animated chevron    -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">21.pototype</p>
+      <div class="stage">
+        <div class="p21-accordion" id="p21-accordion">
+          <div class="p21-item" data-open="false">
+            <button type="button" class="p21-head" aria-expanded="false">
+              <span class="p21-title">Appearance</span>
+              <span class="p21-chevron" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 6.5L8 10.5L12 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+            </button>
+            <div class="p21-panel">
+              <div class="p21-panel-inner">
+                <div class="p21-rows">
+                  <div class="p21-row"><span class="p21-bar"></span><span class="p21-bar"></span></div>
+                  <div class="p21-row"><span class="p21-bar"></span><span class="p21-bar"></span></div>
+                  <div class="p21-row"><span class="p21-bar"></span><span class="p21-bar"></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- ================================================== -->
@@ -3001,6 +3524,76 @@
         <div class="cp-row"><span class="cp-label">Stagger (ms)</span><input type="number" data-var="--p18-stagger" data-unit="ms" min="0" max="1000" step="10" value="40"></div>
         <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p18-ease"></select></div>
         <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p18-ease" spellcheck="false" aria-label="Ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">19. Tilt card</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Max tilt (deg)</span><input type="number" data-var="--p19-max" data-unit="" min="0" max="45" step="1" value="40"></div>
+        <div class="cp-row"><span class="cp-label">Speed sens</span><input type="number" data-var="--p19-speed-sens" data-unit="" min="0" max="3" step="0.05" value="0"></div>
+        <div class="cp-row"><span class="cp-label">Perspective (px)</span><input type="number" data-var="--p19-perspective" data-unit="px" min="200" max="3000" step="50" value="1000"></div>
+        <div class="cp-row"><span class="cp-label">Return (ms)</span><input type="number" data-var="--p19-return-dur" data-unit="ms" min="0" max="2000" step="10" value="1000"></div>
+        <div class="cp-row"><span class="cp-label">Return ease</span><select class="cp-ease" data-var="--p19-return-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p19-return-ease" spellcheck="false" aria-label="Return ease value"></div>
+        <div class="cp-row"><span class="cp-label">Follow (ms)</span><input type="number" data-var="--p19-follow-dur" data-unit="ms" min="0" max="2000" step="10" value="400"></div>
+        <div class="cp-row"><span class="cp-label">Follow ease</span><select class="cp-ease" data-var="--p19-follow-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p19-follow-ease" spellcheck="false" aria-label="Follow ease value"></div>
+        <div class="cp-row"><span class="cp-label">Glare opacity</span><input type="number" data-var="--p19-glare-opacity" data-unit="" min="0" max="1" step="0.01" value="0.32"></div>
+        <div class="cp-row"><span class="cp-label">Glare fade (ms)</span><input type="number" data-var="--p19-glare-fade" data-unit="ms" min="0" max="2000" step="10" value="300"></div>
+        <div class="cp-row"><span class="cp-label">Glare ease</span><select class="cp-ease" data-var="--p19-glare-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p19-glare-ease" spellcheck="false" aria-label="Glare ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">20. Plus to menu morph</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Open (ms)</span><input type="number" data-var="--p20-open-dur" data-unit="ms" min="0" max="2000" step="10" value="350"></div>
+        <div class="cp-row"><span class="cp-label">Close (ms)</span><input type="number" data-var="--p20-close-dur" data-unit="ms" min="0" max="2000" step="10" value="250"></div>
+        <div class="cp-row"><span class="cp-label">Fade (ms)</span><input type="number" data-var="--p20-fade-dur" data-unit="ms" min="0" max="1000" step="10" value="200"></div>
+        <div class="cp-row"><span class="cp-label">Fade ease</span><select class="cp-ease" data-var="--p20-fade-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p20-fade-ease" spellcheck="false" aria-label="Fade ease value"></div>
+        <div class="cp-row"><span class="cp-label">Slide in dist (px)</span><input type="number" data-var="--p20-slide-in-shift" data-unit="px" min="0" max="80" step="1" value="40"></div>
+        <div class="cp-row"><span class="cp-label">Slide in (ms)</span><input type="number" data-var="--p20-slide-in-dur" data-unit="ms" min="0" max="1000" step="10" value="350"></div>
+        <div class="cp-row"><span class="cp-label">Slide in ease</span><select class="cp-ease" data-var="--p20-slide-in-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p20-slide-in-ease" spellcheck="false" aria-label="Slide in ease value"></div>
+        <div class="cp-row"><span class="cp-label">Slide out dist (px)</span><input type="number" data-var="--p20-slide-out-shift" data-unit="px" min="0" max="80" step="1" value="40"></div>
+        <div class="cp-row"><span class="cp-label">Slide out (ms)</span><input type="number" data-var="--p20-slide-out-dur" data-unit="ms" min="0" max="1000" step="10" value="350"></div>
+        <div class="cp-row"><span class="cp-label">Slide out ease</span><select class="cp-ease" data-var="--p20-slide-out-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p20-slide-out-ease" spellcheck="false" aria-label="Slide out ease value"></div>
+        <div class="cp-row"><span class="cp-label">Close anticip (px)</span><input type="number" data-var="--p20-close-anticip" data-unit="px" min="-40" max="40" step="1" value="5"></div>
+        <div class="cp-row"><span class="cp-label">Close anticip (ms)</span><input type="number" data-var="--p20-close-anticip-dur" data-unit="ms" min="0" max="2000" step="10" value="700"></div>
+        <div class="cp-row"><span class="cp-label">Close anticip ease</span><select class="cp-ease" data-var="--p20-close-anticip-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p20-close-anticip-ease" spellcheck="false" aria-label="Close anticip ease value"></div>
+        <div class="cp-row"><span class="cp-label">Rotate (deg)</span><input type="number" data-var="--p20-rotate" data-unit="deg" min="-180" max="180" step="5" value="45"></div>
+        <div class="cp-row"><span class="cp-label">Icon scale</span><input type="number" data-var="--p20-scale" data-unit="" min="0" max="1.5" step="0.01" value="0.97"></div>
+        <div class="cp-row"><span class="cp-label">Radius closed (px)</span><input type="number" data-var="--p20-r-closed" data-unit="px" min="0" max="40" step="1" value="40"></div>
+        <div class="cp-row"><span class="cp-label">Radius open (px)</span><input type="number" data-var="--p20-r-open" data-unit="px" min="0" max="40" step="1" value="20"></div>
+        <div class="cp-row"><span class="cp-label">Radius open (ms)</span><input type="number" data-var="--p20-r-open-dur" data-unit="ms" min="0" max="2000" step="10" value="350"></div>
+        <div class="cp-row"><span class="cp-label">Radius open ease</span><select class="cp-ease" data-var="--p20-r-open-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p20-r-open-ease" spellcheck="false" aria-label="Radius open ease value"></div>
+        <div class="cp-row"><span class="cp-label">Radius close (ms)</span><input type="number" data-var="--p20-r-close-dur" data-unit="ms" min="0" max="2000" step="10" value="250"></div>
+        <div class="cp-row"><span class="cp-label">Radius close ease</span><select class="cp-ease" data-var="--p20-r-close-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p20-r-close-ease" spellcheck="false" aria-label="Radius close ease value"></div>
+        <div class="cp-row"><span class="cp-label">Morph open ease</span><select class="cp-ease" data-var="--p20-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p20-ease" spellcheck="false" aria-label="Morph open ease value"></div>
+        <div class="cp-row"><span class="cp-label">Morph close ease</span><select class="cp-ease" data-var="--p20-close-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p20-close-ease" spellcheck="false" aria-label="Morph close ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">21. Accordion</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Expand (ms)</span><input type="number" data-var="--p21-expand-dur" data-unit="ms" min="0" max="2000" step="10" value="250"></div>
+        <div class="cp-row"><span class="cp-label">Collapse (ms)</span><input type="number" data-var="--p21-collapse-dur" data-unit="ms" min="0" max="2000" step="10" value="250"></div>
+        <div class="cp-row"><span class="cp-label">Chevron (ms)</span><input type="number" data-var="--p21-chevron-dur" data-unit="ms" min="0" max="2000" step="10" value="250"></div>
+        <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p21-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p21-ease" spellcheck="false" aria-label="Ease value"></div>
       </section>
 
     </div>
@@ -3525,6 +4118,156 @@
 
       // --- Prototype 18: Stagger reveal ----------------------
       const p18Text = document.getElementById("p18-text");
+
+      // --- Prototype 19: Card hover tilt (3D) + cursor glare --
+      // While the pointer is over the card we write rotateX/Y and
+      // the glare position straight into CSS vars. Tilt magnitude
+      // scales with cursor speed (--p19-speed-sens): a fast approach
+      // or sweep yields a larger tilt, a slow drift a subtler one.
+      // Skipped on touch (phantom hover) and reduced motion.
+      (function initP19() {
+        const tilt = document.getElementById("p19-tilt");
+        const card = document.getElementById("p19-card");
+        if (!tilt || !card) return;
+        const fine = window.matchMedia("(hover: hover) and (pointer: fine)");
+        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+        let enabled = fine.matches && !reduce.matches;
+
+        const SPEED_REF = 1.2;   // px/ms → full tilt when sens = 1
+        const SPEED_MIN = 0.15;  // tilt scale at rest / very slow
+        const SPEED_SMOOTH = 0.72;
+
+        let lastX = null;
+        let lastY = null;
+        let lastT = null;
+        let speedSmoothed = 0;
+
+        function readNum(prop, fallback) {
+          const v = parseFloat(getComputedStyle(card).getPropertyValue(prop));
+          return isNaN(v) ? fallback : v;
+        }
+        function readMax() {
+          return readNum("--p19-max", 40);
+        }
+        function speedTiltScale() {
+          const sens = readNum("--p19-speed-sens", 0);
+          if (sens <= 0) return 1;
+          const t = Math.min(1, (speedSmoothed * sens) / SPEED_REF);
+          return SPEED_MIN + (1 - SPEED_MIN) * t;
+        }
+        function reset() {
+          tilt.classList.remove("is-hover");
+          card.classList.remove("is-tilting");
+          card.style.setProperty("--p19-rx", "0deg");
+          card.style.setProperty("--p19-ry", "0deg");
+          lastX = null;
+          lastY = null;
+          lastT = null;
+          speedSmoothed = 0;
+        }
+        tilt.addEventListener("pointerenter", function (e) {
+          if (!enabled) return;
+          lastX = e.clientX;
+          lastY = e.clientY;
+          lastT = performance.now();
+          speedSmoothed = 0;
+        });
+        tilt.addEventListener("pointermove", function (e) {
+          if (!enabled) return;
+          const now = performance.now();
+          if (lastT != null && lastX != null && lastY != null) {
+            const dt = now - lastT;
+            if (dt > 0) {
+              const speed = Math.hypot(e.clientX - lastX, e.clientY - lastY) / dt;
+              speedSmoothed = speedSmoothed * SPEED_SMOOTH + speed * (1 - SPEED_SMOOTH);
+            }
+          }
+          lastX = e.clientX;
+          lastY = e.clientY;
+          lastT = now;
+
+          const rect = tilt.getBoundingClientRect();
+          const px = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          const py = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+          const max = readMax() * speedTiltScale();
+          tilt.classList.add("is-hover");
+          card.classList.add("is-tilting");
+          card.style.setProperty("--p19-ry", ((px - 0.5) * max).toFixed(2) + "deg");
+          card.style.setProperty("--p19-rx", ((0.5 - py) * max).toFixed(2) + "deg");
+          card.style.setProperty("--p19-gx", (px * 100).toFixed(1) + "%");
+          card.style.setProperty("--p19-gy", (py * 100).toFixed(1) + "%");
+        });
+        tilt.addEventListener("pointerleave", reset);
+
+        function refresh() {
+          enabled = fine.matches && !reduce.matches;
+          reset();
+        }
+        if (fine.addEventListener) {
+          fine.addEventListener("change", refresh);
+          reduce.addEventListener("change", refresh);
+        }
+      })();
+
+      // --- Prototype 20: Plus button morphs into a menu -------
+      // Clicking the plus toggles data-open on the morph container;
+      // CSS animates the surface size/radius and cross-fades the
+      // plus ↔ menu. The plus is pointer-events:none while open, so
+      // closing happens via an outside click or Escape.
+      (function initP20() {
+        const morph = document.getElementById("p20-morph");
+        const plus = document.getElementById("p20-plus");
+        if (!morph || !plus) return;
+
+        function setOpen(open) {
+          const wasOpen = morph.getAttribute("data-open") === "true";
+          morph.setAttribute("data-open", open ? "true" : "false");
+          plus.setAttribute("aria-expanded", open ? "true" : "false");
+          const menu = morph.querySelector(".p20-menu");
+          if (menu) menu.setAttribute("aria-hidden", open ? "false" : "true");
+          // Play the close anticipation only on an actual open→close.
+          morph.classList.remove("is-closing");
+          if (!open && wasOpen) {
+            // Force reflow so the animation can replay on rapid toggles.
+            void morph.offsetWidth;
+            morph.classList.add("is-closing");
+          }
+        }
+        morph.addEventListener("animationend", function (e) {
+          if (e.target === morph) morph.classList.remove("is-closing");
+        });
+        plus.addEventListener("click", function (e) {
+          e.stopPropagation();
+          setOpen(morph.getAttribute("data-open") !== "true");
+        });
+        document.addEventListener("click", function (e) {
+          if (morph.getAttribute("data-open") !== "true") return;
+          if (!morph.contains(e.target)) setOpen(false);
+        });
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && morph.getAttribute("data-open") === "true") {
+            setOpen(false);
+          }
+        });
+      })();
+
+      // --- Prototype 21: Accordion expand/collapse ------------
+      // Each header toggles data-open on its item; CSS animates the
+      // panel via grid-template-rows 0fr↔1fr. The chevron path morphs
+      // (down "v" ↔ up "^") via the CSS `d` transition — no rotation.
+      (function initP21() {
+        const root = document.getElementById("p21-accordion");
+        if (!root) return;
+        root.addEventListener("click", function (e) {
+          const head = e.target.closest(".p21-head");
+          if (!head) return;
+          const item = head.closest(".p21-item");
+          if (!item) return;
+          const open = item.getAttribute("data-open") === "true";
+          item.setAttribute("data-open", open ? "false" : "true");
+          head.setAttribute("aria-expanded", open ? "false" : "true");
+        });
+      })();
 
       document.addEventListener("click", function (e) {
         const btn = e.target.closest("button[data-proto]");

@@ -433,6 +433,72 @@
       --p18-stagger:         var(--duration-stagger);
       --p18-blur:            var(--blur-medium);
       --p18-ease:            var(--ease-smooth-out);
+
+      /* P19 — Tilt card (hover 3D tilt + cursor-tracked glare).
+         The card follows the cursor 1:1 while hovered (short
+         --p19-follow-dur for a touch of smoothing) and eases back
+         to flat over --p19-return-dur on leave. rotateX/Y + glare
+         position are written live from JS into the vars below. */
+      --p19-max:             40;
+      --p19-speed-sens:      0;
+      --p19-perspective:     1000px;
+      --p19-return-dur:      1000ms;
+      --p19-return-ease:     var(--ease-smooth-out);
+      --p19-follow-dur:      400ms;
+      --p19-follow-ease:     var(--ease-smooth-out);
+      --p19-glare-opacity:   0.32;
+      --p19-glare-fade:      300ms;
+      --p19-glare-ease:      var(--ease-smooth-out);
+      --p19-rx:              0deg;
+      --p19-ry:              0deg;
+      --p19-gx:              50%;
+      --p19-gy:              50%;
+
+      /* P20 — Plus button morphs into a menu.
+         Surface morph uses --p20-open/close-dur + --p20-ease. Content
+         slide has separate in/out dist, duration and easing tokens.
+         Corner radius animates on its own open/close timing. */
+      --p20-open-dur:        350ms;
+      --p20-close-dur:       250ms;
+      --p20-ease:            cubic-bezier(0.34, 1.25, 0.64, 1);
+      --p20-close-ease:      cubic-bezier(0.22, 1, 0.36, 1);
+      --p20-w-closed:        40px;
+      --p20-h-closed:        40px;
+      --p20-r-closed:        40px;
+      --p20-w-open:          183px;
+      --p20-h-open:          172px;
+      --p20-r-open:          20px;
+      --p20-r-open-dur:      350ms;
+      --p20-r-open-ease:     cubic-bezier(0.34, 1.25, 0.64, 1);
+      --p20-r-close-dur:     250ms;
+      --p20-r-close-ease:    cubic-bezier(0.22, 1, 0.36, 1);
+      --p20-fade-dur:        200ms;
+      --p20-fade-ease:       cubic-bezier(0.22, 1, 0.36, 1);
+      --p20-slide-in-shift:  40px;
+      --p20-slide-in-dur:    350ms;
+      --p20-slide-in-ease:   cubic-bezier(0.22, 1, 0.36, 1);
+      --p20-slide-out-shift: 40px;
+      --p20-slide-out-dur:   350ms;
+      --p20-slide-out-ease:  cubic-bezier(0.22, 1, 0.36, 1);
+      --p20-scale:           var(--scale-medium);
+      --p20-blur:            var(--blur-small);
+      --p20-rotate:          45deg;
+      --p20-hover-wash:      rgba(0, 0, 0, 0.02);
+      /* Closing anticipation: the circular button nudges diagonally
+         (bottom-right) by this distance and settles back as the menu
+         collapses into it. */
+      --p20-close-anticip:      5px;
+      --p20-close-anticip-dur:  700ms;
+      --p20-close-anticip-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+      /* P21 — Accordion expand/collapse with animated chevron.
+         The panel animates grid-template-rows 0fr ↔ 1fr (clean
+         height transition, no JS measuring) while the chevron path
+         morphs from a downward "v" to an upward "^". */
+      --p21-expand-dur:      250ms;
+      --p21-collapse-dur:    250ms;
+      --p21-chevron-dur:     250ms;
+      --p21-ease:            var(--ease-smooth-out);
     }
 
     html[data-theme="dark"] {
@@ -516,6 +582,11 @@
          tone above the page background, text #f0f0f0. */
       --p17-bg:              #222222;
       --p17-fg:              #f0f0f0;
+
+      /* P20 — the plus button's hover wash is a subtle black tint in
+         light mode; flip it to a low-alpha white so it reads on the
+         dark material surface. */
+      --p20-hover-wash:      rgba(255, 255, 255, 0.06);
     }
 
     * { box-sizing: border-box; }
@@ -3146,6 +3217,379 @@
       transition-delay: 0s;
     }
 
+    /* These prototypes have no Animate button, so reclaim the 56px
+       the stage reserves for it. */
+    .p19-stage-inner {
+      padding-bottom: 0;
+    }
+    /* Bottom-anchor the accordion so its expanded bottom margin matches
+       the horizontal side margins. The accordion is 261px in the 296px
+       stage, so the side gap is (100% - 261px) / 2; reuse it as the
+       bottom inset (padding-% resolves against the stage width). */
+    .p21-stage-inner {
+      align-items: flex-end;
+      padding-bottom: calc((100% - 261px) / 2);
+    }
+    /* Pin the morph anchor to the bottom with a bottom inset that
+       matches the horizontal side margins (padding-% uses width,
+       same formula as centering the open menu in the 296px stage). */
+    .p20-stage-inner {
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: calc((100% - var(--p20-w-open)) / 2);
+    }
+
+    /* ─── Prototype 19 — Tilt card (3D hover tilt + cursor glare) ───
+       Flat hit-area wrapper. The pointer is tracked on this element
+       (which never transforms), so the tilting card can't rotate its
+       own edges out from under the cursor — kills the edge flicker. */
+    .p19-tilt {
+      width: 192px;
+      height: 106px;
+    }
+    /* Visa "Ocean Blue" card (Figma 1964:935): 192×106, #6a6a6a,
+       12px radius. The whole card tilts toward the cursor with a
+       white glare sheen following the pointer. */
+    .p19-card {
+      position: relative;
+      width: 192px;
+      height: 106px;
+      border-radius: 12px;
+      background: #6a6a6a;
+      box-shadow:
+        0 2px 6px 0 rgba(0, 0, 0, 0.19),
+        0 4px 42px 0 rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+      cursor: pointer;
+      color: #ffffff;
+      transform:
+        perspective(var(--p19-perspective))
+        rotateX(var(--p19-rx))
+        rotateY(var(--p19-ry));
+      transform-style: preserve-3d;
+      transition: transform var(--p19-return-dur) var(--p19-return-ease);
+      will-change: transform;
+    }
+    /* Dark mode: drop the card surface ~70% darker (#6a6a6a → #202020)
+       so it sits closer to the page background like the other dark
+       prototype surfaces. */
+    html[data-theme="dark"] .p19-card {
+      background: #202020;
+    }
+    .p19-card.is-tilting {
+      transition: transform var(--p19-follow-dur) var(--p19-follow-ease);
+    }
+    .p19-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.14),
+        rgba(255, 255, 255, 0) 42%
+      );
+    }
+    .p19-card-body { position: absolute; inset: 0; }
+    .p19-card-body > * { position: absolute; white-space: nowrap; }
+    .p19-credit {
+      left: 13.76px;
+      top: 14.05px;
+      font-family: var(--font-sans);
+      font-size: 9.17px;
+      line-height: 13.755px;
+      opacity: 0.9;
+    }
+    .p19-visa {
+      right: 13.76px;
+      top: 11px;
+      font-family: var(--font-sans);
+      font-style: italic;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+    }
+    .p19-name {
+      left: 13.76px;
+      top: 64.76px;
+      font-family: var(--font-mono);
+      font-size: 9.17px;
+      line-height: 13.755px;
+    }
+    .p19-num {
+      left: 13.76px;
+      top: 78.52px;
+      font-family: var(--font-mono);
+      font-size: 9.17px;
+      line-height: 13.755px;
+    }
+    /* Cursor-tracked glare. Several soft circular light shapes of
+       differing radii and a small offset glint are layered at the
+       pointer so the highlight reads like diffuse light spilling
+       across the surface. mix-blend-mode:screen lets them add like
+       light on the dark card. Position (gx/gy) updates instantly;
+       opacity fades smoothly in/out on hover and is never recentred
+       on leave. */
+    .p19-glare {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      mix-blend-mode: screen;
+      background:
+        radial-gradient(circle 95px at var(--p19-gx) var(--p19-gy),
+          rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.06) 52%,
+          rgba(255, 255, 255, 0) 84%),
+        radial-gradient(circle 200px at var(--p19-gx) var(--p19-gy),
+          rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.04) 58%,
+          rgba(255, 255, 255, 0) 78%),
+        radial-gradient(circle 360px at var(--p19-gx) var(--p19-gy),
+          rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 88%),
+        radial-gradient(circle 55px
+          at calc(var(--p19-gx) + 14px) calc(var(--p19-gy) - 17px),
+          rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 74%);
+      transition: opacity var(--p19-glare-fade) var(--p19-glare-ease);
+    }
+    .p19-tilt.is-hover .p19-glare {
+      opacity: var(--p19-glare-opacity);
+    }
+
+    /* ─── Prototype 20 — Plus button morphs into a menu ───────────
+       Anchor reserves the open menu's footprint and pins the morph to
+       its bottom-right corner, so the surface grows up-and-left out of
+       the plus button (which stays put in the corner). */
+    .p20-anchor {
+      position: relative;
+      width: var(--p20-w-open);
+      height: var(--p20-h-open);
+    }
+    .p20-morph {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: var(--p20-w-closed);
+      height: var(--p20-h-closed);
+      border-radius: var(--p20-r-closed);
+      background: var(--material-bg);
+      box-shadow: var(--material-shadow);
+      overflow: hidden;
+      transition:
+        width var(--p20-close-dur) var(--p20-close-ease),
+        height var(--p20-close-dur) var(--p20-close-ease),
+        border-radius var(--p20-r-close-dur) var(--p20-r-close-ease);
+    }
+    .p20-morph[data-open="true"] {
+      width: var(--p20-w-open);
+      height: var(--p20-h-open);
+      border-radius: var(--p20-r-open);
+      transition:
+        width var(--p20-open-dur) var(--p20-ease),
+        height var(--p20-open-dur) var(--p20-ease),
+        border-radius var(--p20-r-open-dur) var(--p20-r-open-ease);
+    }
+    .p20-morph.is-closing {
+      animation: p20-close-anticip
+        var(--p20-close-anticip-dur) var(--p20-close-anticip-ease);
+    }
+    @keyframes p20-close-anticip {
+      0%   { transform: translate(0, 0); }
+      35%  { transform: translate(var(--p20-close-anticip), var(--p20-close-anticip)); }
+      100% { transform: translate(0, 0); }
+    }
+    .p20-plus {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: var(--p20-w-closed);
+      height: var(--p20-h-closed);
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--icon-color);
+      cursor: pointer;
+      opacity: 1;
+      transform: translateX(0);
+      filter: blur(0);
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        opacity var(--p20-fade-dur) var(--p20-fade-ease),
+        transform var(--p20-slide-out-dur) var(--p20-slide-out-ease),
+        filter var(--p20-fade-dur) var(--p20-fade-ease);
+    }
+    .p20-plus::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--p20-hover-wash);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--p20-fade-dur) var(--p20-fade-ease);
+    }
+    .p20-plus:hover::before { opacity: 1; }
+    .p20-plus svg {
+      display: block;
+      position: relative;
+      transform: scale(1) rotate(0deg);
+      transform-origin: center;
+      transition: transform var(--p20-slide-out-dur) var(--p20-slide-out-ease);
+    }
+    .p20-morph[data-open="true"] .p20-plus {
+      opacity: 0;
+      transform: translateX(calc(-1 * var(--p20-slide-in-shift)));
+      filter: blur(var(--p20-blur));
+      pointer-events: none;
+      transition:
+        opacity var(--p20-fade-dur) var(--p20-fade-ease),
+        transform var(--p20-slide-in-dur) var(--p20-slide-in-ease),
+        filter var(--p20-fade-dur) var(--p20-fade-ease);
+    }
+    .p20-morph[data-open="true"] .p20-plus svg {
+      transform: scale(var(--p20-scale)) rotate(var(--p20-rotate));
+      transition: transform var(--p20-slide-in-dur) var(--p20-slide-in-ease);
+    }
+    .p20-menu {
+      position: absolute;
+      inset: 0;
+      padding: 20px 0 0 23px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      opacity: 0;
+      transform: translateX(var(--p20-slide-out-shift)) scale(var(--p20-scale));
+      filter: blur(var(--p20-blur));
+      pointer-events: none;
+      transition:
+        opacity var(--p20-fade-dur) var(--p20-fade-ease),
+        transform var(--p20-slide-out-dur) var(--p20-slide-out-ease),
+        filter var(--p20-fade-dur) var(--p20-fade-ease);
+    }
+    .p20-morph[data-open="true"] .p20-menu {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      filter: blur(0);
+      pointer-events: auto;
+      transition:
+        opacity var(--p20-fade-dur) var(--p20-fade-ease),
+        transform var(--p20-slide-in-dur) var(--p20-slide-in-ease),
+        filter var(--p20-fade-dur) var(--p20-fade-ease);
+    }
+    .p20-bar {
+      height: 14px;
+      border-radius: 4px;
+      background: var(--skeleton);
+    }
+    .p20-menu .p20-bar:nth-child(1) { width: 77px; }
+    .p20-menu .p20-bar:nth-child(2) { width: 95px; }
+    .p20-menu .p20-bar:nth-child(3) { width: 68px; }
+    .p20-menu .p20-bar:nth-child(4) { width: 95px; }
+
+    /* ─── Prototype 21 — Accordion expand/collapse + chevron ──────
+       261px wide single "Appearance" item, 56px header, 12px radius.
+       The container reserves the expanded height (166px) and
+       top-aligns the item, so the header keeps a fixed position
+       whether the panel is open or closed (no recentre on toggle). */
+    .p21-accordion {
+      width: 261px;
+      height: 166px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+    .p21-item {
+      background: var(--material-bg);
+      border-radius: 12px;
+      box-shadow: var(--material-shadow);
+      overflow: hidden;
+    }
+    .p21-head {
+      appearance: none;
+      width: 100%;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 22px 0 24px;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--text);
+      text-align: left;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .p21-chevron {
+      flex: 0 0 auto;
+      display: inline-flex;
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+    }
+    .p21-chevron svg { display: block; }
+    /* The chevron does NOT rotate — the path itself morphs from a
+       downward "v" to an upward "^" by animating the SVG `d`. Both
+       paths share the same M/L/L command structure so the vertices
+       interpolate cleanly. */
+    .p21-chevron path {
+      d: path("M4 6.5L8 10.5L12 6.5");
+      transition: d var(--p21-chevron-dur) var(--p21-ease);
+    }
+    .p21-item[data-open="true"] .p21-chevron path {
+      d: path("M4 9.5L8 5.5L12 9.5");
+    }
+    .p21-panel {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows var(--p21-collapse-dur) var(--p21-ease);
+    }
+    .p21-item[data-open="true"] .p21-panel {
+      grid-template-rows: 1fr;
+      transition: grid-template-rows var(--p21-expand-dur) var(--p21-ease);
+    }
+    .p21-panel-inner {
+      overflow: hidden;
+      opacity: 0;
+      filter: blur(var(--blur-small));
+      transition:
+        opacity var(--p21-collapse-dur) var(--p21-ease),
+        filter var(--p21-collapse-dur) var(--p21-ease);
+    }
+    .p21-item[data-open="true"] .p21-panel-inner {
+      opacity: 1;
+      filter: blur(0);
+      transition:
+        opacity var(--p21-expand-dur) var(--p21-ease),
+        filter var(--p21-expand-dur) var(--p21-ease);
+    }
+    .p21-rows {
+      padding: 4px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .p21-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .p21-bar {
+      height: 14px;
+      border-radius: 4px;
+      background: var(--skeleton);
+    }
+    .p21-row:nth-child(1) .p21-bar:nth-child(1) { width: 77px; }
+    .p21-row:nth-child(1) .p21-bar:nth-child(2) { width: 42px; }
+    .p21-row:nth-child(2) .p21-bar:nth-child(1) { width: 93px; }
+    .p21-row:nth-child(2) .p21-bar:nth-child(2) { width: 42px; }
+    .p21-row:nth-child(3) .p21-bar:nth-child(1) { width: 57px; }
+    .p21-row:nth-child(3) .p21-bar:nth-child(2) { width: 32px; }
+
     /* ============================================================ */
     /* Responsive — mirrors border-beam demo breakpoints            */
     /* ============================================================ */
@@ -3292,6 +3736,9 @@
       .p16-indicator,
       .p17-tooltip,
       .p18-line,
+      .p19-card,
+      .p20-morph .p20-plus,
+      .p20-morph .p20-menu,
       .course-cta-arrow {
         transform: none !important;
         filter: none !important;
@@ -4357,6 +4804,116 @@
           <div class="card-subtitle">Appear-only delay, instant exit</div>
         </div>
         <button type="button" class="card-copy" aria-label="Copy Tooltip open/close CSS" data-copy-key="p17">
+          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </article>
+
+      <!-- 19. Tilt card -->
+      <article class="card" data-proto-card>
+        <div class="card-stage">
+          <div class="stage-inner p19-stage-inner">
+            <div class="p19-tilt" id="p19-tilt">
+              <div class="p19-card" id="p19-card">
+                <div class="p19-card-body">
+                  <span class="p19-credit">Credit</span>
+                  <span class="p19-visa">VISA</span>
+                  <span class="p19-name">John Smith</span>
+                  <span class="p19-num">4111 - 1111 - 1111 - 1111</span>
+                </div>
+                <div class="p19-glare" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta">
+          <div class="card-title">Card hover tilt</div>
+          <div class="card-subtitle">3D pointer tilt with cursor glare</div>
+        </div>
+        <button type="button" class="card-copy" aria-label="Copy Card hover tilt CSS" data-copy-key="p19">
+          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </article>
+
+      <!-- 20. Plus → menu morph -->
+      <article class="card" data-proto-card>
+        <div class="card-stage">
+          <div class="stage-inner p20-stage-inner">
+            <div class="p20-anchor">
+              <div class="p20-morph" id="p20-morph" data-open="false">
+                <div class="p20-menu" role="menu" aria-hidden="true">
+                  <span class="p20-bar" role="menuitem"></span>
+                  <span class="p20-bar" role="menuitem"></span>
+                  <span class="p20-bar" role="menuitem"></span>
+                  <span class="p20-bar" role="menuitem"></span>
+                </div>
+                <button type="button" class="p20-plus" id="p20-plus" aria-label="Open menu" aria-expanded="false">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta">
+          <div class="card-title">Plus to menu morph</div>
+          <div class="card-subtitle">Button morphs into a menu surface</div>
+        </div>
+        <button type="button" class="card-copy" aria-label="Copy Plus to menu morph CSS" data-copy-key="p20">
+          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </article>
+
+      <!-- 21. Accordion expand/collapse -->
+      <article class="card" data-proto-card>
+        <div class="card-stage">
+          <div class="stage-inner p21-stage-inner">
+            <div class="p21-accordion" id="p21-accordion">
+              <div class="p21-item" data-open="false">
+                <button type="button" class="p21-head" aria-expanded="false">
+                  <span class="p21-title">Appearance</span>
+                  <span class="p21-chevron" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 6.5L8 10.5L12 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                </button>
+                <div class="p21-panel">
+                  <div class="p21-panel-inner">
+                    <div class="p21-rows">
+                      <div class="p21-row"><span class="p21-bar"></span><span class="p21-bar"></span></div>
+                      <div class="p21-row"><span class="p21-bar"></span><span class="p21-bar"></span></div>
+                      <div class="p21-row"><span class="p21-bar"></span><span class="p21-bar"></span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta">
+          <div class="card-title">Accordion expand</div>
+          <div class="card-subtitle">Grid-rows height with chevron morph</div>
+        </div>
+        <button type="button" class="card-copy" aria-label="Copy Accordion expand CSS" data-copy-key="p21">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -5465,6 +6022,127 @@ export function StaggerReveal({ primary, secondary }) {
         <span    className="t-stagger-line t-stagger-line--2">{secondary}</span>
       </div>
     </>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="p19">import { useRef } from "react";
+
+// Pair with the CSS from the CSS tab.
+// The pointer is tracked on the OUTER wrapper (which never transforms)
+// so the tilting card can't pull its own edges out from under the
+// cursor. rotateX/Y + glare position are written into CSS vars.
+export function TiltCard({ children, max = 32 }) {
+  const wrapRef = useRef(null);
+  const cardRef = useRef(null);
+
+  const onMove = (e) => {
+    const wrap = wrapRef.current;
+    const card = cardRef.current;
+    if (!wrap || !card) return;
+    const r = wrap.getBoundingClientRect();
+    const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    const py = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+    wrap.classList.add("is-hover");
+    card.classList.add("is-tilting");
+    card.style.setProperty("--tilt-ry", ((px - 0.5) * max).toFixed(2) + "deg");
+    card.style.setProperty("--tilt-rx", ((0.5 - py) * max).toFixed(2) + "deg");
+    card.style.setProperty("--tilt-gx", (px * 100).toFixed(1) + "%");
+    card.style.setProperty("--tilt-gy", (py * 100).toFixed(1) + "%");
+  };
+
+  const onLeave = () => {
+    const wrap = wrapRef.current;
+    const card = cardRef.current;
+    if (wrap) wrap.classList.remove("is-hover");
+    if (card) {
+      card.classList.remove("is-tilting");
+      card.style.setProperty("--tilt-rx", "0deg");
+      card.style.setProperty("--tilt-ry", "0deg");
+    }
+  };
+
+  return (
+    <div ref={wrapRef} className="t-tilt" onPointerMove={onMove} onPointerLeave={onLeave}>
+      <div ref={cardRef} className="t-tilt-card">
+        {children}
+        <div className="t-tilt-glare" aria-hidden="true" />
+      </div>
+    </div>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="p20">import { useEffect, useRef, useState } from "react";
+
+// Pair with the CSS from the CSS tab.
+// `data-open` drives the whole morph; CSS handles the size + radius
+// animation and the plus ↔ menu cross-fade. Outside click / Escape
+// close the menu.
+export function PlusMenu({ children }) {
+  const ref = useRef(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("click", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="t-morph" data-open={open ? "true" : "false"}>
+      <div className="t-morph-menu" role="menu">{children}</div>
+      <button
+        type="button"
+        className="t-morph-plus"
+        aria-expanded={open ? "true" : "false"}
+        aria-label="Open menu"
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 4V16M4 10H16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="p21">import { useState } from "react";
+
+// Pair with the CSS from the CSS tab.
+// `data-open` toggles the grid-rows height animation and the chevron
+// path morph — no height measuring needed.
+export function Accordion({ title, children }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="t-acc" data-open={open ? "true" : "false"}>
+      <button
+        type="button"
+        className="t-acc-head"
+        aria-expanded={open ? "true" : "false"}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {title}
+        <span className="t-acc-chevron" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M4 6.5L8 10.5L12 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </button>
+      <div className="t-acc-panel">
+        <div className="t-acc-panel-inner">{children}</div>
+      </div>
+    </div>
   );
 }
 </script>
@@ -6848,6 +7526,243 @@ export function Surface({ open, children }) {
             "\n" +
             "@media (prefers-reduced-motion: reduce) {\n" +
             "  .t-stagger-line { transition: none !important; }\n" +
+            "}"
+        },
+
+        p19: {
+          name: "Card hover tilt",
+          usage:
+            "    <div class=\"t-tilt\">                <!-- flat hit area -->\n" +
+            "      <div class=\"t-tilt-card\">       <!-- the element that tilts -->\n" +
+            "        … card content …\n" +
+            "        <div class=\"t-tilt-glare\"></div>\n" +
+            "      </div>\n" +
+            "    </div>\n" +
+            "\n" +
+            "  Track the pointer on the OUTER `.t-tilt` (it never\n" +
+            "  transforms) and write four custom properties from JS:\n" +
+            "    el.style.setProperty('--tilt-rx', rxDeg + 'deg');\n" +
+            "    el.style.setProperty('--tilt-ry', ryDeg + 'deg');\n" +
+            "    el.style.setProperty('--tilt-gx', gxPct + '%');\n" +
+            "    el.style.setProperty('--tilt-gy', gyPct + '%');\n" +
+            "  Add `.is-tilting` while moving (fast follow) and\n" +
+            "  `.is-hover` to fade the glare in; remove both on leave.",
+          vars: [
+            ["--tilt-perspective",   "--p19-perspective"],
+            ["--tilt-return",        "--p19-return-dur"],
+            ["--tilt-return-ease",   "--p19-return-ease"],
+            ["--tilt-follow",        "--p19-follow-dur"],
+            ["--tilt-follow-ease",   "--p19-follow-ease"],
+            ["--tilt-glare-opacity", "--p19-glare-opacity"],
+            ["--tilt-glare-fade",    "--p19-glare-fade"],
+            ["--tilt-glare-ease",    "--p19-glare-ease"]
+          ],
+          css:
+            "/* The card tilts toward the pointer via rotateX/rotateY fed\n" +
+            "   from JS; on leave it eases back to flat. A separate\n" +
+            "   .is-tilting class swaps in a short linear follow while the\n" +
+            "   pointer moves so the tilt tracks the cursor 1:1. */\n" +
+            ".t-tilt-card {\n" +
+            "  position: relative;\n" +
+            "  border-radius: 12px;\n" +
+            "  overflow: hidden;\n" +
+            "  transform:\n" +
+            "    perspective(var(--tilt-perspective))\n" +
+            "    rotateX(var(--tilt-rx, 0deg))\n" +
+            "    rotateY(var(--tilt-ry, 0deg));\n" +
+            "  transform-style: preserve-3d;\n" +
+            "  transition: transform var(--tilt-return) var(--tilt-return-ease);\n" +
+            "  will-change: transform;\n" +
+            "}\n" +
+            ".t-tilt-card.is-tilting {\n" +
+            "  transition: transform var(--tilt-follow) var(--tilt-follow-ease);\n" +
+            "}\n" +
+            "/* Cursor-tracked glare: layered soft circles that add like\n" +
+            "   light (screen blend) at the pointer position. */\n" +
+            ".t-tilt-glare {\n" +
+            "  position: absolute;\n" +
+            "  inset: 0;\n" +
+            "  pointer-events: none;\n" +
+            "  opacity: 0;\n" +
+            "  mix-blend-mode: screen;\n" +
+            "  background:\n" +
+            "    radial-gradient(circle 95px at var(--tilt-gx, 50%) var(--tilt-gy, 50%),\n" +
+            "      rgba(255,255,255,0.48), rgba(255,255,255,0.06) 52%, rgba(255,255,255,0) 84%),\n" +
+            "    radial-gradient(circle 200px at var(--tilt-gx, 50%) var(--tilt-gy, 50%),\n" +
+            "      rgba(255,255,255,0.22), rgba(255,255,255,0.04) 58%, rgba(255,255,255,0) 78%),\n" +
+            "    radial-gradient(circle 360px at var(--tilt-gx, 50%) var(--tilt-gy, 50%),\n" +
+            "      rgba(255,255,255,0.10), rgba(255,255,255,0) 88%);\n" +
+            "  transition: opacity var(--tilt-glare-fade) var(--tilt-glare-ease);\n" +
+            "}\n" +
+            ".t-tilt.is-hover .t-tilt-glare { opacity: var(--tilt-glare-opacity); }\n" +
+            "\n" +
+            "@media (prefers-reduced-motion: reduce) {\n" +
+            "  .t-tilt-card { transform: none !important; transition: none !important; }\n" +
+            "}"
+        },
+
+        p20: {
+          name: "Plus to menu morph",
+          usage:
+            "    <div class=\"t-morph\" data-open=\"false\">\n" +
+            "      <div class=\"t-morph-menu\"> … menu items … </div>\n" +
+            "      <button class=\"t-morph-plus\" aria-expanded=\"false\">+</button>\n" +
+            "    </div>\n" +
+            "\n" +
+            "  Toggle `data-open` on the container (and `aria-expanded`\n" +
+            "  on the button). CSS animates the surface size + corner\n" +
+            "  radius and cross-fades the plus ↔ menu. Wrap the morph in\n" +
+            "  a relatively-positioned anchor sized to the OPEN footprint\n" +
+            "  if you want it to grow out of a fixed corner.",
+          vars: [
+            ["--morph-open-dur",   "--p20-open-dur"],
+            ["--morph-close-dur",  "--p20-close-dur"],
+            ["--morph-ease",       "--p20-ease"],
+            ["--morph-close-ease", "--p20-close-ease"],
+            ["--morph-r-closed",   "--p20-r-closed"],
+            ["--morph-r-open",     "--p20-r-open"],
+            ["--morph-fade-dur",   "--p20-fade-dur"],
+            ["--morph-slide",      "--p20-slide-in-shift"],
+            ["--morph-rotate",     "--p20-rotate"],
+            ["--morph-scale",      "--p20-scale"],
+            ["--morph-blur",       "--p20-blur"]
+          ],
+          css:
+            "/* Closed: a small circular button. Open: a rounded panel.\n" +
+            "   Width/height/border-radius animate; the open state uses a\n" +
+            "   bouncier ease than the close. */\n" +
+            ".t-morph {\n" +
+            "  position: relative;\n" +
+            "  width: 40px;\n" +
+            "  height: 40px;\n" +
+            "  border-radius: var(--morph-r-closed);\n" +
+            "  overflow: hidden;\n" +
+            "  transition:\n" +
+            "    width var(--morph-close-dur) var(--morph-close-ease),\n" +
+            "    height var(--morph-close-dur) var(--morph-close-ease),\n" +
+            "    border-radius var(--morph-close-dur) var(--morph-close-ease);\n" +
+            "}\n" +
+            ".t-morph[data-open=\"true\"] {\n" +
+            "  width: 183px;\n" +
+            "  height: 172px;\n" +
+            "  border-radius: var(--morph-r-open);\n" +
+            "  transition:\n" +
+            "    width var(--morph-open-dur) var(--morph-ease),\n" +
+            "    height var(--morph-open-dur) var(--morph-ease),\n" +
+            "    border-radius var(--morph-open-dur) var(--morph-ease);\n" +
+            "}\n" +
+            "/* Plus fades + slides out and the icon rotates into an ×. */\n" +
+            ".t-morph-plus {\n" +
+            "  position: absolute;\n" +
+            "  inset: auto 0 0 auto;\n" +
+            "  width: 40px; height: 40px;\n" +
+            "  display: grid; place-items: center;\n" +
+            "  border: 0; background: transparent; cursor: pointer;\n" +
+            "  transition:\n" +
+            "    opacity var(--morph-fade-dur) var(--morph-close-ease),\n" +
+            "    transform var(--morph-open-dur) var(--morph-close-ease),\n" +
+            "    filter var(--morph-fade-dur) var(--morph-close-ease);\n" +
+            "}\n" +
+            ".t-morph-plus svg {\n" +
+            "  transition: transform var(--morph-open-dur) var(--morph-close-ease);\n" +
+            "}\n" +
+            ".t-morph[data-open=\"true\"] .t-morph-plus {\n" +
+            "  opacity: 0;\n" +
+            "  transform: translateX(calc(-1 * var(--morph-slide)));\n" +
+            "  filter: blur(var(--morph-blur));\n" +
+            "  pointer-events: none;\n" +
+            "}\n" +
+            ".t-morph[data-open=\"true\"] .t-morph-plus svg {\n" +
+            "  transform: scale(var(--morph-scale)) rotate(var(--morph-rotate));\n" +
+            "}\n" +
+            "/* Menu starts slid in + scaled + blurred; reveals on open. */\n" +
+            ".t-morph-menu {\n" +
+            "  position: absolute;\n" +
+            "  inset: 0;\n" +
+            "  opacity: 0;\n" +
+            "  transform: translateX(var(--morph-slide)) scale(var(--morph-scale));\n" +
+            "  filter: blur(var(--morph-blur));\n" +
+            "  pointer-events: none;\n" +
+            "  transition:\n" +
+            "    opacity var(--morph-fade-dur) var(--morph-close-ease),\n" +
+            "    transform var(--morph-open-dur) var(--morph-close-ease),\n" +
+            "    filter var(--morph-fade-dur) var(--morph-close-ease);\n" +
+            "}\n" +
+            ".t-morph[data-open=\"true\"] .t-morph-menu {\n" +
+            "  opacity: 1;\n" +
+            "  transform: translateX(0) scale(1);\n" +
+            "  filter: blur(0);\n" +
+            "  pointer-events: auto;\n" +
+            "}\n" +
+            "\n" +
+            "@media (prefers-reduced-motion: reduce) {\n" +
+            "  .t-morph, .t-morph-plus, .t-morph-menu { transition: none !important; }\n" +
+            "}"
+        },
+
+        p21: {
+          name: "Accordion expand",
+          usage:
+            "    <div class=\"t-acc\" data-open=\"false\">\n" +
+            "      <button class=\"t-acc-head\" aria-expanded=\"false\">\n" +
+            "        Title\n" +
+            "        <span class=\"t-acc-chevron\">\n" +
+            "          <svg viewBox=\"0 0 16 16\"><path d=\"M4 6.5L8 10.5L12 6.5\"/></svg>\n" +
+            "        </span>\n" +
+            "      </button>\n" +
+            "      <div class=\"t-acc-panel\"><div class=\"t-acc-panel-inner\"> … </div></div>\n" +
+            "    </div>\n" +
+            "\n" +
+            "  Toggle `data-open` on the item. The panel animates via\n" +
+            "  grid-template-rows 0fr ↔ 1fr (no JS height measuring) and\n" +
+            "  the chevron's `d` path morphs from a \"v\" to a \"^\".",
+          vars: [
+            ["--acc-expand",   "--p21-expand-dur"],
+            ["--acc-collapse", "--p21-collapse-dur"],
+            ["--acc-chevron",  "--p21-chevron-dur"],
+            ["--acc-ease",     "--p21-ease"]
+          ],
+          css:
+            "/* grid-template-rows 0fr → 1fr gives a clean height animation\n" +
+            "   with no JS measurement; the inner element clips overflow. */\n" +
+            ".t-acc-panel {\n" +
+            "  display: grid;\n" +
+            "  grid-template-rows: 0fr;\n" +
+            "  transition: grid-template-rows var(--acc-collapse) var(--acc-ease);\n" +
+            "}\n" +
+            ".t-acc[data-open=\"true\"] .t-acc-panel {\n" +
+            "  grid-template-rows: 1fr;\n" +
+            "  transition: grid-template-rows var(--acc-expand) var(--acc-ease);\n" +
+            "}\n" +
+            ".t-acc-panel-inner {\n" +
+            "  overflow: hidden;\n" +
+            "  opacity: 0;\n" +
+            "  filter: blur(2px);\n" +
+            "  transition:\n" +
+            "    opacity var(--acc-collapse) var(--acc-ease),\n" +
+            "    filter var(--acc-collapse) var(--acc-ease);\n" +
+            "}\n" +
+            ".t-acc[data-open=\"true\"] .t-acc-panel-inner {\n" +
+            "  opacity: 1;\n" +
+            "  filter: blur(0);\n" +
+            "  transition:\n" +
+            "    opacity var(--acc-expand) var(--acc-ease),\n" +
+            "    filter var(--acc-expand) var(--acc-ease);\n" +
+            "}\n" +
+            "/* The chevron does NOT rotate — its path morphs. Both `d`\n" +
+            "   values share the same M/L/L structure so vertices tween. */\n" +
+            ".t-acc-chevron path {\n" +
+            "  d: path(\"M4 6.5L8 10.5L12 6.5\");\n" +
+            "  transition: d var(--acc-chevron) var(--acc-ease);\n" +
+            "}\n" +
+            ".t-acc[data-open=\"true\"] .t-acc-chevron path {\n" +
+            "  d: path(\"M4 9.5L8 5.5L12 9.5\");\n" +
+            "}\n" +
+            "\n" +
+            "@media (prefers-reduced-motion: reduce) {\n" +
+            "  .t-acc-panel, .t-acc-panel-inner, .t-acc-chevron path {\n" +
+            "    transition: none !important;\n" +
+            "  }\n" +
             "}"
         },
 
@@ -8363,6 +9278,165 @@ export function Surface({ open, children }) {
       }
 
       fetchGitHubStars();
+    })();
+  </script>
+
+  <!-- Prototypes 19–21 interaction (tilt card, plus→menu morph, accordion) -->
+  <script>
+    (function () {
+      // --- Prototype 19: Card hover tilt (3D) + cursor glare ---
+      // Tilt magnitude scales with cursor speed (--p19-speed-sens).
+      (function initP19() {
+        var tilt = document.getElementById("p19-tilt");
+        var card = document.getElementById("p19-card");
+        if (!tilt || !card) return;
+        var fine = window.matchMedia("(hover: hover) and (pointer: fine)");
+        var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+        var enabled = fine.matches && !reduce.matches;
+
+        var SPEED_REF = 1.2;
+        var SPEED_MIN = 0.15;
+        var SPEED_SMOOTH = 0.72;
+
+        var lastX = null;
+        var lastY = null;
+        var lastT = null;
+        var speedSmoothed = 0;
+
+        function readNum(prop, fallback) {
+          var v = parseFloat(getComputedStyle(card).getPropertyValue(prop));
+          return isNaN(v) ? fallback : v;
+        }
+        function readMax() {
+          return readNum("--p19-max", 40);
+        }
+        function speedTiltScale() {
+          var sens = readNum("--p19-speed-sens", 0);
+          if (sens <= 0) return 1;
+          var t = Math.min(1, (speedSmoothed * sens) / SPEED_REF);
+          return SPEED_MIN + (1 - SPEED_MIN) * t;
+        }
+        function reset() {
+          tilt.classList.remove("is-hover");
+          card.classList.remove("is-tilting");
+          card.style.setProperty("--p19-rx", "0deg");
+          card.style.setProperty("--p19-ry", "0deg");
+          lastX = null;
+          lastY = null;
+          lastT = null;
+          speedSmoothed = 0;
+        }
+        tilt.addEventListener("pointerenter", function (e) {
+          if (!enabled) return;
+          lastX = e.clientX;
+          lastY = e.clientY;
+          lastT = performance.now();
+          speedSmoothed = 0;
+        });
+        tilt.addEventListener("pointermove", function (e) {
+          if (!enabled) return;
+          var now = performance.now();
+          if (lastT != null && lastX != null && lastY != null) {
+            var dt = now - lastT;
+            if (dt > 0) {
+              var speed = Math.hypot(e.clientX - lastX, e.clientY - lastY) / dt;
+              speedSmoothed = speedSmoothed * SPEED_SMOOTH + speed * (1 - SPEED_SMOOTH);
+            }
+          }
+          lastX = e.clientX;
+          lastY = e.clientY;
+          lastT = now;
+
+          var rect = tilt.getBoundingClientRect();
+          var px = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          var py = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+          var max = readMax() * speedTiltScale();
+          tilt.classList.add("is-hover");
+          card.classList.add("is-tilting");
+          card.style.setProperty("--p19-ry", ((px - 0.5) * max).toFixed(2) + "deg");
+          card.style.setProperty("--p19-rx", ((0.5 - py) * max).toFixed(2) + "deg");
+          card.style.setProperty("--p19-gx", (px * 100).toFixed(1) + "%");
+          card.style.setProperty("--p19-gy", (py * 100).toFixed(1) + "%");
+        });
+        tilt.addEventListener("pointerleave", reset);
+
+        function refresh() {
+          enabled = fine.matches && !reduce.matches;
+          reset();
+        }
+        if (fine.addEventListener) {
+          fine.addEventListener("change", refresh);
+          reduce.addEventListener("change", refresh);
+        }
+      })();
+
+      // --- Prototype 20: Plus button morphs into a menu ---
+      // Clicking the plus toggles data-open on the morph container; CSS
+      // animates the surface size/radius and cross-fades the plus ↔ menu.
+      // Outside click / Escape closes it.
+      (function initP20() {
+        var morph = document.getElementById("p20-morph");
+        var plus = document.getElementById("p20-plus");
+        if (!morph || !plus) return;
+
+        function setOpen(open) {
+          var wasOpen = morph.getAttribute("data-open") === "true";
+          morph.setAttribute("data-open", open ? "true" : "false");
+          plus.setAttribute("aria-expanded", open ? "true" : "false");
+          var menu = morph.querySelector(".p20-menu");
+          if (menu) menu.setAttribute("aria-hidden", open ? "false" : "true");
+          morph.classList.remove("is-closing");
+          if (!open && wasOpen) {
+            void morph.offsetWidth;
+            morph.classList.add("is-closing");
+          }
+        }
+        morph.addEventListener("animationend", function (e) {
+          if (e.target === morph) morph.classList.remove("is-closing");
+        });
+        plus.addEventListener("click", function (e) {
+          e.stopPropagation();
+          setOpen(morph.getAttribute("data-open") !== "true");
+        });
+        document.addEventListener("click", function (e) {
+          if (morph.getAttribute("data-open") !== "true") return;
+          if (!morph.contains(e.target)) setOpen(false);
+        });
+        // Clicking anywhere in this card's stage while the menu is open
+        // closes it — and we stop the event in the capture phase so the
+        // card's "open code modal" click handler doesn't also fire.
+        var stage = morph.closest(".card-stage");
+        if (stage) {
+          stage.addEventListener("click", function (e) {
+            if (morph.getAttribute("data-open") !== "true") return;
+            if (plus.contains(e.target)) return;
+            e.stopPropagation();
+            setOpen(false);
+          }, true);
+        }
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && morph.getAttribute("data-open") === "true") {
+            setOpen(false);
+          }
+        });
+      })();
+
+      // --- Prototype 21: Accordion expand/collapse ---
+      // The header toggles data-open on its item; CSS animates the panel
+      // via grid-template-rows 0fr↔1fr and morphs the chevron path.
+      (function initP21() {
+        var root = document.getElementById("p21-accordion");
+        if (!root) return;
+        root.addEventListener("click", function (e) {
+          var head = e.target.closest(".p21-head");
+          if (!head) return;
+          var item = head.closest(".p21-item");
+          if (!item) return;
+          var open = item.getAttribute("data-open") === "true";
+          item.setAttribute("data-open", open ? "false" : "true");
+          head.setAttribute("aria-expanded", open ? "false" : "true");
+        });
+      })();
     })();
   </script>
 </body>

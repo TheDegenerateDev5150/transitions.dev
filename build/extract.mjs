@@ -249,6 +249,33 @@ The glow uses \`mix-blend-mode: multiply\` in light mode. In dark mode flip to \
     when: "A hover/focus tooltip that fades + scales in with a short appear-delay but disappears immediately on leave. Pure CSS — the wrap (not the trigger) is the hover target so the pointer can drift onto the tooltip without flicker." },
   { key: "p18", file: "18-texts-reveal", summary: "Staggered blurred rise for stacked text lines, quiet fade out",
     when: "A headline + supporting line that rise into view with staggered blur — hero copy, empty states, onboarding steps. Exit is decoupled: a single quiet fade with no Y-return so dismissing doesn't replay the reveal in reverse." },
+  { key: "p19", file: "19-card-tilt", summary: "Tilt a card in 3D toward the pointer with a cursor-tracked glare",
+    when: "A card / tile / media surface that tilts in 3D toward the pointer while hovered, with a soft light \"glare\" tracking the cursor across it. Use for product cards, credit / membership cards, feature tiles, cover art — anything that should feel physical and reactive on hover. Pointer-only (skips touch) and flattens under reduced motion.\n\nThe pointer is tracked on an **outer flat wrapper** (`.t-tilt`) that never transforms, so the tilting card can't rotate its own edges out from under the cursor (which causes hover flicker). The inner `.t-tilt-card` is the element that actually rotates.",
+    notes: `### Peak tilt angle
+
+The rotation magnitude is a JS constant (\`MAX\`, in degrees), not a CSS variable — the orchestration writes \`--tilt-rx\` / \`--tilt-ry\` from the pointer position scaled by \`MAX\`. Raise it for a stronger lean (the live demo goes up to ~40°); 10–16° reads as a subtle, tasteful tilt.
+
+### Why the pointer is tracked on the flat wrapper
+
+Bind \`pointermove\` to the outer \`.t-tilt\` (which never transforms), not the \`.t-tilt-card\` that rotates. If you track the tilting element, its rotating edges slip out from under the cursor near the borders and the hover flickers on and off.` },
+  { key: "p20", file: "20-plus-menu-morph", summary: "Morph a circular trigger into the menu / panel it opens",
+    when: "A small circular trigger (a \"+\" FAB, a compose button, an add-action affordance) that **morphs into the menu / panel it opens** instead of popping a separate surface next to it. The button's box grows in width / height and relaxes its corner radius into a rounded panel while the plus icon cross-fades + rotates out and the menu content slides in.\n\nReach for this over **menu dropdown** when the trigger and the surface are the *same* element (the button becomes the panel). Use plain **menu dropdown** when the surface is a distinct popover that merely grows from the trigger's corner.",
+    notes: `### Pin the plus button to a corner
+
+The plus button must overlay the panel, pinned to a corner (\`inset: auto 0 0 auto\`), so it stays put while the box grows up-and-left out of it. If it's in normal flow it gets shoved around as the container resizes. \`overflow: hidden\` on \`.t-morph\` is load-bearing — it clips the menu content during the size morph so items don't spill outside the growing rounded box.
+
+### Open and close use different eases
+
+The bouncy \`--morph-ease\` only drives the open; the close falls back to the calm \`--morph-close-ease\`. Don't collapse them into one variable. Adjust the open \`width\` / \`height\` in the snippet to your real panel size — they're hardcoded, not derived from the content.` },
+  { key: "p21", file: "21-accordion", summary: "Grow / shrink a panel via grid-rows with a chevron path morph",
+    when: "A disclosure / accordion / collapsible section whose panel grows and shrinks in height when toggled, with the header chevron morphing between a downward \"v\" and an upward \"^\". Use for settings groups, FAQs, filter sections, \"show more\" details — any header + collapsible body.\n\nHeight animates via `grid-template-rows: 0fr ↔ 1fr`, so there's **no JS height measuring** and content of any size animates cleanly. The chevron's SVG `d` path morphs between two vertex sets rather than rotating, so it reads as a single fluid shape change.",
+    notes: `### Two-element panel + padding placement
+
+The panel needs the two-element structure (\`.t-acc-panel\` grid track + \`.t-acc-panel-inner\` with \`overflow: hidden\`). The \`0fr → 1fr\` track can only collapse a child that clips its own overflow. Keep padding on \`.t-acc-panel-inner\`, never on \`.t-acc-panel\` — padding on the \`0fr\` track leaves a residual height strip so the panel never fully closes.
+
+### The \`d:\` path morph is Chromium-only
+
+CSS \`d:\` path interpolation animates in Chromium; in Firefox / Safari the chevron snaps between the two paths (everything else still animates). Both \`d\` values must share identical command structure (same count and order of \`M\` / \`L\`) to interpolate. If you need cross-browser chevron motion, swap the path morph for a \`transform: rotate(180deg)\` on the chevron instead.` },
 ];
 
 // ── Default-value rewrites ───────────────────────────────────────
@@ -582,6 +609,65 @@ function hideText() {
   block.classList.remove("is-shown");
   setTimeout(() => block.classList.remove("is-hiding"), 200);
 }`,
+  p19: `// Track the pointer on the OUTER .t-tilt (never transforms) and write
+// rotation + glare position into custom properties on the inner card.
+const tilt = document.querySelector(".t-tilt");
+const card = tilt.querySelector(".t-tilt-card");
+const fine = matchMedia("(hover: hover) and (pointer: fine)");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+
+const MAX = 14; // peak tilt in degrees at the card edges (raise for a stronger lean)
+
+function reset() {
+  tilt.classList.remove("is-hover");
+  card.classList.remove("is-tilting");
+  card.style.setProperty("--tilt-rx", "0deg");
+  card.style.setProperty("--tilt-ry", "0deg");
+}
+
+tilt.addEventListener("pointermove", (e) => {
+  if (!fine.matches || reduce.matches) return;
+  const r = tilt.getBoundingClientRect();
+  const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+  const py = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+  tilt.classList.add("is-hover");
+  card.classList.add("is-tilting");
+  card.style.setProperty("--tilt-ry", ((px - 0.5) * MAX).toFixed(2) + "deg");
+  card.style.setProperty("--tilt-rx", ((0.5 - py) * MAX).toFixed(2) + "deg");
+  card.style.setProperty("--tilt-gx", (px * 100).toFixed(1) + "%");
+  card.style.setProperty("--tilt-gy", (py * 100).toFixed(1) + "%");
+});
+
+tilt.addEventListener("pointerleave", reset);`,
+  p20: `// Toggle data-open on the container; CSS owns the morph. Mirror the
+// state to aria-expanded and close on outside click / Escape.
+const morph = document.querySelector(".t-morph");
+const plus = morph.querySelector(".t-morph-plus");
+
+function setOpen(open) {
+  morph.setAttribute("data-open", String(open));
+  plus.setAttribute("aria-expanded", String(open));
+}
+
+plus.addEventListener("click", (e) => {
+  e.stopPropagation();
+  setOpen(morph.getAttribute("data-open") !== "true");
+});
+document.addEventListener("click", (e) => {
+  if (!morph.contains(e.target)) setOpen(false);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") setOpen(false);
+});`,
+  p21: `// Toggle data-open on the item; CSS owns the height + chevron morph.
+const acc = document.querySelector(".t-acc");
+const head = acc.querySelector(".t-acc-head");
+
+head.addEventListener("click", () => {
+  const open = acc.getAttribute("data-open") === "true";
+  acc.setAttribute("data-open", String(!open));
+  head.setAttribute("aria-expanded", String(!open));
+});`,
 });
 
 // ── Render templates ──────────────────────────────────────────────
