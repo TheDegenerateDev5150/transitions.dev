@@ -3246,6 +3246,9 @@
     .p19-tilt {
       width: 192px;
       height: 106px;
+      /* Capture touch drags for the tilt instead of letting them scroll
+         the page, so tap-hold-drag works on mobile. */
+      touch-action: none;
     }
     /* Visa "Ocean Blue" card (Figma 1964:935): 192×106, #6a6a6a,
        12px radius. The whole card tilts toward the cursor with a
@@ -7558,6 +7561,10 @@ export function Surface({ open, children }) {
             ["--tilt-glare-ease",    "--p19-glare-ease"]
           ],
           css:
+            "/* The outer wrapper is the flat hit area; touch-action:none\n" +
+            "   lets a finger drag tilt the card instead of scrolling the\n" +
+            "   page, so tap-hold-drag works on mobile. */\n" +
+            ".t-tilt { touch-action: none; }\n" +
             "/* The card tilts toward the pointer via rotateX/rotateY fed\n" +
             "   from JS; on leave it eases back to flat. A separate\n" +
             "   .is-tilting class swaps in a short linear follow while the\n" +
@@ -9290,9 +9297,11 @@ export function Surface({ open, children }) {
         var tilt = document.getElementById("p19-tilt");
         var card = document.getElementById("p19-card");
         if (!tilt || !card) return;
-        var fine = window.matchMedia("(hover: hover) and (pointer: fine)");
         var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-        var enabled = fine.matches && !reduce.matches;
+        // Works for any pointer type. A mouse drives the tilt on hover;
+        // touch / pen drive it while pressed (tap-hold-drag), since a
+        // touch pointermove only fires while a finger is down.
+        var enabled = !reduce.matches;
 
         var SPEED_REF = 1.2;
         var SPEED_MIN = 0.15;
@@ -9326,12 +9335,22 @@ export function Surface({ open, children }) {
           lastT = null;
           speedSmoothed = 0;
         }
-        tilt.addEventListener("pointerenter", function (e) {
+        function begin(e) {
           if (!enabled) return;
           lastX = e.clientX;
           lastY = e.clientY;
           lastT = performance.now();
           speedSmoothed = 0;
+        }
+        tilt.addEventListener("pointerenter", begin);
+        tilt.addEventListener("pointerdown", function (e) {
+          if (!enabled) return;
+          // Touch / pen: capture the pointer so the drag keeps targeting
+          // the card even if the finger drifts past its edge.
+          if (e.pointerType !== "mouse") {
+            try { tilt.setPointerCapture(e.pointerId); } catch (err) {}
+          }
+          begin(e);
         });
         tilt.addEventListener("pointermove", function (e) {
           if (!enabled) return;
@@ -9358,14 +9377,18 @@ export function Surface({ open, children }) {
           card.style.setProperty("--p19-gx", (px * 100).toFixed(1) + "%");
           card.style.setProperty("--p19-gy", (py * 100).toFixed(1) + "%");
         });
-        tilt.addEventListener("pointerleave", reset);
+        tilt.addEventListener("pointerup", reset);
+        tilt.addEventListener("pointercancel", reset);
+        tilt.addEventListener("pointerleave", function (e) {
+          // Mouse: leaving the card flattens it. Touch already reset on up.
+          if (e.pointerType === "mouse") reset();
+        });
 
         function refresh() {
-          enabled = fine.matches && !reduce.matches;
+          enabled = !reduce.matches;
           reset();
         }
-        if (fine.addEventListener) {
-          fine.addEventListener("change", refresh);
+        if (reduce.addEventListener) {
           reduce.addEventListener("change", refresh);
         }
       })();

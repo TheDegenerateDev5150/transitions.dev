@@ -57,6 +57,10 @@ The `:root` defaults below match the live tuning on [transitions.dev](https://tr
 ## CSS
 
 ```css
+/* The outer wrapper is the flat hit area; touch-action:none
+   lets a finger drag tilt the card instead of scrolling the
+   page, so tap-hold-drag works on mobile. */
+.t-tilt { touch-action: none; }
 /* The card tilts toward the pointer via rotateX/rotateY fed
    from JS; on leave it eases back to flat. A separate
    .is-tilting class swaps in a short linear follow while the
@@ -106,10 +110,11 @@ The `@media (prefers-reduced-motion: reduce)` guard at the bottom of the snippet
 
 ```js
 // Track the pointer on the OUTER .t-tilt (never transforms) and write
-// rotation + glare position into custom properties on the inner card.
+// rotation + glare position onto the inner card. Works for mouse
+// (hover) and touch / pen (tap-hold-drag) — a touch pointermove only
+// fires while a finger is down, so the press naturally drives the tilt.
 const tilt = document.querySelector(".t-tilt");
 const card = tilt.querySelector(".t-tilt-card");
-const fine = matchMedia("(hover: hover) and (pointer: fine)");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)");
 
 const MAX = 14; // peak tilt in degrees at the card edges (raise for a stronger lean)
@@ -121,8 +126,8 @@ function reset() {
   card.style.setProperty("--tilt-ry", "0deg");
 }
 
-tilt.addEventListener("pointermove", (e) => {
-  if (!fine.matches || reduce.matches) return;
+function track(e) {
+  if (reduce.matches) return;
   const r = tilt.getBoundingClientRect();
   const px = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
   const py = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
@@ -132,9 +137,23 @@ tilt.addEventListener("pointermove", (e) => {
   card.style.setProperty("--tilt-rx", ((0.5 - py) * MAX).toFixed(2) + "deg");
   card.style.setProperty("--tilt-gx", (px * 100).toFixed(1) + "%");
   card.style.setProperty("--tilt-gy", (py * 100).toFixed(1) + "%");
-});
+}
 
-tilt.addEventListener("pointerleave", reset);
+tilt.addEventListener("pointerdown", (e) => {
+  // Touch / pen: capture so the drag keeps targeting the card even if
+  // the finger drifts past its edge. Pair with touch-action: none on
+  // .t-tilt so the drag tilts instead of scrolling the page.
+  if (e.pointerType !== "mouse") {
+    try { tilt.setPointerCapture(e.pointerId); } catch (_) {}
+  }
+});
+tilt.addEventListener("pointermove", track);
+tilt.addEventListener("pointerup", reset);
+tilt.addEventListener("pointercancel", reset);
+tilt.addEventListener("pointerleave", (e) => {
+  // Mouse: leaving the card flattens it. Touch already reset on up.
+  if (e.pointerType === "mouse") reset();
+});
 ```
 
 ### Peak tilt angle
@@ -144,4 +163,8 @@ The rotation magnitude is a JS constant (`MAX`, in degrees), not a CSS variable 
 ### Why the pointer is tracked on the flat wrapper
 
 Bind `pointermove` to the outer `.t-tilt` (which never transforms), not the `.t-tilt-card` that rotates. If you track the tilting element, its rotating edges slip out from under the cursor near the borders and the hover flickers on and off.
+
+### Touch / mobile
+
+Because it uses Pointer Events, the tilt also works on touch: tap-hold-drag on the card and it follows your finger (a touch `pointermove` only fires while pressed). Two pieces make this reliable — `touch-action: none` on `.t-tilt` so the drag tilts instead of scrolling the page, and `setPointerCapture` on `pointerdown` so the gesture keeps targeting the card even if the finger drifts past its edge.
 
