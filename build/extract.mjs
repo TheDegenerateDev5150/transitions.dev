@@ -96,6 +96,66 @@ while ((tk = tokenRe.exec(rootBlock)) !== null) {
   tokens.set(tk[1].trim(), tk[2].trim().replace(/\s+/g, " "));
 }
 
+// Parse the same block again, this time keeping the family groupings
+// (Durations / Easings / Distances / Scales / Blur) and each token's
+// trailing /* usage */ comment. This shared scale is what the Motion
+// tokens tab exposes; the skill ships it verbatim and documents it so
+// `transitions refine` can suggest the exact var(--…) to reference.
+const motionStart = rootBlock.indexOf("/* ---- Motion tokens");
+const motionStop = rootBlock.indexOf("/* P1");
+if (motionStart === -1 || motionStop === -1) {
+  throw new Error("extract.mjs: motion-token block not found in :root");
+}
+const motionFamilies = []; // [{ name, entries: [{ token, value, usage }] }]
+let currentFamily = null;
+const familyRe = /^\s*\/\*\s*(Durations|Easings|Distances|Scales|Blur)\s*\*\/\s*$/;
+const mtLineRe = /^\s*(--[a-z-]+)\s*:\s*([^;]+);\s*(?:\/\*\s*([\s\S]*?)\s*\*\/)?\s*$/;
+for (const line of rootBlock.slice(motionStart, motionStop).split("\n")) {
+  const fam = line.match(familyRe);
+  if (fam) {
+    currentFamily = { name: fam[1], entries: [] };
+    motionFamilies.push(currentFamily);
+    continue;
+  }
+  const decl = line.match(mtLineRe);
+  if (decl && currentFamily) {
+    currentFamily.entries.push({
+      token: decl[1].trim(),
+      value: decl[2].trim().replace(/\s+/g, " "),
+      usage: (decl[3] || "").trim().replace(/\s+/g, " "),
+    });
+  }
+}
+if (!motionFamilies.length) {
+  throw new Error("extract.mjs: parsed zero motion-token families");
+}
+
+// The shared-scale :root block prepended to _root.css (2-space indent).
+const motionRootBlock = motionFamilies
+  .map((fam) => {
+    const lines = fam.entries.map(({ token, value, usage }) =>
+      usage ? `  ${token}: ${value};  /* ${usage} */` : `  ${token}: ${value};`
+    );
+    return [`  /* ${fam.name} */`, ...lines].join("\n");
+  })
+  .join("\n");
+
+// The markdown tables for the SKILL.md "## Motion tokens" section.
+const motionTokensDoc = motionFamilies
+  .map((fam) => {
+    const rows = fam.entries.map(
+      ({ token, value, usage }) => `| \`${token}\` | \`${value}\` | ${usage || "—"} |`
+    );
+    return [
+      `**${fam.name}**`,
+      "",
+      "| Token | Value | Usage |",
+      "| --- | --- | --- |",
+      ...rows,
+    ].join("\n");
+  })
+  .join("\n\n");
+
 // ── Curated metadata: ordering, file names, decision-rule copy ────
 // The README's published order (card → number → badge → text → menu →
 // modal → panel → page → icon) is the canonical taxonomy users see, so
@@ -758,7 +818,18 @@ for (const entry of ORDER) {
 }
 
 // ── _root.css (the universal install block) ──────────────────────
-const allDecls = [];
+// Lead with the shared motion-token scale so it can be referenced as
+// var(--…) anywhere, then the per-transition semantic variables (which
+// ship literal values so each snippet stays self-contained).
+const allDecls = [
+  "  /* ── Motion tokens — shared scale ──────────────────────────────",
+  "     Reference these with var(--…) anywhere in your project. The",
+  "     transitions below ship literal values so each snippet works on",
+  "     its own; `transitions refine` maps hardcoded values back to",
+  "     these tokens. */",
+  motionRootBlock,
+  "",
+];
 for (const entry of ORDER) {
   const tpl = PROTO_TEMPLATES[entry.key];
   allDecls.push(`  /* ${tpl.name} */`);
@@ -780,6 +851,7 @@ const tableRows = ORDER.map((entry) => {
 const skillMd = renderTemplate("skill.md.tmpl", {
   table: tableRows,
   fileList: ORDER.map((e) => `- [${e.file}.md](./${e.file}.md) — ${PROTO_TEMPLATES[e.key].name}`).join("\n"),
+  motionTokens: motionTokensDoc,
 });
 const skillPath = path.join(skillDir, "SKILL.md");
 fs.writeFileSync(skillPath, skillMd);
