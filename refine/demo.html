@@ -164,7 +164,21 @@
     .tl-header .tl-ghost-btn,
     .tl-header .tl-icon-btn,
     .tl-header .tl-sec-btn,
+    .tl-header .tl-accept-btn,
     .tl-header .tl-refine-btn { border-radius: 60px; }
+    .tl-accept-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px;
+      border: none; cursor: pointer; font-weight: 500; font-size: 13px; line-height: 14px; color: #17181C;
+      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.04),
+        inset 0 0 0 1px rgba(0,0,0,0.06), inset 0 -1px 0 0 rgba(0,0,0,0.06), inset 0 0 0 1px rgba(196,196,196,0.10);
+      transition: background 140ms ease, scale 140ms ease, opacity 140ms ease; }
+    .tl-accept-btn > svg { width: 16px; height: 16px; color: #17181C; flex: none; }
+    .tl-accept-btn:hover:not(:disabled) { background: #f9f9f9; }
+    .tl-accept-btn:active:not(:disabled) { background: #f9f9f9; scale: 0.96; }
+    .tl-accept-btn:disabled { opacity: 0.5; cursor: default; }
+    .tl-accept-spin { width: 16px; height: 16px; flex: none; border-radius: 50%;
+      border: 2px solid rgba(0,0,0,0.15); border-top-color: #17181C; animation: tl-accept-rot 0.7s linear infinite; }
+    @keyframes tl-accept-rot { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .tl-accept-spin { animation-duration: 1.4s; } }
 
     /* ghost button: transparent, grey on hover/pressed (Figma #f7f7f7) */
     .tl-ghost-btn { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 36px;
@@ -1169,6 +1183,82 @@
       // capture phase + the bubbling transitionrun event reaches document
       document.addEventListener("transitionrun",_txOnRun,true);
     }
+    // from/to recovered from a previously observed real run
+    function _txCaptured(el,et){
+      const rec=_txCapture.get(el);if(!rec)return null;
+      const from={},to={};let n=0;
+      for(const t of et){const c=rec.get(t.property);if(c){from[t.property]=c.from;to[t.property]=c.to;n++;}}
+      return n?{from,to}:null;
+    }
+    // Discover the transition's end-state WITHOUT interaction by reading the
+    // stylesheets: find rules that set a transitioning prop and represent a
+    // *state* of the element (a :hover/:focus pseudo, or a toggled class/attr
+    // like `.modal.open`). from = current computed value, to = the rule's value.
+    const _TX_STATE_PSEUDO=/:{1,2}(hover|focus|focus-visible|focus-within|active|checked|enabled|disabled|target|visited|link|valid|invalid|placeholder-shown|default)\b(\([^)]*\))?/g;
+    function _txReduceLast(el,sel){
+      const parts=sel.split(/(\s*[>+~]\s*|\s+)/);
+      let i=parts.length-1;while(i>=0&&/^\s*[>+~]?\s*$/.test(parts[i]))i--;
+      if(i<0)return null;
+      const toks=parts[i].match(/[.#]?[\w-]+|\[[^\]]*\]|::?[\w-]+(?:\([^)]*\))?|\*/g)||[];
+      let dropped=false,hasId=false;
+      const kept=toks.filter(tk=>{
+        if(tk[0]==="."){const ok=el.classList.contains(tk.slice(1));if(ok)hasId=true;else dropped=true;return ok;}
+        if(tk[0]==="["){let ok;try{ok=el.matches(tk);}catch{ok=false;}if(ok)hasId=true;else dropped=true;return ok;}
+        if(tk[0]==="#"){const ok=el.id&&("#"+el.id)===tk;if(ok)hasId=true;else dropped=true;return ok;}
+        if(tk[0]===":"){dropped=true;return false;} // pseudo = the state delta
+        return true; // tag / *
+      });
+      // Only a real *variant of this element*: we must have removed a state token
+      // AND kept a class/id/attr that ties the rule to el. Dropping every class to
+      // land on a bare tag/`*` would falsely match unrelated rules.
+      if(!dropped||!hasId)return null;
+      parts[i]=kept.join("");
+      return parts.join("");
+    }
+    function _txIsStateOf(el,sel){
+      try{if(el.matches(sel))return false;}catch{return false;}
+      const noP=sel.replace(_TX_STATE_PSEUDO,"").trim();
+      if(noP&&noP!==sel){try{if(el.matches(noP))return true;}catch{}}
+      const red=_txReduceLast(el,sel);
+      if(red&&red!==sel){try{if(el.matches(red))return true;}catch{}}
+      return false;
+    }
+    function _txScanRules(rules,el,props,to){
+      for(const rule of rules){
+        // Read style rules directly. NOTE: in browsers with CSS Nesting a plain
+        // CSSStyleRule also has a (usually empty) .cssRules, so test selectorText
+        // first — don't treat every style rule as a grouping rule.
+        const decl=rule.style;
+        if(decl&&rule.selectorText){
+          let sets=false;for(const p of props){if(decl.getPropertyValue(p)){sets=true;break;}}
+          if(sets){
+            for(const sub of rule.selectorText.split(",")){
+              const s=sub.trim();if(!s)continue;
+              if(_txIsStateOf(el,s)){for(const p of props){const v=decl.getPropertyValue(p);if(v&&!(p in to))to[p]=v.trim();}}
+            }
+          }
+        }
+        // Recurse into @media / @supports / @layer and any nested rules.
+        if(rule.cssRules&&rule.cssRules.length){
+          try{if(rule.media&&!window.matchMedia(rule.media.mediaText).matches)continue;}catch{}
+          _txScanRules(rule.cssRules,el,props,to);
+        }
+      }
+    }
+    function _txDiscover(el,et){
+      if(typeof document==="undefined"||!el.matches)return null;
+      const props=et.map(t=>t.property).filter(p=>p&&p!=="all");
+      if(!props.length)return null;
+      const to={};
+      for(const sheet of Array.from(document.styleSheets||[])){
+        let rules;try{rules=sheet.cssRules;}catch{continue;} // cross-origin sheet
+        if(rules)_txScanRules(rules,el,props,to);
+      }
+      const keys=Object.keys(to);if(!keys.length)return null;
+      const cs=getComputedStyle(el);const from={};
+      for(const p of keys)from[p]=cs.getPropertyValue(p)||cs[_txCamel(p)]||"";
+      return {from,to};
+    }
 
     class PreviewController {
       state="idle"; listeners=new Set(); cleanups=[]; animations=[]; progressListeners=new Set(); _rafId=null; scanner=null; _gen=0;
@@ -1210,23 +1300,39 @@
         this._pendingSeek=timeMs;
       }
       _finish(){this._stopPL();if(this.animations.length>0){let end=0;for(const a of this.animations){const t=a.effect?.getTiming();const e=(t?.delay??0)+(Number(t?.duration)||0);if(e>end)end=e;}this._ep(end);}this.animations=[];for(const c of this.cleanups)c();this.cleanups=[];if(this.scanner)this.scanner.unpause();this._setState("idle");}
-      // Arm an element so its transition runs now. If we captured the real
-      // transition earlier, replay it from→to (no click, no side effects);
-      // otherwise fall back to clicking the element. Returns a restore fn.
+      // Arm an element so its transition runs now, without needing the user to
+      // trigger it first. Priority:
+      //   1. a previously observed real run (exact),
+      //   2. end-state discovered from the stylesheets (hover/focus/toggled class),
+      //   3. a synthetic opacity/transform pulse to preview the timing,
+      //   4. click the element (last resort, may have side effects).
+      // Returns a restore fn.
       _arm(el,et){
         const saved=el.style.cssText;
         const tv=et.map(t=>`${t.property} ${formatCssTime(t.durationMs)} ${t.easing} ${formatCssTime(t.delayMs)}`).join(", ");
-        const rec=_txCapture.get(el);
-        const caps=rec?et.map(t=>[t.property,rec.get(t.property)]).filter(x=>x[1]):[];
-        if(caps.length){
-          el.style.transition="none";
-          for(const[p,v]of caps)el.style.setProperty(p,v.from);
-          void el.offsetWidth; // commit the from-state before transitioning
-          el.style.transition=tv;
-          for(const[p,v]of caps)el.style.setProperty(p,v.to);
-        }else{
-          el.style.transition=tv;el.click();
+        const states=_txCaptured(el,et)||_txDiscover(el,et);
+        if(states){
+          const props=et.map(t=>t.property).filter(p=>states.from[p]!=null&&states.to[p]!=null);
+          if(props.length){
+            el.style.transition="none";
+            for(const p of props)el.style.setProperty(p,states.from[p]);
+            void el.offsetWidth; // commit the from-state before transitioning
+            el.style.transition=tv;
+            for(const p of props)el.style.setProperty(p,states.to[p]);
+            return ()=>{try{el.style.cssText=saved;}catch{}};
+          }
         }
+        const synth=et.filter(t=>t.property==="opacity"||t.property==="transform"||t.property==="all");
+        if(synth.length){
+          const dur=Math.max(...et.map(t=>(t.durationMs||0)+(t.delayMs||0)))||et[0].durationMs||300;
+          const ease=et[0].easing||"ease";
+          const hasOp=synth.some(t=>t.property!=="transform"),hasTr=synth.some(t=>t.property!=="opacity");
+          const k0={},k1={},k2={};
+          if(hasOp){k0.opacity=1;k1.opacity=0.35;k2.opacity=1;}
+          if(hasTr){k0.transform="none";k1.transform="translateY(8px)";k2.transform="none";}
+          try{el.animate([k0,k1,k2],{duration:dur,easing:ease,fill:"none"});return ()=>{};}catch{}
+        }
+        el.style.transition=tv;el.click();
         return ()=>{try{el.style.cssText=saved;}catch{}};
       }
       _playCss(entry,gen){if(entry.bindings.type!=="css")return;this.animations=[];
@@ -1642,7 +1748,25 @@
           h("div",{className:"tl-refine-foot"},foot)));
     }
 
-    function Header({entries,active,onSelect,onReset,onCopy,copied,loop,setLoop,snap,setSnap,onMinimize,onRefine,refineActive}){
+    // Diff the active transition's effective (edited/refined) timings against its
+    // originally-scanned values — the set of changes Accept writes to source.
+    function computeChanges(active){
+      if(!active)return[];
+      const base=active.propertyTimings||(active.properties||[]).map(p=>({property:p,durationMs:active.durationMs,delayMs:active.delayMs,easing:active.easing}));
+      const bmap=new Map(base.map(t=>[t.property,t]));
+      const out=[];
+      for(const t of (active.effectiveTimings||[])){
+        const b=bmap.get(t.property);if(!b)continue;
+        if(t.durationMs!==b.durationMs||t.delayMs!==b.delayMs||(t.easing||"")!==(b.easing||"")){
+          out.push({property:t.property,
+            from:{durationMs:b.durationMs,delayMs:b.delayMs,easing:b.easing},
+            to:{durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing}});
+        }
+      }
+      return out;
+    }
+
+    function Header({entries,active,onSelect,onReset,onCopy,copied,loop,setLoop,snap,setSnap,onMinimize,onRefine,refineActive,onAccept,acceptState,acceptDisabled,acceptError}){
       const[pick,setPick]=useState(false);
       const[setg,setSetg]=useState(false);
       const pickRef=useRef(null), gearRef=useRef(null);
@@ -1672,6 +1796,18 @@
               h("span",{className:"t-icon","data-icon":"a"},h(Ic,{name:"copy"})),
               h("span",{className:"t-icon","data-icon":"b"},h(Ic,{name:"check"})))),
           h("span",{className:"t-tt tl-tt-below",role:"tooltip"},copied?"Copied":"Copy values")),
+        h("span",{className:"t-tt-wrap"},
+          h("button",{className:cx("tl-accept-btn",acceptState==="saving"&&"is-saving",acceptState==="done"&&"is-done"),
+            disabled:!active||acceptDisabled||acceptState==="saving"||acceptState==="done",onClick:onAccept,"aria-label":"Accept changes to your code"},
+            acceptState==="saving"
+              ? h("span",{className:"tl-accept-spin","aria-hidden":"true"})
+              : h(Ic,{name:"check"}),
+            h("span",null,acceptState==="done"?"Done":"Accept")),
+          h("span",{className:"t-tt tl-tt-below",role:"tooltip"},
+            acceptState==="error"&&acceptError?acceptError
+              :acceptState==="done"?"Saved to your code"
+              :acceptDisabled?"No changes to save"
+              :"Save changes to your codebase")),
         h("button",{className:cx("tl-refine-btn",refineActive&&"is-active"),disabled:!active,onClick:onRefine},
             h(Ic,{name:"wand"}),
             h("span",{className:"tl-refine-sparks","aria-hidden":"true"},
@@ -2295,6 +2431,9 @@
       const[refineSuggestions,setRefineSuggestions]=useState([]);
       const[refineSummary,setRefineSummary]=useState(null);
       const[refineError,setRefineError]=useState(null);
+      // ── accept (write to source) ──
+      const[acceptState,setAcceptState]=useState("idle"); // idle | saving | done | error
+      const[acceptError,setAcceptError]=useState(null);
       const[refineLabel,setRefineLabel]=useState(null);
       const[appliedIds,setAppliedIds]=useState({});
       const[refineMode,setRefineMode]=useState("llm"); // llm (Agent) | deterministic
@@ -2391,6 +2530,35 @@
         navigator.clipboard.writeText("transition: "+css+";").then(()=>{setCopied(true);setTimeout(()=>setCopied(false),1500);});
       },[active]);
       const resetOverrides=useCallback(()=>{if(active)registry.clearOverride(active.id);},[registry,active]);
+      // Accept → send an "apply" job so the agent writes the edited timings into
+      // the user's source, then reflect saving / done / error on the button.
+      const onAccept=useCallback(async()=>{
+        const changes=computeChanges(active);
+        if(!active||!changes.length)return;
+        setAcceptState("saving");setAcceptError(null);
+        try{
+          const{id}=await relayCreateJob({kind:"apply",transitionId:active.id,label:active.label,
+            selector:active.bindings&&active.bindings.selector,changes});
+          let settled=false;
+          for(let i=0;i<240&&!settled;i++){
+            await new Promise(r=>setTimeout(r,500));
+            const job=await relayGetJob(id);
+            if(job.status==="done"){settled=true;
+              if(job.result&&job.result.applied===false){
+                setAcceptState("error");setAcceptError((job.result&&job.result.summary)||"The agent couldn't find this transition in your source.");
+              }else{
+                setAcceptState("done");setTimeout(()=>setAcceptState("idle"),2500);
+              }
+            }else if(job.status==="error"){settled=true;setAcceptState("error");setAcceptError(job.error||"The agent reported an error.");}
+          }
+          if(!settled){setAcceptState("error");setAcceptError("Timed out waiting for the agent.");}
+        }catch(e){
+          setAcceptState("error");
+          setAcceptError("Couldn't reach the relay. Run: npx transitions-refine live");
+        }
+      },[active]);
+      // reset Accept feedback when switching transitions
+      useEffect(()=>{setAcceptState("idle");setAcceptError(null);},[active&&active.id]);
 
       // whole-component open/close uses the transitions.dev panel reveal:
       // keep the panel mounted while it animates, flip data-open on the next
@@ -2439,7 +2607,8 @@
           h("div",{className:"tl-panel-body"},
             h("div",{className:"tl-panel-main"},
               h(Header,{entries,active,onSelect:setActiveId,onReset:resetOverrides,onCopy:copyValues,copied,
-                loop,setLoop,snap,setSnap,onMinimize:()=>setMinimized(true),onRefine:openRefine,refineActive:refineOpen}),
+                loop,setLoop,snap,setSnap,onMinimize:()=>setMinimized(true),onRefine:openRefine,refineActive:refineOpen,
+                onAccept,acceptState,acceptDisabled:computeChanges(active).length===0,acceptError}),
               active
                 ?h(Body,{entry:active,onPropChange:(prop,o)=>setPropOverride(prop,o),
                     state,play,pause,resume,restart,stop,speed,setSpeed,snap})

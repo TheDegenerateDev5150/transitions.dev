@@ -2,7 +2,7 @@
 
 A live, agent-driven **Refine** panel for CSS and [Motion](https://motion.dev) transitions. One command injects a docked timeline + Refine panel onto your running app — no `npm install`, no source edits of your own — and every "Refine" click asks a coding agent to review the selected transition against the [transitions.dev](https://transitions.dev) motion tokens and suggest token-aligned values (or a whole-transition replacement from the library).
 
-The feedback shows up **in a panel that slides in from the right** — not in your chat — and you pick which suggestions to apply. Applied suggestions are **live overrides** (instant preview, reversible) — the same path as dragging the timeline bars.
+The feedback shows up **in a panel that slides in from the right** — not in your chat — and you pick which suggestions to apply. Applied suggestions are **live overrides** (instant preview, reversible) — the same path as dragging the timeline bars. When you're happy, **Accept** writes those values back into your source via the agent.
 
 Inspired by the [impeccable.style](https://impeccable.style/live-mode/) "live" pattern: the browser drops a job in a tiny local relay, and the relay answers it with **one agent run per click**. No standing loop, nothing to start per click — you just keep the relay running.
 
@@ -59,6 +59,12 @@ The CLI must have the `transitions-dev` skill available (the prompt tells it to 
 - **Small refinements** — keeps the transition, suggests motion-token tweaks (duration/easing), and may add a whole-transition replacement when one clearly fits better.
 - **Replace transition** — only whole-transition replacements from the transitions.dev library (no token tweaks). This path needs the agent; the deterministic answerer will tell you to switch to the LLM.
 
+## Accept — write changes to your code
+
+The **Accept** button (next to Refine) is enabled whenever the selected transition has unsaved changes — whether you edited the bars/easing by hand or applied a Refine suggestion. Pressing it sends an **apply job** to the relay: the agent finds where that transition is declared in your source (plain CSS, CSS Modules, styled-components/emotion, Tailwind, or inline styles), edits only the changed timings, and reports back. The button shows a spinner while saving and flips to **Done** on success.
+
+Like Replace, Accept needs the agent — run `/refine live` (or `--llm` / `REFINE_AGENT_CMD`). The deterministic answerer can't edit files. Play preview also no longer needs you to trigger the transition first: it recovers the end-state from your stylesheets (hover/focus pseudo-states and toggled classes like `.modal.open`), so opening the panel and pressing Play just works.
+
 ## Pieces
 
 | Piece | File | Role |
@@ -80,9 +86,9 @@ The CLI must have the `transitions-dev` skill available (the prompt tells it to 
 | `REFINE_AUTO=0` | — | disable auto-answer and wait for an external poller |
 | `window.REFINE_RELAY_URL` | injected origin | browser override for the relay URL |
 
-Endpoints: `POST /jobs`, `GET /jobs/:id` (browser). In `REFINE_AUTO=0` mode an external poller also uses `GET /jobs/next` and `POST /jobs/:id/{status,result,error}`.
+Endpoints: `POST /jobs` (refine or `kind: "apply"`), `GET /jobs/:id` (browser). In `REFINE_AUTO=0` mode an external poller also uses `GET /jobs/next` and `POST /jobs/:id/{status,result,error}`.
 
-Writing a value back to your source is a separate, explicit step (treat it like a normal edit / `transitions apply`).
+Refine suggestions stay as live overrides until you press **Accept**, which is the explicit step that writes them into your source.
 
 ## License
 

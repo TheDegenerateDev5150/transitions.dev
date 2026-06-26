@@ -140,24 +140,35 @@ function buildPrompt(job) {
   return lines.join("\n");
 }
 
-function parseAgentOutput(stdout) {
+function parseJsonish(stdout) {
   let s = (stdout || "").trim();
   const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fence) s = fence[1].trim();
-  let obj;
   try {
-    obj = JSON.parse(s);
+    return JSON.parse(s);
   } catch {
     const a = s.indexOf("{");
     const b = s.lastIndexOf("}");
-    if (a >= 0 && b > a) obj = JSON.parse(s.slice(a, b + 1));
-    else throw new Error("agent output was not JSON");
+    if (a >= 0 && b > a) return JSON.parse(s.slice(a, b + 1));
+    throw new Error("agent output was not JSON");
   }
+}
+
+function parseAgentOutput(stdout) {
+  const obj = parseJsonish(stdout);
   if (!obj || !Array.isArray(obj.suggestions)) throw new Error("agent output missing suggestions[]");
   return { suggestions: obj.suggestions, summary: obj.summary ?? null };
 }
 
-function runAgentCmd(cmd, prompt) {
+// Apply jobs ask the agent to edit the user's source, so the result is an
+// outcome, not suggestions.
+function parseApplyOutput(stdout) {
+  const obj = parseJsonish(stdout);
+  if (!obj || typeof obj.applied === "undefined") throw new Error("agent output missing `applied`");
+  return { applied: Boolean(obj.applied), summary: obj.summary ?? null, files: Array.isArray(obj.files) ? obj.files : null };
+}
+
+function runAgentCmd(cmd, prompt, parse = parseAgentOutput) {
   return new Promise((resolve, reject) => {
     const child = spawn("sh", ["-c", cmd], { stdio: ["pipe", "pipe", "pipe"] });
     let out = "";
@@ -176,7 +187,7 @@ function runAgentCmd(cmd, prompt) {
       clearTimeout(timer);
       if (code !== 0) return reject(new Error(`agent exited ${code}: ${err.slice(0, 300)}`));
       try {
-        resolve(parseAgentOutput(out));
+        resolve(parse(out));
       } catch (e) {
         reject(new Error(`${e.message} — got: ${out.slice(0, 200)}`));
       }
@@ -184,6 +195,27 @@ function runAgentCmd(cmd, prompt) {
     child.stdin.write(prompt);
     child.stdin.end();
   });
+}
+
+// Prompt for an "apply" job: the agent edits the user's source so the selected
+// transition uses the approved timings.
+function buildApplyPrompt(job) {
+  const r = job.request || {};
+  return [
+    "You are APPLYING an approved transition change to the user's SOURCE CODE. Edit files; do not just suggest.",
+    "",
+    "Change context (JSON):",
+    JSON.stringify({ label: r.label, selector: r.selector, changes: r.changes }, null, 2),
+    "",
+    "Steps:",
+    "1. Find where this transition is defined in the source. Search by the selector/label/class names. Handle plain CSS, CSS Modules, styled-components/emotion template literals, Tailwind utilities/config, and inline style objects — the browser selector is a hint, the real declaration may live in any of these.",
+    "2. For each change, edit the source so that property's transition uses the `to` values: durationMs (ms), easing, delayMs (ms). Keep the file's existing unit/format conventions (e.g. `0.25s` vs `250ms`) and only touch the timing of the named property. If a CSS variable / design token backs the value, update it at the most sensible single place.",
+    "3. Make the minimal edit. Do not reformat or change unrelated code.",
+    "",
+    'Output ONLY a JSON object — no prose, no markdown fences — shaped exactly like:',
+    '{"applied":true,"summary":"Set .modal transition to 250ms ease-out","files":["src/Modal.css:42"]}',
+    'If you cannot confidently locate the declaration, output {"applied":false,"summary":"<what you looked for and why it was not found>"}.',
+  ].join("\n");
 }
 
 function refineDeterministic(job) {
@@ -207,13 +239,30 @@ function refineDeterministic(job) {
 async function answerJob(job) {
   job.status = "working";
   job.updatedAt = now();
+  const isApply = job.request?.kind === "apply";
   const label = job.request?.label || job.request?.selector || "transition";
   // The browser picks the mode per job via the LLM / Deterministic tabs.
   // Default: LLM when a command is configured, otherwise deterministic.
   const mode = job.request?.mode || (AGENT_CMD ? "llm" : "deterministic");
-  job.statusLog.push({ message: `Scanning "${label}"…`, at: now() });
+  job.statusLog.push({ message: isApply ? `Writing "${label}" to your code…` : `Scanning "${label}"…`, at: now() });
   try {
     let result;
+    if (isApply) {
+      // Editing source can only be done by the agent.
+      if (!AGENT_CMD) {
+        throw new Error(
+          "Saving to your code needs the agent. Run `/refine live` in your editor, " +
+            "or start the relay with REFINE_AGENT_CMD set."
+        );
+      }
+      job.statusLog.push({ message: "Editing source files…", at: now() });
+      result = await runAgentCmd(AGENT_CMD, buildApplyPrompt(job), parseApplyOutput);
+      job.result = { applied: result.applied, summary: result.summary, files: result.files };
+      job.status = "done";
+      job.updatedAt = now();
+      console.log(`  ✓ apply ${job.id.slice(0, 8)} — applied=${result.applied}`);
+      return;
+    }
     if (mode === "llm") {
       if (!AGENT_CMD) {
         throw new Error(
@@ -313,7 +362,10 @@ const server = createServer(async (req, res) => {
       return send(res, 400, { error: "Body must be { request: {...} }" });
     }
     const job = createJob(body.request);
-    const mode = job.request.mode || (llmAvailable() ? "llm" : "deterministic");
+    // Apply jobs edit source — agent only, never deterministic.
+    const mode = job.request.kind === "apply"
+      ? "llm"
+      : (job.request.mode || (llmAvailable() ? "llm" : "deterministic"));
     job.request.mode = mode;
 
     if (!AUTO) {
@@ -386,9 +438,14 @@ const server = createServer(async (req, res) => {
 
     if (method === "POST" && sub === "result") {
       const body = await readJson(req);
-      const suggestions = body && Array.isArray(body.suggestions) ? body.suggestions : null;
-      if (!suggestions) return send(res, 400, { error: "Body must be { suggestions: [...] }" });
-      job.result = { suggestions, summary: body.summary ?? null };
+      if (body && Array.isArray(body.suggestions)) {
+        job.result = { suggestions: body.suggestions, summary: body.summary ?? null };
+      } else if (body && typeof body.applied !== "undefined") {
+        // apply-job result from a `/refine live` agent
+        job.result = { applied: Boolean(body.applied), summary: body.summary ?? null, files: Array.isArray(body.files) ? body.files : null };
+      } else {
+        return send(res, 400, { error: "Body must be { suggestions: [...] } or { applied, summary }" });
+      }
       job.status = "done";
       job.updatedAt = now();
       return send(res, 200, { ok: true });

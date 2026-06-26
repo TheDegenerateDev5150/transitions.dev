@@ -1,6 +1,6 @@
 ---
 name: refine-live
-description: Become the live "Refine" agent for the Timeline Inspector. Use when the user runs `/refine live`, asks to "refine live", "go live", "answer refine jobs", or wants the timeline panel's Refine button (LLM mode) to be backed by a real agent. Long-polls the local refine relay, reasons about each CSS transition with the transitions-dev skill, and posts suggestions back to the browser panel.
+description: Become the live "Refine" agent for the Timeline Inspector. Use when the user runs `/refine live`, asks to "refine live", "go live", "answer refine jobs", or wants the timeline panel's Refine button (LLM mode) or Accept button to be backed by a real agent. Long-polls the local refine relay, reasons about each CSS transition with the transitions-dev skill, posts suggestions back to the browser panel, and for "apply" jobs writes the accepted timing changes into the user's source code.
 ---
 
 # Refine Live
@@ -54,6 +54,11 @@ never has to re-run `/refine live`.
      }
      ```
 
+   - **If `request.kind === "apply"`** this is not a suggestion job — the user
+     pressed **Accept** to write changes to their code. Jump to
+     [`## Apply jobs`](#apply-jobs-write-to-source) and edit the source instead of
+     posting suggestions. Everything below (refineType, steps 3–4) is for the
+     normal Refine flow.
    - `refineType` chooses what kinds of suggestions to make (it mirrors the
      panel's two tabs):
      - `"small"` (or missing) → **Small refinements**: nudge the existing
@@ -170,6 +175,53 @@ never has to re-run `/refine live`.
    because it's been quiet — idle is the normal state between clicks. If you do
    stop, tell them the LLM tab will go unavailable and how to restart
    (`/refine live`).
+
+## Apply jobs (write to source)
+
+When a claimed job has `request.kind === "apply"`, the user accepted their current
+timeline values and wants them written to the codebase. The request looks like:
+
+```json
+{
+  "id": "uuid",
+  "request": {
+    "kind": "apply",
+    "label": "div.modal.t-modal",
+    "selector": "div.modal > button.close",
+    "changes": [
+      { "property": "opacity", "from": { "durationMs": 300, "delayMs": 0, "easing": "ease" },
+        "to": { "durationMs": 150, "delayMs": 0, "easing": "cubic-bezier(0.4, 0, 1, 1)" } }
+    ]
+  }
+}
+```
+
+Do this:
+
+1. **Locate the real declaration in the source.** The `selector` is a DOM-path
+   *hint*, not necessarily the source selector. Search by the label/class names and
+   handle whatever the project uses: plain CSS / CSS Modules, styled-components or
+   emotion template literals, Tailwind utilities (`duration-300`, arbitrary
+   `[transition-duration:300ms]`, or the `tailwind.config` theme), and inline
+   `style={{ transition: … }}` objects. Match by the `from` values to disambiguate.
+2. **Edit each change's property** to its `to` values (`durationMs` ms, `easing`,
+   `delayMs` ms). Keep the file's existing unit/format (`0.25s` vs `250ms`) and
+   touch only that property's timing. If a CSS variable / design token backs the
+   value, update it at the single most sensible place.
+3. **Minimal edit** — no reformatting or unrelated changes.
+4. **Post the outcome** (this completes the job):
+
+   ```bash
+   curl -s -X POST http://localhost:7331/jobs/<id>/result \
+     -H 'Content-Type: application/json' \
+     -d '{"applied":true,"summary":"Set .t-modal transition to 150ms ease-in","files":["src/Modal.css:42"]}'
+   ```
+
+   If you cannot confidently find the declaration, post
+   `{"applied":false,"summary":"<what you searched and why not found>"}` (still a
+   `result`, not an `error`). Reserve `/jobs/<id>/error` for unexpected failures.
+
+Then go back to step 1 of the loop.
 
 ## Suggestion shape (must match the panel)
 
