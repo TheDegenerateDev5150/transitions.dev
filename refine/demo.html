@@ -323,8 +323,15 @@
       position: relative; z-index: 5; cursor: grabbing; }
     .tl-prop-row.reordering .tl-prop-grip { color: var(--c-ruler); cursor: grabbing; }
     .tl-prop-label { font-size: 13px; font-weight: 500; line-height: 18px; color: var(--c-text-mut2); white-space: nowrap; overflow: hidden;
-      text-overflow: ellipsis; text-transform: capitalize; }
+      text-overflow: ellipsis; text-transform: capitalize; display: flex; align-items: center; gap: 6px; min-width: 0; }
     .tl-prop-row.selected .tl-prop-label { color: #171717; }
+    .tl-prop-member { flex: none; font-size: 11px; font-weight: 600; line-height: 14px; padding: 1px 6px; border-radius: 60px;
+      background: var(--c-sec, rgba(0,0,0,0.05)); color: var(--c-text-faint); text-transform: none; max-width: 96px;
+      overflow: hidden; text-overflow: ellipsis; }
+    .tl-prop-row.selected .tl-prop-member { color: var(--c-text-mut2); }
+    .tl-prop-prop { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .tl-insp-member { display: inline-block; font-size: 11px; font-weight: 600; line-height: 14px; padding: 1px 6px; border-radius: 60px;
+      background: var(--c-sec, rgba(0,0,0,0.05)); color: var(--c-text-faint); text-transform: none; margin-right: 6px; vertical-align: middle; }
     /* 16px left inset of the plot area (kept in sync with ruler/playhead/scrub) */
     .tl-prop-track { position: relative; flex: 1; user-select: none; margin-left: 16px; }
     /* timeline line — capsule (fully rounded), Figma #eeeeef default / #e9e9e9 hover */
@@ -548,6 +555,9 @@
     .tl-menu-help svg { display: block; }
     .tl-menu-check { display: flex; color: var(--c-text-strong); flex: none; }
     .tl-menu-empty { padding: 10px; color: var(--c-disabled); font-size: 13px; }
+    .tl-menu-section { padding: 8px 10px 4px; font-size: 11px; font-weight: 600; line-height: 14px;
+      letter-spacing: 0.02em; text-transform: uppercase; color: var(--c-text-faint); }
+    .tl-menu-section:not(:first-child) { margin-top: 2px; border-top: 1px solid var(--c-border, rgba(0,0,0,0.06)); padding-top: 8px; }
 
     /* ═════ transitions.dev — menu dropdown (verbatim) ═════ */
     .t-dropdown {
@@ -1115,36 +1125,103 @@
       return out;
     }
 
-    // ── registry (per-property overrides) ──
+    // ── registry (per-lane overrides) ──
+    // A "lane" is one animated property of one element. For flat DOM transitions
+    // a lane's id is just the property; for agent-grouped phases it is
+    // `memberId::property`, so two members can each animate e.g. `opacity`.
+    // Selectable items are either flat DOM entries (kind "flat") or one phase of
+    // an agent group (kind "phase"); a phase fans out into per-member lanes.
     class TransitionRegistry {
-      entries=new Map(); listeners=new Set(); propOverrides=new Map(); snapshot=[]; effectiveCache=new Map();
-      register(e){ this.entries.set(e.id,e); this._notify(); }
-      unregister(id){ this.entries.delete(id); this.propOverrides.delete(id); this._notify(); }
-      replaceAll(list){ this.entries.clear(); for(const e of list) this.entries.set(e.id,e); this._notify(); }
+      entries=new Map();        // flat DOM entries by id
+      groups=[];                // agent groups: [{id,label,component,phases:[{id,phase,label,members:[...]}]}]
+      claimedEntryIds=new Set();// flat entries covered by a group member (hidden from "Ungrouped")
+      listeners=new Set(); laneOverrides=new Map(); snapshot=[]; effectiveCache=new Map();
+      register(e){ this.entries.set(e.id,e); this._recomputeClaimed(); this._notify(); }
+      unregister(id){ this.entries.delete(id); this.laneOverrides.delete(id); this._recomputeClaimed(); this._notify(); }
+      replaceAll(list){ this.entries.clear(); for(const e of list) this.entries.set(e.id,e); this._recomputeClaimed(); this._notify(); }
+      setGroups(groups){ this.groups = Array.isArray(groups)?groups:[]; this._recomputeClaimed(); this._notify(); }
+      clearGroups(){ this.groups=[]; this.claimedEntryIds.clear(); this._notify(); }
       get(id){ return this.entries.get(id); }
       getAll(){ return this.snapshot; }
       getEffective(id){ return this.effectiveCache.get(id); }
-      setPropOverride(id, prop, o){
-        const m = this.propOverrides.get(id) || {};
-        m[prop] = { ...m[prop], ...o };
-        this.propOverrides.set(id, m);
+      // overrides are keyed by selectable-item id, then by laneId
+      setPropOverride(id, laneId, o){
+        const m = this.laneOverrides.get(id) || {};
+        m[laneId] = { ...m[laneId], ...o };
+        this.laneOverrides.set(id, m);
         this._notify();
       }
-      clearOverride(id){ this.propOverrides.delete(id); this._notify(); }
-      getPropOverrides(id){ return this.propOverrides.get(id); }
+      clearOverride(id){ this.laneOverrides.delete(id); this._notify(); }
+      getPropOverrides(id){ return this.laneOverrides.get(id); }
       subscribe(fn){ this.listeners.add(fn); return ()=>this.listeners.delete(fn); }
-      _notify(){
-        this.snapshot=Array.from(this.entries.values());
-        this.effectiveCache.clear();
-        for(const[id,entry]of this.entries){
-          const po = this.propOverrides.get(id) || {};
-          const timings = (entry.propertyTimings || entry.properties.map(p=>({property:p,durationMs:entry.durationMs,delayMs:entry.delayMs,easing:entry.easing})));
-          const effTimings = timings.map(t => {
-            const o = po[t.property];
-            return { property:t.property, durationMs:o?.durationMs??t.durationMs, delayMs:o?.delayMs??t.delayMs, easing:o?.easing??t.easing, spring:o?.spring??t.spring };
-          });
-          this.effectiveCache.set(id, { ...entry, effectiveTimings: effTimings });
+      // A flat entry is "claimed" when every live element it is bound to is also
+      // matched by some group member's selector, so we don't list it twice.
+      _recomputeClaimed(){
+        this.claimedEntryIds.clear();
+        if(!this.groups.length||typeof document==="undefined")return;
+        const memberEls=new Set();
+        for(const g of this.groups)for(const ph of (g.phases||[]))for(const m of (ph.members||[])){
+          if(!m.selector)continue;
+          let els=[];try{els=Array.from(document.querySelectorAll(m.selector));}catch{}
+          for(const el of els)memberEls.add(el);
         }
+        if(!memberEls.size)return;
+        for(const[id,entry]of this.entries){
+          const els=((entry.bindings&&entry.bindings.elements)||[]).map(w=>w.deref&&w.deref()).filter(Boolean);
+          if(els.length&&els.every(el=>memberEls.has(el)))this.claimedEntryIds.add(id);
+        }
+      }
+      _baseLanesFlat(entry){
+        const timings=(entry.propertyTimings||entry.properties.map(p=>({property:p,durationMs:entry.durationMs,delayMs:entry.delayMs,easing:entry.easing})));
+        return timings.map(t=>({laneId:t.property,property:t.property,memberId:null,member:null,selector:entry.bindings&&entry.bindings.selector,durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing,spring:t.spring}));
+      }
+      _baseLanesPhase(phase){
+        const out=[];
+        for(const m of (phase.members||[])){
+          for(const t of (m.propertyTimings||[])){
+            out.push({laneId:m.id+"::"+t.property,property:t.property,memberId:m.id,member:m.label||m.id,selector:m.selector,toState:m.toState,durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing,spring:t.spring});
+          }
+        }
+        return out;
+      }
+      _applyOverrides(baseLanes,po){
+        return baseLanes.map(t=>{const o=po[t.laneId];return {...t,durationMs:o?.durationMs??t.durationMs,delayMs:o?.delayMs??t.delayMs,easing:o?.easing??t.easing,spring:o?.spring??t.spring};});
+      }
+      _notify(){
+        this.effectiveCache.clear();
+        const items=[];
+        // 1) agent groups → one selectable item per phase
+        for(const g of this.groups){
+          for(const ph of (g.phases||[])){
+            const id=ph.id||(g.id+":"+(ph.phase||ph.label||"phase"));
+            const po=this.laneOverrides.get(id)||{};
+            const baseLanes=this._baseLanesPhase(ph);
+            const effTimings=this._applyOverrides(baseLanes,po);
+            const repDur=effTimings.reduce((mx,t)=>Math.max(mx,(t.durationMs||0)+(t.delayMs||0)),0);
+            const members=(ph.members||[]).map(m=>{
+              const mb=baseLanes.filter(l=>l.memberId===m.id);
+              return {memberId:m.id,label:m.label||m.id,selector:m.selector,toState:m.toState,
+                lanes:this._applyOverrides(mb,po),baseLanes:mb};
+            });
+            const item={id,kind:"phase",groupId:g.id,groupLabel:g.label||g.id,component:g.component||null,
+              phase:ph.phase||null,phaseLabel:ph.label||ph.phase||"Phase",
+              label:(g.label||g.id)+" · "+(ph.label||ph.phase||"Phase"),durationMs:repDur,
+              members,effectiveTimings:effTimings,baseLanes};
+            this.effectiveCache.set(id,item);
+            items.push(item);
+          }
+        }
+        // 2) flat DOM entries not claimed by a group → "Ungrouped"
+        for(const[id,entry]of this.entries){
+          if(this.claimedEntryIds.has(id))continue;
+          const po=this.laneOverrides.get(id)||{};
+          const baseLanes=this._baseLanesFlat(entry);
+          const effTimings=this._applyOverrides(baseLanes,po);
+          const item={...entry,kind:"flat",groupId:null,groupLabel:null,effectiveTimings:effTimings,baseLanes};
+          this.effectiveCache.set(id,item);
+          items.push(item);
+        }
+        this.snapshot=items;
         for(const fn of this.listeners) fn(this.snapshot);
       }
     }
@@ -1259,6 +1336,33 @@
       for(const p of keys)from[p]=cs.getPropertyValue(p)||cs[_txCamel(p)]||"";
       return {from,to};
     }
+    // Toggle a phase's state class/attribute (e.g. ".is-open" or "[data-open]")
+    // and read the resulting computed values, so a phase plays its real end-state
+    // even when the source uses a toggled class the DOM isn't currently in.
+    function _txToState(el,et,toState){
+      if(typeof document==="undefined"||!el.matches||!toState)return null;
+      const props=et.map(t=>t.property).filter(p=>p&&p!=="all");
+      if(!props.length)return null;
+      const s=String(toState).trim();
+      let applied=null; // {undo}
+      try{
+        if(s[0]==="."){const c=s.slice(1);if(c&&!el.classList.contains(c)){el.classList.add(c);applied=()=>el.classList.remove(c);}}
+        else if(s[0]==="["){
+          const m=s.match(/^\[\s*([\w-]+)\s*(?:([~|^$*]?=)\s*"?([^"\]]*)"?\s*)?\]$/);
+          if(m){const name=m[1],val=m[3]!=null?m[3]:"";if(el.getAttribute(name)!==val){el.setAttribute(name,val);applied=()=>el.removeAttribute(name);}}
+        }
+      }catch{}
+      if(!applied)return null; // already in that state, or unparseable
+      const cs=getComputedStyle(el);const to={};
+      for(const p of props)to[p]=cs.getPropertyValue(p)||cs[_txCamel(p)]||"";
+      try{applied();}catch{}
+      const cs0=getComputedStyle(el);const from={};
+      for(const p of props)from[p]=cs0.getPropertyValue(p)||cs0[_txCamel(p)]||"";
+      const keys=Object.keys(to).filter(p=>to[p]!=null&&to[p]!==""&&to[p]!==from[p]);
+      if(!keys.length)return null;
+      const f={},t={};for(const p of keys){f[p]=from[p];t[p]=to[p];}
+      return {from:f,to:t};
+    }
 
     class PreviewController {
       state="idle"; listeners=new Set(); cleanups=[]; animations=[]; progressListeners=new Set(); _rafId=null; scanner=null; _gen=0;
@@ -1269,7 +1373,25 @@
       subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn);}
       onProgress(fn){this.progressListeners.add(fn);return()=>this.progressListeners.delete(fn);}
       play(entry){this.stop();this._gen++;this._current=entry;
-        if(this.scanner)this.scanner.pause();if(entry.bindings.type==="css")this._playCss(entry,this._gen);this._setState("playing");}
+        if(this.scanner)this.scanner.pause();this._playCss(entry,this._gen);this._setState("playing");}
+      // Resolve a selectable item to a flat list of {el, et, toState} arm targets.
+      // Phase items fan out to their members (selector may match several elements,
+      // e.g. staggered items); flat items use their bound DOM elements.
+      _targets(entry){
+        const out=[];
+        if(entry.kind==="phase"){
+          for(const m of (entry.members||[])){
+            if(!m.selector||!m.lanes||!m.lanes.length)continue;
+            let els=[];try{els=Array.from(document.querySelectorAll(m.selector));}catch{}
+            for(const el of els)out.push({el,et:m.lanes,toState:m.toState});
+          }
+          return out;
+        }
+        if(!entry.bindings||entry.bindings.type!=="css")return out;
+        const et=entry.effectiveTimings||entry.properties.map(p=>({property:p,durationMs:entry.durationMs,delayMs:entry.delayMs,easing:entry.easing}));
+        for(const wr of entry.bindings.elements){const el=wr.deref&&wr.deref();if(el)out.push({el,et,toState:null});}
+        return out;
+      }
       pause(){if(this.state!=="playing")return;for(const a of this.animations){try{a.pause();}catch{}}this._stopPL();this._setState("paused");}
       resume(){if(this.state!=="paused")return;for(const a of this.animations){try{a.play();}catch{}}this._startPL();this._setState("playing");}
       stop(){this._stopPL();for(const a of this.animations){try{a.cancel();}catch{}}this.animations=[];for(const c of this.cleanups)c();this.cleanups=[];this._ep(0);if(this.scanner)this.scanner.unpause();this._setState("idle");}
@@ -1278,11 +1400,11 @@
         this.stop();this._gen++;const gen=this._gen;
         this._pendingSeek=seekMs;
         if(this.scanner)this.scanner.pause();
-        if(entry.bindings.type!=="css")return;
+        const targets=this._targets(entry);
+        if(!targets.length)return;
         this.animations=[];
-        const et=entry.effectiveTimings||entry.properties.map(p=>({property:p,durationMs:entry.durationMs,delayMs:entry.delayMs,easing:entry.easing}));
-        for(const wr of entry.bindings.elements){const el=wr.deref();if(!el)continue;
-          const restore=this._arm(el,et);
+        for(const {el,et,toState} of targets){
+          const restore=this._arm(el,et,toState);
           requestAnimationFrame(()=>{if(this._gen!==gen)return;const running=el.getAnimations();
             for(const a of running){a.pause();a.playbackRate=this.rate;this.animations.push(a);}
             const t=this._pendingSeek??seekMs;
@@ -1307,10 +1429,12 @@
       //   3. a synthetic opacity/transform pulse to preview the timing,
       //   4. click the element (last resort, may have side effects).
       // Returns a restore fn.
-      _arm(el,et){
+      _arm(el,et,toState){
         const saved=el.style.cssText;
         const tv=et.map(t=>`${t.property} ${formatCssTime(t.durationMs)} ${t.easing} ${formatCssTime(t.delayMs)}`).join(", ");
-        const states=_txCaptured(el,et)||_txDiscover(el,et);
+        // toState (a phase's driving class/attr) is the most reliable source of
+        // the real end-state; fall back to a captured run, then CSSOM discovery.
+        const states=(toState&&_txToState(el,et,toState))||_txCaptured(el,et)||_txDiscover(el,et);
         if(states){
           const props=et.map(t=>t.property).filter(p=>states.from[p]!=null&&states.to[p]!=null);
           if(props.length){
@@ -1335,12 +1459,17 @@
         el.style.transition=tv;el.click();
         return ()=>{try{el.style.cssText=saved;}catch{}};
       }
-      _playCss(entry,gen){if(entry.bindings.type!=="css")return;this.animations=[];
-        const et = entry.effectiveTimings || entry.properties.map(p=>({property:p,durationMs:entry.durationMs,delayMs:entry.delayMs,easing:entry.easing}));
-        for(const wr of entry.bindings.elements){const el=wr.deref();if(!el)continue;
-          const restore=this._arm(el,et);
+      _playCss(entry,gen){
+        const targets=this._targets(entry);
+        this.animations=[];
+        if(!targets.length){this._finish();return;}
+        let pending=targets.length;
+        for(const {el,et,toState} of targets){
+          const restore=this._arm(el,et,toState);
           requestAnimationFrame(()=>{if(this._gen!==gen)return;const running=el.getAnimations();for(const a of running){a.playbackRate=this.rate;this.animations.push(a);}this._startPL();
-            if(running.length>0){Promise.allSettled(running.map(a=>a.finished)).then(()=>{if(this._gen!==gen||this.state!=="playing")return;if(this.loop&&this._current){this.play(this._current);}else{this._finish();}});}else{this._finish();}});
+            // resolve the whole group when every target's animations have settled
+            const onDone=()=>{if(this._gen!==gen||this.state!=="playing")return;pending--;if(pending>0)return;if(this.loop&&this._current){this.play(this._current);}else{this._finish();}};
+            if(running.length>0){Promise.allSettled(running.map(a=>a.finished)).then(onDone);}else{onDone();}});
           this.cleanups.push(restore);}}
       _startPL(){this._stopPL();const tick=()=>{if(this.animations.length>0){let cur=0;for(const a of this.animations){const c=Number(a.currentTime)||0;if(c>cur)cur=c;}this._ep(cur);}this._rafId=requestAnimationFrame(tick);};this._rafId=requestAnimationFrame(tick);}
       _stopPL(){if(this._rafId!==null){cancelAnimationFrame(this._rafId);this._rafId=null;}}
@@ -1748,17 +1877,19 @@
           h("div",{className:"tl-refine-foot"},foot)));
     }
 
-    // Diff the active transition's effective (edited/refined) timings against its
+    // Diff the active item's effective (edited/refined) lanes against their
     // originally-scanned values — the set of changes Accept writes to source.
+    // Each change carries member/selector/phase context so the agent can target
+    // the right state rule (e.g. .is-open vs .is-closing) for a grouped phase.
     function computeChanges(active){
       if(!active)return[];
-      const base=active.propertyTimings||(active.properties||[]).map(p=>({property:p,durationMs:active.durationMs,delayMs:active.delayMs,easing:active.easing}));
-      const bmap=new Map(base.map(t=>[t.property,t]));
+      const base=active.baseLanes||[];
+      const bmap=new Map(base.map(t=>[t.laneId,t]));
       const out=[];
       for(const t of (active.effectiveTimings||[])){
-        const b=bmap.get(t.property);if(!b)continue;
+        const b=bmap.get(t.laneId);if(!b)continue;
         if(t.durationMs!==b.durationMs||t.delayMs!==b.delayMs||(t.easing||"")!==(b.easing||"")){
-          out.push({property:t.property,
+          out.push({property:t.property,member:t.member||null,selector:t.selector||null,
             from:{durationMs:b.durationMs,delayMs:b.delayMs,easing:b.easing},
             to:{durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing}});
         }
@@ -1766,10 +1897,26 @@
       return out;
     }
 
-    function Header({entries,active,onSelect,onReset,onCopy,copied,loop,setLoop,snap,setSnap,onMinimize,onRefine,refineActive,onAccept,acceptState,acceptDisabled,acceptError}){
+    function Header({entries,active,onSelect,onReset,onCopy,copied,loop,setLoop,snap,setSnap,onMinimize,onRefine,refineActive,onAccept,acceptState,acceptDisabled,acceptError,scanning}){
       const[pick,setPick]=useState(false);
       const[setg,setSetg]=useState(false);
       const pickRef=useRef(null), gearRef=useRef(null);
+      // Split selectable items into agent groups (component → phases) and the
+      // flat, ungrouped DOM transitions, preserving order.
+      const groupList=[]; const groupMap=new Map(); const flatItems=[];
+      for(const e of entries){
+        if(e.kind==="phase"){
+          let g=groupMap.get(e.groupId);
+          if(!g){g={id:e.groupId,label:e.groupLabel,phases:[]};groupMap.set(e.groupId,g);groupList.push(g);}
+          g.phases.push(e);
+        }else flatItems.push(e);
+      }
+      const phaseItem=(e)=>h(MenuItem,{key:e.id,active:active&&e.id===active.id,onClick:()=>{onSelect(e.id);setPick(false);},
+        right:active&&e.id===active.id&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},
+        h("span",null,e.phaseLabel,h("span",{className:"tl-menu-dim"}," "+e.durationMs+"ms")));
+      const flatItem=(e)=>h(MenuItem,{key:e.id,active:active&&e.id===active.id,onClick:()=>{onSelect(e.id);setPick(false);},
+        right:active&&e.id===active.id&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},
+        h("span",null,e.label,h("span",{className:"tl-menu-dim"}," "+e.durationMs+"ms")));
       return h("div",{className:"tl-header"},
         h("span",{className:"tl-header-label"},"Selected"),
         h("button",{ref:pickRef,className:cx("tl-ghost-btn",pick&&"is-active"),disabled:!active,onClick:()=>setPick(v=>!v)},
@@ -1779,10 +1926,14 @@
         h(Dropdown,{open:pick,onClose:()=>setPick(false),triggerRef:pickRef,width:Math.max(240,(pickRef.current&&pickRef.current.offsetWidth)||240),align:"left"},
           entries.length===0
             ? h("div",{className:"tl-menu-empty"},"No transitions found")
-            : entries.map(e=>h(MenuItem,{key:e.id,active:active&&e.id===active.id,onClick:()=>{onSelect(e.id);setPick(false);},
-                right:active&&e.id===active.id&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},
-                h("span",null,e.label,h("span",{className:"tl-menu-dim"}," "+e.durationMs+"ms")))) ),
-        h("span",{className:"tl-header-count"},entries.length+" transition"+(entries.length===1?"":"s")+" found"),
+            : h(React.Fragment,null,
+                ...groupList.map(g=>h(React.Fragment,{key:g.id},
+                  h("div",{className:"tl-menu-section"},g.label),
+                  ...g.phases.map(phaseItem))),
+                flatItems.length>0&&groupList.length>0&&h("div",{className:"tl-menu-section"},"Ungrouped"),
+                ...flatItems.map(flatItem))),
+        h("span",{className:"tl-header-count"},
+          scanning?"Grouping…":entries.length+" transition"+(entries.length===1?"":"s")+" found"),
         h("button",{ref:gearRef,className:cx("tl-icon-btn",setg&&"is-active"),title:"Settings",onClick:()=>setSetg(v=>!v)},h(Ic,{name:"gear"})),
         h(Dropdown,{open:setg,onClose:()=>setSetg(false),triggerRef:gearRef,width:210,align:"right"},
           h(MenuItem,{onClick:()=>setLoop(v=>!v),right:loop&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},"Loop playback"),
@@ -1826,7 +1977,7 @@
       );
     }
 
-    function PropTrack({property, delayMs, durationMs, selected, dragging, onSelect, onReorder, onDelayChange, onDurationChange, snap, scaleMs, lockDuration}){
+    function PropTrack({property, member, delayMs, durationMs, selected, dragging, onSelect, onReorder, onDelayChange, onDurationChange, snap, scaleMs, lockDuration}){
       const trackRef=useRef(null);
       const grid = snap ? 25 : 1;
       const pxToMs=useCallback(px=>{if(!trackRef.current)return 0;const w=trackRef.current.getBoundingClientRect().width;return Math.round((px/w)*scaleMs/grid)*grid;},[grid,scaleMs]);
@@ -1856,7 +2007,9 @@
       return h("div",{className:cx("tl-prop-row",selected&&"selected",dragging&&"reordering",lockDuration&&"is-spring"),onClick:onSelect},
         h("div",{className:"tl-prop-head"},
           h("span",{className:"tl-prop-grip",title:"Drag to reorder",onMouseDown:onReorder},h(Ic,{name:"dots"})),
-          h("span",{className:"tl-prop-label"},property)),
+          h("span",{className:"tl-prop-label"},
+            member&&h("span",{className:"tl-prop-member"},member),
+            h("span",{className:"tl-prop-prop"},property))),
         h("div",{className:"tl-prop-track",ref:trackRef},
           h("div",{className:"tl-bar",style:{left:delPct+"%",width:durPct+"%"},onMouseDown:e=>startDrag("move",e),
             title:lockDuration?"Spring duration is derived \u2014 drag to move, resize is locked":undefined},
@@ -2272,44 +2425,44 @@
       return h("div",{className:"tl-scrub-zone",ref:areaRef,onMouseDown:startScrub});
     }
 
-    function Tracks({et, selProp, setSelProp, onPropChange, snap, scaleMs}){
+    function Tracks({et, selLane, setSelLane, onPropChange, snap, scaleMs}){
       const t = usePreviewTime();
       const ratio = Math.min(t / scaleMs, 1);
       const ROW_H = 48;
       const rowsRef = useRef(null);
       const [order, setOrder] = useState([]);
-      const [dragProp, setDragProp] = useState(null);
-      const propKey = et.map(x=>x.property).join("|");
+      const [dragLane, setDragLane] = useState(null);
+      const laneKey = et.map(x=>x.laneId).join("|");
       useEffect(()=>{
-        const props = et.map(x=>x.property);
+        const ids = et.map(x=>x.laneId);
         setOrder(prev=>{
-          const kept = prev.filter(p=>props.includes(p));
-          const added = props.filter(p=>!kept.includes(p));
+          const kept = prev.filter(p=>ids.includes(p));
+          const added = ids.filter(p=>!kept.includes(p));
           return [...kept, ...added];
         });
-      },[propKey]);
-      const orderedRows = order.map(p=>et.find(x=>x.property===p)).filter(Boolean);
-      const startReorder = useCallback((property,e)=>{
+      },[laneKey]);
+      const orderedRows = order.map(p=>et.find(x=>x.laneId===p)).filter(Boolean);
+      const startReorder = useCallback((laneId,e)=>{
         e.preventDefault(); e.stopPropagation();
-        setSelProp(property);
-        setDragProp(property);
+        setSelLane(laneId);
+        setDragLane(laneId);
         const top = rowsRef.current ? rowsRef.current.getBoundingClientRect().top : 0;
         const onMove = e2=>{
           const idx = Math.floor((e2.clientY - top) / ROW_H);
           setOrder(prev=>{
-            const cur = prev.indexOf(property);
+            const cur = prev.indexOf(laneId);
             if(cur<0) return prev;
             const target = Math.max(0, Math.min(prev.length-1, idx));
             if(target===cur) return prev;
             const next = prev.slice();
             next.splice(cur,1);
-            next.splice(target,0,property);
+            next.splice(target,0,laneId);
             return next;
           });
         };
-        const onUp = ()=>{ setDragProp(null); window.removeEventListener("mousemove",onMove); window.removeEventListener("mouseup",onUp); };
+        const onUp = ()=>{ setDragLane(null); window.removeEventListener("mousemove",onMove); window.removeEventListener("mouseup",onUp); };
         window.addEventListener("mousemove",onMove); window.addEventListener("mouseup",onUp);
-      },[setSelProp]);
+      },[setSelLane]);
       const majorStep = scaleMs <= 10000 ? 1000 : scaleMs <= 25000 ? 5000 : 10000;
       const minorStep = majorStep / 4;
       const ruler=[];
@@ -2327,13 +2480,13 @@
           h("div",{className:"tl-ruler"},...ruler)),
         h("div",{className:"tl-rows",ref:rowsRef},
           ...orderedRows.map(row=>h(PropTrack,{
-            key:row.property, property:row.property,
+            key:row.laneId, property:row.property, member:row.member,
             delayMs:row.delayMs, durationMs:row.durationMs, lockDuration:!!row.spring,
-            selected:row.property===selProp, dragging:row.property===dragProp, snap, scaleMs,
-            onSelect:()=>setSelProp(row.property),
-            onReorder:e=>startReorder(row.property,e),
-            onDelayChange:ms=>onPropChange(row.property,{delayMs:ms}),
-            onDurationChange:ms=>onPropChange(row.property,{durationMs:ms}),
+            selected:row.laneId===selLane, dragging:row.laneId===dragLane, snap, scaleMs,
+            onSelect:()=>setSelLane(row.laneId),
+            onReorder:e=>startReorder(row.laneId,e),
+            onDelayChange:ms=>onPropChange(row.laneId,{delayMs:ms}),
+            onDurationChange:ms=>onPropChange(row.laneId,{durationMs:ms}),
           }))),
         h(ScrubZone,{scaleMs}),
         h("div",{className:"tl-playhead-layer"},
@@ -2344,40 +2497,42 @@
       );
     }
 
-    function Inspector({entry, selProp, onPropChange, snap}){
+    function Inspector({entry, selLane, onPropChange, snap}){
       const et = entry.effectiveTimings || [];
-      const sel = et.find(t=>t.property===selProp) || et[0];
+      const sel = et.find(t=>t.laneId===selLane) || et[0];
       if(!sel) return h("div",{className:"tl-inspector"});
       const cubic = easingToCubic(sel.easing);
       const isSpring = !!sel.spring;
       return h("div",{className:"tl-inspector"},
-        h("div",{className:"tl-insp-title"},sel.property),
+        h("div",{className:"tl-insp-title"},
+          sel.member&&h("span",{className:"tl-insp-member"},sel.member),
+          h("span",null,sel.property)),
         h(ValueField,{label:"Duration",value:sel.durationMs,min:0,max:5000,step:25,tokens:DURATION_TOKENS,snap,
           readOnly:isSpring,
           readOnlyHint:"Duration is set by the spring. A spring's settle time is derived from its stiffness, damping and mass \u2014 so it can't be edited directly. Switch to the Easing tab to set a fixed duration.",
-          onChange:v=>onPropChange(sel.property,{durationMs:v})}),
+          onChange:v=>onPropChange(sel.laneId,{durationMs:v})}),
         h(ValueField,{label:"Delay",value:sel.delayMs,min:0,max:5000,step:25,tokens:DELAY_TOKENS,snap,
-          onChange:v=>onPropChange(sel.property,{delayMs:v})}),
-        h(EasingEditor,{easing:sel.easing, cubic, spring:sel.spring, durationMs:sel.durationMs, propKey:sel.property,
-          apply:partial=>onPropChange(sel.property,partial)}),
+          onChange:v=>onPropChange(sel.laneId,{delayMs:v})}),
+        h(EasingEditor,{easing:sel.easing, cubic, spring:sel.spring, durationMs:sel.durationMs, propKey:sel.laneId,
+          apply:partial=>onPropChange(sel.laneId,partial)}),
       );
     }
 
     function Body({entry, onPropChange, state, play, pause, resume, restart, stop, speed, setSpeed, snap}){
       const et = entry.effectiveTimings || [];
-      const [selProp, setSelProp] = useState(et[0]?.property ?? null);
+      const [selLane, setSelLane] = useState(et[0]?.laneId ?? null);
       const [zoom, setZoom] = useState(ZOOM_DEFAULT);
       const scaleMs = scaleFromZoom(zoom);
       useEffect(()=>{
-        if(et.length && !et.find(t=>t.property===selProp)) setSelProp(et[0]?.property);
-      },[et,selProp]);
+        if(et.length && !et.find(t=>t.laneId===selLane)) setSelLane(et[0]?.laneId);
+      },[et,selLane]);
 
       return h("div",{className:"tl-body"},
         h("div",{className:"tl-main"},
           h(Transport,{state,disabled:!entry,onPlay:play,onPause:pause,onResume:resume,onRestart:restart,onStop:stop,speed,setSpeed,zoom,setZoom}),
-          h(Tracks,{et,selProp,setSelProp,onPropChange,snap,scaleMs}),
+          h(Tracks,{et,selLane,setSelLane,onPropChange,snap,scaleMs}),
         ),
-        h(Inspector,{entry,selProp,onPropChange,snap}),
+        h(Inspector,{entry,selLane,onPropChange,snap}),
       );
     }
 
@@ -2434,6 +2589,9 @@
       // ── accept (write to source) ──
       const[acceptState,setAcceptState]=useState("idle"); // idle | saving | done | error
       const[acceptError,setAcceptError]=useState(null);
+      // ── grouped scan (agent reads source → Open/Close phases) ──
+      const[groupScanState,setGroupScanState]=useState("idle"); // idle | scanning | done | error
+      const didGroupScanRef=useRef(false);
       const[refineLabel,setRefineLabel]=useState(null);
       const[appliedIds,setAppliedIds]=useState({});
       const[refineMode,setRefineMode]=useState("llm"); // llm (Agent) | deterministic
@@ -2467,8 +2625,11 @@
         const mode=(refineMode==="llm"&&!avail)?"deterministic":refineMode;
         if(mode!==refineMode)setRefineMode(mode);
         try{
-          const timings=(active.effectiveTimings||[]).map(t=>({property:t.property,durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing}));
-          const{id}=await relayCreateJob({transitionId:active.id,label:active.label,selector:active.bindings&&active.bindings.selector,timings,mode,refineType});
+          const et=active.effectiveTimings||[];
+          const timings=et.map(t=>({property:t.property,durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing}));
+          const selector=(active.bindings&&active.bindings.selector)||(et[0]&&et[0].selector)||null;
+          const{id}=await relayCreateJob({transitionId:active.id,label:active.label,selector,
+            phase:active.phase||null,group:active.groupLabel||null,timings,mode,refineType});
           setRefineJobId(id);
         }catch(e){
           setRefinePhase("error");
@@ -2500,9 +2661,15 @@
         if(p.durationMs!=null)o.durationMs=p.durationMs;
         if(p.delayMs!=null)o.delayMs=p.delayMs;
         if(p.easing!=null)o.easing=p.easing;
-        setPropOverride(p.property,o);
+        // map a property patch onto the matching lane(s) — for a grouped phase the
+        // same property can appear on several members, so apply to each.
+        const et=(active&&active.effectiveTimings)||[];
+        let lanes=p.property==="all"?et:et.filter(t=>t.property===p.property);
+        if(p.member)lanes=lanes.filter(t=>(t.member===p.member||t.memberId===p.member));
+        const ids=lanes.length?lanes.map(t=>t.laneId):[p.property];
+        for(const id of ids)setPropOverride(id,o);
         setAppliedIds(prev=>({...prev,[s.id]:true}));
-      },[setPropOverride]);
+      },[setPropOverride,active]);
       const applyAllSuggestions=useCallback(()=>{
         for(const s of refineSuggestions){if(!appliedIds[s.id])applySuggestion(s);}
       },[refineSuggestions,appliedIds,applySuggestion]);
@@ -2524,10 +2691,19 @@
       const copyValues=useCallback(()=>{
         if(!active)return;
         const et=active.effectiveTimings||[];
-        const css=et.map(t=>
-          `${t.property} ${formatCssTime(t.durationMs)} ${t.easing} ${formatCssTime(t.delayMs)}`
-        ).join(",\n       ");
-        navigator.clipboard.writeText("transition: "+css+";").then(()=>{setCopied(true);setTimeout(()=>setCopied(false),1500);});
+        const decl=t=>`${t.property} ${formatCssTime(t.durationMs)} ${t.easing} ${formatCssTime(t.delayMs)}`;
+        let text;
+        if(et.some(t=>t.member)){
+          // grouped phase: one transition block per member, labelled
+          const byMember=new Map();
+          for(const t of et){const k=t.memberId||t.member||"";if(!byMember.has(k))byMember.set(k,{member:t.member,selector:t.selector,lanes:[]});byMember.get(k).lanes.push(t);}
+          text=[...byMember.values()].map(m=>
+            `/* ${m.member||"element"}${m.selector?" — "+m.selector:""} */\ntransition: ${m.lanes.map(decl).join(",\n            ")};`
+          ).join("\n\n");
+        }else{
+          text="transition: "+et.map(decl).join(",\n       ")+";";
+        }
+        navigator.clipboard.writeText(text).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),1500);});
       },[active]);
       const resetOverrides=useCallback(()=>{if(active)registry.clearOverride(active.id);},[registry,active]);
       // Accept → send an "apply" job so the agent writes the edited timings into
@@ -2538,7 +2714,9 @@
         setAcceptState("saving");setAcceptError(null);
         try{
           const{id}=await relayCreateJob({kind:"apply",transitionId:active.id,label:active.label,
-            selector:active.bindings&&active.bindings.selector,changes});
+            selector:active.bindings&&active.bindings.selector,
+            group:active.groupLabel||null,phase:active.phase||null,component:active.component||null,
+            changes});
           let settled=false;
           for(let i=0;i<240&&!settled;i++){
             await new Promise(r=>setTimeout(r,500));
@@ -2559,6 +2737,33 @@
       },[active]);
       // reset Accept feedback when switching transitions
       useEffect(()=>{setAcceptState("idle");setAcceptError(null);},[active&&active.id]);
+      // Auto-run the grouped scan once, after the flat DOM scan has populated.
+      // The agent reads the source and returns Open/Close phases; if no agent is
+      // live (or the relay is down) we silently keep the flat DOM scan.
+      useEffect(()=>{
+        if(didGroupScanRef.current||!entries.length)return;
+        didGroupScanRef.current=true;
+        let cancelled=false;
+        (async()=>{
+          setGroupScanState("scanning");
+          const flat=registry.getAll().filter(e=>e.kind!=="phase");
+          const raw=flat.map(e=>({label:e.label,selector:e.bindings&&e.bindings.selector,
+            properties:e.properties,
+            timings:(e.baseLanes||[]).map(l=>({property:l.property,durationMs:l.durationMs,delayMs:l.delayMs,easing:l.easing}))}));
+          try{
+            const{id}=await relayCreateJob({kind:"scan",url:location.href,raw});
+            for(let i=0;i<240&&!cancelled;i++){
+              await new Promise(r=>setTimeout(r,500));
+              const job=await relayGetJob(id);
+              if(cancelled)return;
+              if(job.status==="done"){const groups=(job.result&&job.result.groups)||[];if(groups.length)registry.setGroups(groups);setGroupScanState("done");return;}
+              if(job.status==="error"){setGroupScanState("error");return;}
+            }
+            if(!cancelled)setGroupScanState("error");
+          }catch(e){ if(!cancelled)setGroupScanState("error"); /* relay down → stay flat */ }
+        })();
+        return ()=>{cancelled=true;};
+      },[entries.length,registry]);
 
       // whole-component open/close uses the transitions.dev panel reveal:
       // keep the panel mounted while it animates, flip data-open on the next
@@ -2608,7 +2813,8 @@
             h("div",{className:"tl-panel-main"},
               h(Header,{entries,active,onSelect:setActiveId,onReset:resetOverrides,onCopy:copyValues,copied,
                 loop,setLoop,snap,setSnap,onMinimize:()=>setMinimized(true),onRefine:openRefine,refineActive:refineOpen,
-                onAccept,acceptState,acceptDisabled:computeChanges(active).length===0,acceptError}),
+                onAccept,acceptState,acceptDisabled:computeChanges(active).length===0,acceptError,
+                scanning:groupScanState==="scanning"}),
               active
                 ?h(Body,{entry:active,onPropChange:(prop,o)=>setPropOverride(prop,o),
                     state,play,pause,resume,restart,stop,speed,setSpeed,snap})

@@ -4,6 +4,8 @@ A live, agent-driven **Refine** panel for CSS and [Motion](https://motion.dev) t
 
 The feedback shows up **in a panel that slides in from the right** — not in your chat — and you pick which suggestions to apply. Applied suggestions are **live overrides** (instant preview, reversible) — the same path as dragging the timeline bars. When you're happy, **Accept** writes those values back into your source via the agent.
 
+Real components rarely live in one CSS rule. A dropdown has an **Open** and a **Close** phase, each animating several elements (panel, backdrop, staggered items) with different timings — and the close phase usually isn't even in the DOM while the panel is open. So when the panel opens it also asks the agent to **read your source and group** the page's transitions into components → phases → member elements. You then pick a whole phase (e.g. *Dropdown · Open*) and see every sub-transition as a labeled lane on one shared timeline; Play arms all of them together. If no agent is live, the panel falls back to the flat DOM scan with no regression.
+
 Inspired by the [impeccable.style](https://impeccable.style/live-mode/) "live" pattern: the browser drops a job in a tiny local relay, and the relay answers it with **one agent run per click**. No standing loop, nothing to start per click — you just keep the relay running.
 
 ```
@@ -54,6 +56,12 @@ REFINE_AGENT_CMD='cursor-agent -p' npm run relay   # or: codex exec -  |  claude
 
 The CLI must have the `transitions-dev` skill available (the prompt tells it to read the skill).
 
+## Grouped scan — Open / Close phases
+
+When the panel opens it posts a **scan job** to the relay; the agent reads your source and returns the page's animated components, each split into phases (`open`, `close`, …) with their **member elements** and the *real* per-state timings — including the close transition the DOM can't show you. The picker then groups by component, you select a phase, and the timeline renders one lane per member-property (each lane labeled with its member) on a single time axis so stagger and delays line up. **Play** arms every member of the phase at once (driving each element via its `toState` class/attribute), and **Accept** writes back to the correct state rule (`.is-open` vs `.is-closing`) per member.
+
+Grouping needs the agent (`/refine live`, `--llm`, or `REFINE_AGENT_CMD`); with no agent the panel just shows the flat DOM scan as before.
+
 ## Refine modes
 
 - **Small refinements** — keeps the transition, suggests motion-token tweaks (duration/easing), and may add a whole-transition replacement when one clearly fits better.
@@ -86,7 +94,7 @@ Like Replace, Accept needs the agent — run `/refine live` (or `--llm` / `REFIN
 | `REFINE_AUTO=0` | — | disable auto-answer and wait for an external poller |
 | `window.REFINE_RELAY_URL` | injected origin | browser override for the relay URL |
 
-Endpoints: `POST /jobs` (refine or `kind: "apply"`), `GET /jobs/:id` (browser). In `REFINE_AUTO=0` mode an external poller also uses `GET /jobs/next` and `POST /jobs/:id/{status,result,error}`.
+Endpoints: `POST /jobs` (refine, `kind: "apply"`, or `kind: "scan"`), `GET /jobs/:id` (browser). In `REFINE_AUTO=0` mode an external poller also uses `GET /jobs/next` and `POST /jobs/:id/{status,result,error}` (the result body accepts `suggestions`, `groups`, or `applied`).
 
 Refine suggestions stay as live overrides until you press **Accept**, which is the explicit step that writes them into your source.
 

@@ -168,6 +168,14 @@ function parseApplyOutput(stdout) {
   return { applied: Boolean(obj.applied), summary: obj.summary ?? null, files: Array.isArray(obj.files) ? obj.files : null };
 }
 
+// Scan jobs ask the agent to read the source and group related transitions into
+// components with open/close phases and member elements.
+function parseScanOutput(stdout) {
+  const obj = parseJsonish(stdout);
+  if (!obj || !Array.isArray(obj.groups)) throw new Error("agent output missing groups[]");
+  return { groups: obj.groups, summary: obj.summary ?? null };
+}
+
 function runAgentCmd(cmd, prompt, parse = parseAgentOutput) {
   return new Promise((resolve, reject) => {
     const child = spawn("sh", ["-c", cmd], { stdio: ["pipe", "pipe", "pipe"] });
@@ -205,16 +213,39 @@ function buildApplyPrompt(job) {
     "You are APPLYING an approved transition change to the user's SOURCE CODE. Edit files; do not just suggest.",
     "",
     "Change context (JSON):",
-    JSON.stringify({ label: r.label, selector: r.selector, changes: r.changes }, null, 2),
+    JSON.stringify({ label: r.label, selector: r.selector, component: r.component, group: r.group, phase: r.phase, changes: r.changes }, null, 2),
+    "",
+    "If `phase` is set (e.g. \"open\"/\"close\"), the change targets ONE state of a component — edit the rule for THAT state (e.g. the `.is-open` rule for open, the `.is-closing`/base rule for close), not the other phase. Each change may carry its own `member` + `selector` identifying which element it belongs to.",
     "",
     "Steps:",
-    "1. Find where this transition is defined in the source. Search by the selector/label/class names. Handle plain CSS, CSS Modules, styled-components/emotion template literals, Tailwind utilities/config, and inline style objects — the browser selector is a hint, the real declaration may live in any of these.",
-    "2. For each change, edit the source so that property's transition uses the `to` values: durationMs (ms), easing, delayMs (ms). Keep the file's existing unit/format conventions (e.g. `0.25s` vs `250ms`) and only touch the timing of the named property. If a CSS variable / design token backs the value, update it at the most sensible single place.",
+    "1. Find where this transition is defined in the source. Search by the per-change `selector`/`member`, the `component` hint, and class names. Handle plain CSS, CSS Modules, styled-components/emotion template literals, Tailwind utilities/config, inline style objects, and Motion/Framer variants — the browser selector is a hint, the real declaration may live in any of these.",
+    "2. For each change, edit the source so that property's transition uses the `to` values: durationMs (ms), easing, delayMs (ms). Keep the file's existing unit/format conventions (e.g. `0.25s` vs `250ms`) and only touch the timing of the named property on the right member + phase. If a CSS variable / design token backs the value, update it at the most sensible single place.",
     "3. Make the minimal edit. Do not reformat or change unrelated code.",
     "",
     'Output ONLY a JSON object — no prose, no markdown fences — shaped exactly like:',
     '{"applied":true,"summary":"Set .modal transition to 250ms ease-out","files":["src/Modal.css:42"]}',
     'If you cannot confidently locate the declaration, output {"applied":false,"summary":"<what you looked for and why it was not found>"}.',
+  ].join("\n");
+}
+
+// Prompt for a "scan" job: the agent reads the source and groups the raw,
+// DOM-detected transitions into components with open/close phases and members.
+function buildScanPrompt(job) {
+  const r = job.request || {};
+  return [
+    "You are GROUPING UI transitions by reading the user's SOURCE CODE. A naive DOM scan only sees each element's current computed transition — it cannot tell open from close, and lists related elements separately. Fix that.",
+    "",
+    "Raw DOM-detected transitions (JSON) — use as hints to locate the components, not as the final answer:",
+    JSON.stringify({ url: r.url, raw: r.raw }, null, 2),
+    "",
+    "Steps:",
+    "1. Identify each animated UI component (dropdown, modal, tooltip, accordion, drawer, toast…). Read its source (CSS/CSS Modules, styled-components/emotion, Tailwind, inline styles, Motion/Framer variants).",
+    "2. For each component, split into PHASES — typically `open` and `close` (a hover-only component may have a single phase). Open and close often live on different selectors (e.g. `.is-open` vs `.is-closing`) with different timings; report BOTH even though only one is in the DOM right now.",
+    "3. For each phase, list its MEMBER elements (panel, backdrop, the staggered items…). Give each member a stable `id`, a human `label`, a CSS `selector` that resolves in the live DOM, an optional `toState` hint (the class/attribute that drives that phase, e.g. `.is-open`), and its real `propertyTimings` (durationMs, delayMs, easing per animated property). Quote the real timings from source — never invent.",
+    "",
+    "Output ONLY a JSON object — no prose, no markdown fences — shaped exactly like:",
+    '{"summary":"Grouped 3 components.","groups":[{"id":"dropdown","label":"Dropdown","component":"src/Dropdown.tsx","phases":[{"id":"dropdown:open","phase":"open","label":"Open","members":[{"id":"panel","label":"Panel","selector":".dropdown-panel","toState":".is-open","propertyTimings":[{"property":"opacity","durationMs":200,"delayMs":0,"easing":"ease-out"},{"property":"transform","durationMs":200,"delayMs":0,"easing":"cubic-bezier(0.22, 1, 0.36, 1)"}]}]},{"id":"dropdown:close","phase":"close","label":"Close","members":[{"id":"panel","label":"Panel","selector":".dropdown-panel","toState":".is-closing","propertyTimings":[{"property":"opacity","durationMs":150,"delayMs":0,"easing":"ease-in"}]}]}]}]}',
+    "If you cannot confidently group anything, return an empty groups array with a short summary; the panel keeps its flat DOM scan.",
   ].join("\n");
 }
 
@@ -240,11 +271,15 @@ async function answerJob(job) {
   job.status = "working";
   job.updatedAt = now();
   const isApply = job.request?.kind === "apply";
+  const isScan = job.request?.kind === "scan";
   const label = job.request?.label || job.request?.selector || "transition";
   // The browser picks the mode per job via the LLM / Deterministic tabs.
   // Default: LLM when a command is configured, otherwise deterministic.
   const mode = job.request?.mode || (AGENT_CMD ? "llm" : "deterministic");
-  job.statusLog.push({ message: isApply ? `Writing "${label}" to your code…` : `Scanning "${label}"…`, at: now() });
+  job.statusLog.push({
+    message: isApply ? `Writing "${label}" to your code…` : isScan ? "Grouping transitions from your source…" : `Scanning "${label}"…`,
+    at: now(),
+  });
   try {
     let result;
     if (isApply) {
@@ -261,6 +296,22 @@ async function answerJob(job) {
       job.status = "done";
       job.updatedAt = now();
       console.log(`  ✓ apply ${job.id.slice(0, 8)} — applied=${result.applied}`);
+      return;
+    }
+    if (isScan) {
+      // Reading source to group transitions can only be done by the agent.
+      if (!AGENT_CMD) {
+        throw new Error(
+          "Grouping transitions needs the agent. Run `/refine live` in your editor, " +
+            "or start the relay with REFINE_AGENT_CMD set."
+        );
+      }
+      job.statusLog.push({ message: "Reading components from source…", at: now() });
+      result = await runAgentCmd(AGENT_CMD, buildScanPrompt(job), parseScanOutput);
+      job.result = { groups: result.groups, summary: result.summary };
+      job.status = "done";
+      job.updatedAt = now();
+      console.log(`  ✓ scan ${job.id.slice(0, 8)} — ${result.groups.length} group(s)`);
       return;
     }
     if (mode === "llm") {
@@ -362,8 +413,8 @@ const server = createServer(async (req, res) => {
       return send(res, 400, { error: "Body must be { request: {...} }" });
     }
     const job = createJob(body.request);
-    // Apply jobs edit source — agent only, never deterministic.
-    const mode = job.request.kind === "apply"
+    // Apply and scan jobs read/edit source — agent only, never deterministic.
+    const mode = (job.request.kind === "apply" || job.request.kind === "scan")
       ? "llm"
       : (job.request.mode || (llmAvailable() ? "llm" : "deterministic"));
     job.request.mode = mode;
@@ -440,11 +491,14 @@ const server = createServer(async (req, res) => {
       const body = await readJson(req);
       if (body && Array.isArray(body.suggestions)) {
         job.result = { suggestions: body.suggestions, summary: body.summary ?? null };
+      } else if (body && Array.isArray(body.groups)) {
+        // scan-job result from a `/refine live` agent
+        job.result = { groups: body.groups, summary: body.summary ?? null };
       } else if (body && typeof body.applied !== "undefined") {
         // apply-job result from a `/refine live` agent
         job.result = { applied: Boolean(body.applied), summary: body.summary ?? null, files: Array.isArray(body.files) ? body.files : null };
       } else {
-        return send(res, 400, { error: "Body must be { suggestions: [...] } or { applied, summary }" });
+        return send(res, 400, { error: "Body must be { suggestions: [...] }, { groups: [...] }, or { applied, summary }" });
       }
       job.status = "done";
       job.updatedAt = now();

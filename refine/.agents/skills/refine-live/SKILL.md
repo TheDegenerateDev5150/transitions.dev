@@ -1,6 +1,6 @@
 ---
 name: refine-live
-description: Become the live "Refine" agent for the Timeline Inspector. Use when the user runs `/refine live`, asks to "refine live", "go live", "answer refine jobs", or wants the timeline panel's Refine button (LLM mode) or Accept button to be backed by a real agent. Long-polls the local refine relay, reasons about each CSS transition with the transitions-dev skill, posts suggestions back to the browser panel, and for "apply" jobs writes the accepted timing changes into the user's source code.
+description: Become the live "Refine" agent for the Timeline Inspector. Use when the user runs `/refine live`, asks to "refine live", "go live", "answer refine jobs", or wants the timeline panel's Refine button (LLM mode), Accept button, or grouped scan to be backed by a real agent. Long-polls the local refine relay, reasons about each CSS transition with the transitions-dev skill, posts suggestions back to the browser panel, for "scan" jobs groups the page's transitions into components with open/close phases by reading the source, and for "apply" jobs writes the accepted timing changes into the user's source code.
 ---
 
 # Refine Live
@@ -54,6 +54,10 @@ never has to re-run `/refine live`.
      }
      ```
 
+   - **If `request.kind === "scan"`** this is not a suggestion job — the panel is
+     asking you to group the page's transitions by reading the source. Jump to
+     [`## Scan jobs`](#scan-jobs-group-from-source) and return `groups` instead of
+     suggestions.
    - **If `request.kind === "apply"`** this is not a suggestion job — the user
      pressed **Accept** to write changes to their code. Jump to
      [`## Apply jobs`](#apply-jobs-write-to-source) and edit the source instead of
@@ -176,6 +180,78 @@ never has to re-run `/refine live`.
    stop, tell them the LLM tab will go unavailable and how to restart
    (`/refine live`).
 
+## Scan jobs (group from source)
+
+When a claimed job has `request.kind === "scan"`, the panel wants you to turn a
+flat list of DOM-detected transitions into **components with phases**. A naive
+DOM scan only sees each element's *current* computed transition — it can't tell
+open from close, and lists related elements (panel, backdrop, staggered items)
+separately. You fix that by reading the source. The request looks like:
+
+```json
+{
+  "id": "uuid",
+  "request": {
+    "kind": "scan",
+    "url": "http://localhost:5173/",
+    "raw": [
+      { "label": "div.dropdown-panel", "selector": ".dropdown-panel",
+        "properties": ["opacity","transform"],
+        "timings": [{ "property": "opacity", "durationMs": 200, "delayMs": 0, "easing": "ease-out" }] }
+    ]
+  }
+}
+```
+
+Do this:
+
+1. **Identify each animated component** the raw entries belong to (dropdown,
+   modal, tooltip, accordion, drawer, toast…). Use the selectors/labels as hints,
+   then read the source — plain CSS / CSS Modules, styled-components/emotion,
+   Tailwind, inline styles, or Motion/Framer variants.
+2. **Split each component into phases** — usually `open` and `close` (a hover-only
+   component can be a single phase). Open and close often live on different
+   selectors (`.is-open` vs `.is-closing`) with different timings; report **both**
+   even though only one is in the DOM right now.
+3. **List each phase's members** — the elements that animate in that phase. Give
+   each a stable `id`, a human `label`, a live-resolvable CSS `selector`, an
+   optional `toState` hint (the class/attribute that drives the phase, e.g.
+   `.is-open`), and its real `propertyTimings`. **Quote the real timings from the
+   source — never invent.**
+4. **Post the groups** (this completes the job):
+
+   ```bash
+   curl -s -X POST http://localhost:7331/jobs/<id>/result \
+     -H 'Content-Type: application/json' \
+     -d '{
+       "summary": "Grouped Dropdown into Open/Close.",
+       "groups": [
+         { "id": "dropdown", "label": "Dropdown", "component": "src/Dropdown.tsx",
+           "phases": [
+             { "id": "dropdown:open", "phase": "open", "label": "Open", "members": [
+               { "id": "panel", "label": "Panel", "selector": ".dropdown-panel", "toState": ".is-open",
+                 "propertyTimings": [
+                   { "property": "opacity", "durationMs": 200, "delayMs": 0, "easing": "ease-out" },
+                   { "property": "transform", "durationMs": 200, "delayMs": 0, "easing": "cubic-bezier(0.22, 1, 0.36, 1)" }
+                 ] }
+             ] },
+             { "id": "dropdown:close", "phase": "close", "label": "Close", "members": [
+               { "id": "panel", "label": "Panel", "selector": ".dropdown-panel", "toState": ".is-closing",
+                 "propertyTimings": [
+                   { "property": "opacity", "durationMs": 150, "delayMs": 0, "easing": "ease-in" }
+                 ] }
+             ] }
+           ] }
+       ]
+     }'
+   ```
+
+   If you can't confidently group anything, post `{"groups":[],"summary":"…"}` —
+   the panel keeps its flat DOM scan. Reserve `/jobs/<id>/error` for unexpected
+   failures.
+
+Then go back to step 1 of the loop.
+
 ## Apply jobs (write to source)
 
 When a claimed job has `request.kind === "apply"`, the user accepted their current
@@ -186,10 +262,14 @@ timeline values and wants them written to the codebase. The request looks like:
   "id": "uuid",
   "request": {
     "kind": "apply",
-    "label": "div.modal.t-modal",
-    "selector": "div.modal > button.close",
+    "label": "Dropdown · Close",
+    "selector": ".dropdown-panel",
+    "component": "src/Dropdown.tsx",
+    "group": "Dropdown",
+    "phase": "close",
     "changes": [
-      { "property": "opacity", "from": { "durationMs": 300, "delayMs": 0, "easing": "ease" },
+      { "property": "opacity", "member": "Panel", "selector": ".dropdown-panel",
+        "from": { "durationMs": 300, "delayMs": 0, "easing": "ease" },
         "to": { "durationMs": 150, "delayMs": 0, "easing": "cubic-bezier(0.4, 0, 1, 1)" } }
     ]
   }
@@ -199,15 +279,19 @@ timeline values and wants them written to the codebase. The request looks like:
 Do this:
 
 1. **Locate the real declaration in the source.** The `selector` is a DOM-path
-   *hint*, not necessarily the source selector. Search by the label/class names and
-   handle whatever the project uses: plain CSS / CSS Modules, styled-components or
-   emotion template literals, Tailwind utilities (`duration-300`, arbitrary
-   `[transition-duration:300ms]`, or the `tailwind.config` theme), and inline
-   `style={{ transition: … }}` objects. Match by the `from` values to disambiguate.
+   *hint*, not necessarily the source selector. Use the `component` hint and search
+   by the label/class names; handle whatever the project uses: plain CSS / CSS
+   Modules, styled-components or emotion template literals, Tailwind utilities
+   (`duration-300`, arbitrary `[transition-duration:300ms]`, or the
+   `tailwind.config` theme), inline `style={{ transition: … }}` objects, and
+   Motion/Framer variants. Match by the `from` values to disambiguate.
+   - **If `phase` is set** (e.g. `"open"`/`"close"`), edit only that state's rule
+     (the `.is-open` rule for open, the `.is-closing`/base rule for close) — not
+     the other phase. Each change's `member` + `selector` says which element.
 2. **Edit each change's property** to its `to` values (`durationMs` ms, `easing`,
-   `delayMs` ms). Keep the file's existing unit/format (`0.25s` vs `250ms`) and
-   touch only that property's timing. If a CSS variable / design token backs the
-   value, update it at the single most sensible place.
+   `delayMs` ms) on the right member + phase. Keep the file's existing unit/format
+   (`0.25s` vs `250ms`) and touch only that property's timing. If a CSS variable /
+   design token backs the value, update it at the single most sensible place.
 3. **Minimal edit** — no reformatting or unrelated changes.
 4. **Post the outcome** (this completes the job):
 
