@@ -1136,6 +1136,40 @@
     }
 
     // ── preview controller ──
+    // ── transition capture ──
+    // Real-world transitions are usually triggered by interaction (hover, a
+    // click on a *different* button, focus, JS state) — not by clicking the
+    // element that carries the transition. So we observe transitions as they
+    // actually run and remember each property's from/to computed values; the
+    // preview then replays them with no synthetic click required.
+    const _txCapture = new WeakMap(); // Element -> Map<prop,{from,to}>
+    let _txInstalled = false;
+    function _txCamel(p){return p.replace(/-([a-z])/g,(_,c)=>c.toUpperCase());}
+    function _txOnRun(e){
+      const el=e.target, prop=e.propertyName;
+      if(!el||!prop||typeof el.getAnimations!=="function")return;
+      if(el.closest&&el.closest("[data-timeline-panel]"))return;
+      try{
+        const ck=_txCamel(prop);
+        const anims=el.getAnimations();
+        let anim=anims.find(a=>a.transitionProperty===prop);
+        if(!anim)anim=anims.find(a=>{try{const k=a.effect&&a.effect.getKeyframes();return k&&k.length&&(ck in k[0]||ck in k[k.length-1]);}catch{return false;}});
+        if(!anim||!anim.effect)return;
+        const kf=anim.effect.getKeyframes();
+        if(!kf||kf.length<2)return;
+        const from=kf[0][ck], to=kf[kf.length-1][ck];
+        if(from==null||to==null)return;
+        let rec=_txCapture.get(el); if(!rec){rec=new Map();_txCapture.set(el,rec);}
+        rec.set(prop,{from:String(from),to:String(to)});
+      }catch{}
+    }
+    function _txInstallCapture(){
+      if(_txInstalled||typeof document==="undefined")return;
+      _txInstalled=true;
+      // capture phase + the bubbling transitionrun event reaches document
+      document.addEventListener("transitionrun",_txOnRun,true);
+    }
+
     class PreviewController {
       state="idle"; listeners=new Set(); cleanups=[]; animations=[]; progressListeners=new Set(); _rafId=null; scanner=null; _gen=0;
       rate=1; loop=false; _current=null;
@@ -1157,15 +1191,14 @@
         if(entry.bindings.type!=="css")return;
         this.animations=[];
         const et=entry.effectiveTimings||entry.properties.map(p=>({property:p,durationMs:entry.durationMs,delayMs:entry.delayMs,easing:entry.easing}));
-        for(const wr of entry.bindings.elements){const el=wr.deref();if(!el)continue;const saved=el.style.transition;
-          const tv=et.map(t=>`${t.property} ${formatCssTime(t.durationMs)} ${t.easing} ${formatCssTime(t.delayMs)}`).join(", ");
-          el.style.transition=tv;el.click();
+        for(const wr of entry.bindings.elements){const el=wr.deref();if(!el)continue;
+          const restore=this._arm(el,et);
           requestAnimationFrame(()=>{if(this._gen!==gen)return;const running=el.getAnimations();
             for(const a of running){a.pause();a.playbackRate=this.rate;this.animations.push(a);}
             const t=this._pendingSeek??seekMs;
             if(t!=null){for(const a of this.animations){try{a.currentTime=t;}catch{}}this._ep(t);}
           });
-          this.cleanups.push(()=>{el.style.transition=saved;});}
+          this.cleanups.push(restore);}
         this._setState("paused");
         if(seekMs!=null)this._ep(seekMs);
       }
@@ -1177,14 +1210,32 @@
         this._pendingSeek=timeMs;
       }
       _finish(){this._stopPL();if(this.animations.length>0){let end=0;for(const a of this.animations){const t=a.effect?.getTiming();const e=(t?.delay??0)+(Number(t?.duration)||0);if(e>end)end=e;}this._ep(end);}this.animations=[];for(const c of this.cleanups)c();this.cleanups=[];if(this.scanner)this.scanner.unpause();this._setState("idle");}
+      // Arm an element so its transition runs now. If we captured the real
+      // transition earlier, replay it from→to (no click, no side effects);
+      // otherwise fall back to clicking the element. Returns a restore fn.
+      _arm(el,et){
+        const saved=el.style.cssText;
+        const tv=et.map(t=>`${t.property} ${formatCssTime(t.durationMs)} ${t.easing} ${formatCssTime(t.delayMs)}`).join(", ");
+        const rec=_txCapture.get(el);
+        const caps=rec?et.map(t=>[t.property,rec.get(t.property)]).filter(x=>x[1]):[];
+        if(caps.length){
+          el.style.transition="none";
+          for(const[p,v]of caps)el.style.setProperty(p,v.from);
+          void el.offsetWidth; // commit the from-state before transitioning
+          el.style.transition=tv;
+          for(const[p,v]of caps)el.style.setProperty(p,v.to);
+        }else{
+          el.style.transition=tv;el.click();
+        }
+        return ()=>{try{el.style.cssText=saved;}catch{}};
+      }
       _playCss(entry,gen){if(entry.bindings.type!=="css")return;this.animations=[];
         const et = entry.effectiveTimings || entry.properties.map(p=>({property:p,durationMs:entry.durationMs,delayMs:entry.delayMs,easing:entry.easing}));
-        for(const wr of entry.bindings.elements){const el=wr.deref();if(!el)continue;const saved=el.style.transition;
-          const tv=et.map(t=>`${t.property} ${formatCssTime(t.durationMs)} ${t.easing} ${formatCssTime(t.delayMs)}`).join(", ");
-          el.style.transition=tv;el.click();
+        for(const wr of entry.bindings.elements){const el=wr.deref();if(!el)continue;
+          const restore=this._arm(el,et);
           requestAnimationFrame(()=>{if(this._gen!==gen)return;const running=el.getAnimations();for(const a of running){a.playbackRate=this.rate;this.animations.push(a);}this._startPL();
             if(running.length>0){Promise.allSettled(running.map(a=>a.finished)).then(()=>{if(this._gen!==gen||this.state!=="playing")return;if(this.loop&&this._current){this.play(this._current);}else{this._finish();}});}else{this._finish();}});
-          this.cleanups.push(()=>{el.style.transition=saved;});}}
+          this.cleanups.push(restore);}}
       _startPL(){this._stopPL();const tick=()=>{if(this.animations.length>0){let cur=0;for(const a of this.animations){const c=Number(a.currentTime)||0;if(c>cur)cur=c;}this._ep(cur);}this._rafId=requestAnimationFrame(tick);};this._rafId=requestAnimationFrame(tick);}
       _stopPL(){if(this._rafId!==null){cancelAnimationFrame(this._rafId);this._rafId=null;}}
       _ep(p){for(const fn of this.progressListeners)fn(p);}
@@ -1196,7 +1247,7 @@
       observer=null;rafId=null;running=false;paused=false;
       constructor(root,reg){this.root=root;this.registry=reg;}
       pause(){this.paused=true;} unpause(){this.paused=false;this._sched();}
-      start(){if(this.running)return;this.running=true;this.scan();this.observer=new MutationObserver(()=>this._sched());this.observer.observe(this.root,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});}
+      start(){if(this.running)return;this.running=true;_txInstallCapture();this.scan();this.observer=new MutationObserver(()=>this._sched());this.observer.observe(this.root,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});}
       stop(){this.running=false;this.observer?.disconnect();this.observer=null;if(this.rafId!==null){cancelAnimationFrame(this.rafId);this.rafId=null;}}
       _sched(){if(this.rafId!==null)return;this.rafId=requestAnimationFrame(()=>{this.rafId=null;if(this.running&&!this.paused)this.scan();});}
       scan(){const seen=new Map();const w=document.createTreeWalker(this.root,NodeFilter.SHOW_ELEMENT);let n=w.currentNode;while(n){if(n instanceof HTMLElement)this._proc(n,seen);n=w.nextNode();}this.registry.replaceAll(Array.from(seen.values()));}
