@@ -19,6 +19,10 @@ const DEMO_PATH = fileURLToPath(new URL("../demo.html", import.meta.url));
 const REACT_URL = "https://esm.sh/react@19";
 const REACT_DOM_URL = "https://esm.sh/react-dom@19";
 const REACT_DOM_CLIENT_URL = "https://esm.sh/react-dom@19/client";
+// `deps=` (not `external=`) so esm.sh resolves border-beam's own react/react-dom
+// to the same esm.sh/react@19 the panel uses — one React instance, no import map
+// required on the host page.
+const BORDER_BEAM_URL = "https://esm.sh/border-beam@1.2.0?deps=react@19,react-dom@19";
 
 const CUT_MARKER = "// ── demo boxes ──";
 
@@ -46,7 +50,8 @@ function buildJs(scriptSrc) {
   js = js
     .replace(/import\s+React\s+from\s+["']react["'];?/, `import React from "${REACT_URL}";`)
     .replace(/import\s+\{\s*createRoot\s*\}\s+from\s+["']react-dom\/client["'];?/, `import { createRoot } from "${REACT_DOM_CLIENT_URL}";`)
-    .replace(/import\s+\{\s*createPortal\s*\}\s+from\s+["']react-dom["'];?/, `import { createPortal } from "${REACT_DOM_URL}";`);
+    .replace(/import\s+\{\s*createPortal\s*\}\s+from\s+["']react-dom["'];?/, `import { createPortal } from "${REACT_DOM_URL}";`)
+    .replace(/import\s+\{\s*BorderBeam\s*\}\s+from\s+["']border-beam["'];?/, `import { BorderBeam } from "${BORDER_BEAM_URL}";`);
 
   // Point the relay client at whatever origin served this module, so the panel
   // works on any port the CLI chose (the script is served BY the relay).
