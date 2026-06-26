@@ -86,15 +86,13 @@ function buildEpilogue(css) {
 
   function InjectedRoot(){
     const registry = useMemo(() => new TransitionRegistry(), []);
-    const preview = useMemo(() => new PreviewController(), []);
     const [activeId, setActiveId] = useState(null);
     useEffect(() => {
       const scanner = new DomScanner(document.body, registry);
-      preview.setScanner(scanner);
       scanner.start();
-      return () => { scanner.stop(); preview.setScanner(null); };
-    }, [registry, preview]);
-    const ctx = useMemo(() => ({ registry, preview, activeId, setActiveId }), [registry, preview, activeId]);
+      return () => { scanner.stop(); };
+    }, [registry]);
+    const ctx = useMemo(() => ({ registry, activeId, setActiveId }), [registry, activeId]);
     return h(TimelineCtx.Provider, { value: ctx }, h(TimelinePanel));
   }
 

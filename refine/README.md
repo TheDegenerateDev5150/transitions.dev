@@ -4,7 +4,9 @@ A live, agent-driven **Refine** panel for CSS and [Motion](https://motion.dev) t
 
 The feedback shows up **in a panel that slides in from the right** — not in your chat — and you pick which suggestions to apply. Applied suggestions are **live overrides** (instant preview, reversible) — the same path as dragging the timeline bars. When you're happy, **Accept** writes those values back into your source via the agent.
 
-Real components rarely live in one CSS rule. A dropdown has an **Open** and a **Close** phase, each animating several elements (panel, backdrop, staggered items) with different timings — and the close phase usually isn't even in the DOM while the panel is open. So when the panel opens it also asks the agent to **read your source and group** the page's transitions into components → phases → member elements. You then pick a whole phase (e.g. *Dropdown · Open*) and see every sub-transition as a labeled lane on one shared timeline; Play arms all of them together. If no agent is live, the panel falls back to the flat DOM scan with no regression.
+There's **no play button or scrubber** — the running component *is* the preview. Any edit (a dragged bar, an inspector tweak, or an applied suggestion) is written straight onto the live element as an inline `transition`, so you see it the next time you trigger the transition (open the dropdown, hover the card, …). Reset reverts the element to its source.
+
+Real components rarely live in one CSS rule. A dropdown has an **Open** and a **Close** phase, each animating several elements (panel, backdrop, staggered items) with different timings — and the close phase usually isn't even in the DOM while the panel is open. So when the panel opens it also asks the agent to **read your source and group** the page's transitions into components → phases → member elements. You then pick a whole phase (e.g. *Dropdown · Open*) and see every sub-transition as a labeled lane on one shared timeline. If no agent is live, the panel falls back to the flat DOM scan with no regression.
 
 Inspired by the [impeccable.style](https://impeccable.style/live-mode/) "live" pattern: the browser drops a job in a tiny local relay, and the relay answers it with **one agent run per click**. No standing loop, nothing to start per click — you just keep the relay running.
 
@@ -58,7 +60,7 @@ The CLI must have the `transitions-dev` skill available (the prompt tells it to 
 
 ## Grouped scan — Open / Close phases
 
-When the panel opens it posts a **scan job** to the relay; the agent reads your source and returns the page's animated components, each split into phases (`open`, `close`, …) with their **member elements** and the *real* per-state timings — including the close transition the DOM can't show you. The picker then groups by component, you select a phase, and the timeline renders one lane per member-property (each lane labeled with its member) on a single time axis so stagger and delays line up. **Play** arms every member of the phase at once (driving each element via its `toState` class/attribute), and **Accept** writes back to the correct state rule (`.is-open` vs `.is-closing`) per member.
+When the panel opens it posts a **scan job** to the relay; the agent reads your source and returns the page's animated components, each split into phases (`open`, `close`, …) with their **member elements** and the *real* per-state timings — including the close transition the DOM can't show you. The picker then groups by component, you select a phase, and the timeline renders one lane per member-property (each lane labeled with its member) on a single time axis so stagger and delays line up. Editing any lane applies **live** as an inline `transition` on that member element, so triggering the component yourself (open/close it) previews the whole phase with your values; **Accept** writes back to the correct state rule (`.is-open` vs `.is-closing`) per member.
 
 Grouping needs the agent (`/refine live`, `--llm`, or `REFINE_AGENT_CMD`); with no agent the panel just shows the flat DOM scan as before.
 
@@ -71,7 +73,7 @@ Grouping needs the agent (`/refine live`, `--llm`, or `REFINE_AGENT_CMD`); with 
 
 The **Accept** button (next to Refine) is enabled whenever the selected transition has unsaved changes — whether you edited the bars/easing by hand or applied a Refine suggestion. Pressing it sends an **apply job** to the relay: the agent finds where that transition is declared in your source (plain CSS, CSS Modules, styled-components/emotion, Tailwind, or inline styles), edits only the changed timings, and reports back. The button shows a spinner while saving and flips to **Done** on success.
 
-Like Replace, Accept needs the agent — run `/refine live` (or `--llm` / `REFINE_AGENT_CMD`). The deterministic answerer can't edit files. Play preview also no longer needs you to trigger the transition first: it recovers the end-state from your stylesheets (hover/focus pseudo-states and toggled classes like `.modal.open`), so opening the panel and pressing Play just works.
+Like Replace, Accept needs the agent — run `/refine live` (or `--llm` / `REFINE_AGENT_CMD`). The deterministic answerer can't edit files.
 
 ## Pieces
 

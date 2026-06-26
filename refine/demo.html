@@ -249,50 +249,6 @@
     @media (prefers-reduced-motion: reduce) {
       .tl-refine-btn:hover:not(:disabled) .tl-refine-sparks i { animation: none; } }
 
-    /* ── transport row ── */
-    .tl-transport { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--c-line); }
-    .tl-transport-left { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .tl-transport-center { flex: 0 0 auto; display: flex; justify-content: center; }
-    .tl-transport-right { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
-    .tl-transport .tl-ghost-btn,
-    .tl-transport .tl-icon-btn,
-    .tl-transport .tl-play-btn { border-radius: 60px; }
-    .tl-timecode { font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 500; color: var(--c-text); min-width: 70px; }
-    .tl-speed { font-variant-numeric: tabular-nums; }
-    .tl-zoom { position: relative; width: 72px; height: 15px; flex: none; }
-    /* slider — Logram design system (node 13064:2539): 15px frame, track at y=5, 15px knob at y=0 */
-    .tl-zoom-track { position: absolute; left: 0; right: 0; top: 5px; height: 5px; pointer-events: none;
-      background: rgba(115,115,115,0.1); border: 1px solid rgba(0,0,0,0.08); border-radius: 7px; box-sizing: border-box; }
-    .tl-zoom input[type="range"] { position: relative; z-index: 1; width: 100%; height: 15px; margin: 0;
-      -webkit-appearance: none; appearance: none; background: transparent; outline: none; cursor: pointer; }
-    .tl-zoom input[type="range"]::-webkit-slider-runnable-track { height: 15px; background: transparent; border: none; }
-    .tl-zoom input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
-      width: 15px; height: 15px; margin-top: 0; border-radius: 50%; background: #fff; cursor: pointer;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(126,126,126,0.1), inset 0 -1px 0 rgba(0,0,0,0.1); }
-    .tl-zoom input[type="range"]::-moz-range-track { height: 15px; background: transparent; border: none; }
-    .tl-zoom input[type="range"]::-moz-range-thumb { width: 15px; height: 15px; border: none; border-radius: 50%;
-      background: #fff; cursor: pointer;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(126,126,126,0.1), inset 0 -1px 0 rgba(0,0,0,0.1); }
-    /* play/pause circle — Figma: drop shadow + inset ring overlay */
-    .tl-play-btn { position: relative; isolation: isolate; overflow: hidden;
-      display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;
-      border: none; border-radius: 50%; background: var(--c-circle); color: #17181c;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04); cursor: pointer;
-      transition: background 0.12s ease, scale 0.12s ease; }
-    .tl-play-btn::after { content: ""; position: absolute; inset: 0; border-radius: inherit;
-      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06), inset 0 -1px 0 0 rgba(0, 0, 0, 0.06),
-        inset 0 0 0 1px rgba(196, 196, 196, 0.10); pointer-events: none; }
-    .tl-play-btn > * { position: relative; z-index: 1; }
-    .tl-play-btn:hover:not(:disabled) { background: var(--c-circle-h); }
-    .tl-play-btn:active:not(:disabled) { background: var(--c-circle-a); scale: 0.96; }
-    .tl-play-btn:disabled { opacity: 0.5; cursor: default; }
-    /* center both icon layers in the swap cell so the differently-sized play (10×12)
-       and pause (16²) svgs share one center; nudge ONLY the play triangle right for
-       optical centering (skill: play-button triangles). left/position (not transform)
-       so it doesn't clash with the icon-swap scale animation; pause stays dead-center. */
-    .tl-play-btn .t-icon { place-self: center; }
-    .tl-play-btn .t-icon[data-icon="a"] { position: relative; left: 1px; }
-
     /* ── body / floating cards row ── */
     .tl-body { display: flex; flex: 1; min-height: 0; gap: 0; }
     .tl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
@@ -332,7 +288,7 @@
     .tl-prop-prop { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .tl-insp-member { display: inline-block; font-size: 11px; font-weight: 600; line-height: 14px; padding: 1px 6px; border-radius: 60px;
       background: var(--c-sec, rgba(0,0,0,0.05)); color: var(--c-text-faint); text-transform: none; margin-right: 6px; vertical-align: middle; }
-    /* 16px left inset of the plot area (kept in sync with ruler/playhead/scrub) */
+    /* 16px left inset of the plot area (kept in sync with the ruler) */
     .tl-prop-track { position: relative; flex: 1; user-select: none; margin-left: 16px; }
     /* timeline line — capsule (fully rounded), Figma #eeeeef default / #e9e9e9 hover */
     .tl-bar { position: absolute; top: 50%; height: 24px; transform: translateY(-50%); background: var(--c-track);
@@ -352,13 +308,16 @@
     .tl-bar-grip { position: absolute; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 2; }
     .tl-bar-grip.left { left: -5px; } .tl-bar-grip.right { right: -5px; }
 
-    .tl-playhead-layer { position: absolute; top: 14px; bottom: 0; left: 166px; right: 0;
-      pointer-events: none; z-index: 4; }
-    .tl-playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: #1A7AFF; transform: translateX(-1px); }
-    .tl-playhead-head { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 16.666px; height: 24px;
-      overflow: visible; filter: drop-shadow(0 1px 3px rgba(0,0,0,.25)); }
-    .tl-scrub-zone { position: absolute; top: 0; height: 30px; left: 166px; right: 0;
-      z-index: 6; cursor: ew-resize; }
+    /* draggable divider between the label column and the bars column. The hit
+       area is wide for easy grabbing; the visible line is thin and only accents
+       on hover / while dragging (matches the panel's 0.12s hover house style). */
+    .tl-col-resizer { position: absolute; top: 0; bottom: 0; width: 11px; transform: translateX(-50%);
+      cursor: col-resize; z-index: 6; display: flex; justify-content: center; }
+    .tl-col-resizer-line { width: 1px; height: 100%; background: transparent;
+      transition: background 0.12s ease, width 0.12s ease; }
+    .tl-col-resizer:hover .tl-col-resizer-line,
+    .tl-col-resizer.dragging .tl-col-resizer-line { width: 2px; background: #1A7AFF; }
+    @media (prefers-reduced-motion: reduce) { .tl-col-resizer-line { transition: none; } }
 
     /* ── value field (slider + input) — exact Figma "Value slider and input" ── */
     .tl-field-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
@@ -1019,6 +978,13 @@
       if(cur)parts.push(cur); return parts;
     }
     function transitionSignature(props,dur,del,ease) { return [...props].sort().join(",")+"|"+dur+"|"+del+"|"+ease; }
+    // Serialise a set of effective lanes back into a CSS `transition` shorthand.
+    function transitionLanesToCss(lanes){ return (lanes||[]).map(t=>`${t.property} ${formatCssTime(t.durationMs)} ${t.easing} ${formatCssTime(t.delayMs)}`).join(", "); }
+    // Elements we've live-applied edited timings to. Maps element → its ORIGINAL
+    // source lanes ({z}), so the DomScanner keeps the entry pinned to the source
+    // signature/timings even while our inline `transition` overrides the DOM —
+    // otherwise the timing-based id would churn and orphan the user's edits.
+    const _TX_LIVE_BASE = new WeakMap();
 
     const EASING_PRESETS = [
       { keyword:"linear", cubic:[0,0,1,1] }, { keyword:"ease", cubic:[0.25,0.1,0.25,1] },
@@ -1205,6 +1171,7 @@
             });
             const item={id,kind:"phase",groupId:g.id,groupLabel:g.label||g.id,component:g.component||null,
               phase:ph.phase||null,phaseLabel:ph.label||ph.phase||"Phase",
+              stateTarget:ph.stateTarget||null,fromState:(ph.fromState??null),toState:(ph.toState??null),
               label:(g.label||g.id)+" · "+(ph.label||ph.phase||"Phase"),durationMs:repDur,
               members,effectiveTimings:effTimings,baseLanes};
             this.effectiveCache.set(id,item);
@@ -1364,6 +1331,26 @@
       return {from:f,to:t};
     }
 
+    // Add/remove a single state token (".class" or "[attr=val]"/"[attr]") on an
+    // element. Returns false for tokens we can't toggle (e.g. pseudo ":hover").
+    function _applyStateToken(el,token,add){
+      const s=String(token||"").trim();
+      if(!s)return true;
+      if(s[0]==="."){const c=s.slice(1);if(!c)return false;if(add)el.classList.add(c);else el.classList.remove(c);return true;}
+      if(s[0]==="["){
+        const m=s.match(/^\[\s*([\w-]+)\s*(?:[~|^$*]?=\s*"?([^"\]]*)"?\s*)?\]$/);
+        if(!m)return false;
+        const name=m[1],val=m[2]!=null?m[2]:"";
+        if(add)el.setAttribute(name,val);else el.removeAttribute(name);
+        return true;
+      }
+      return false; // pseudo (:hover/:focus) or unrecognised → not class-toggleable
+    }
+    function _tokenToggleable(token){
+      const s=String(token||"").trim();
+      return !s || s[0]==="."||s[0]==="[";
+    }
+
     class PreviewController {
       state="idle"; listeners=new Set(); cleanups=[]; animations=[]; progressListeners=new Set(); _rafId=null; scanner=null; _gen=0;
       rate=1; loop=false; _current=null;
@@ -1400,19 +1387,80 @@
         this.stop();this._gen++;const gen=this._gen;
         this._pendingSeek=seekMs;
         if(this.scanner)this.scanner.pause();
-        const targets=this._targets(entry);
-        if(!targets.length)return;
+        const armed=this._armAll(entry);
+        const els=armed.els;
+        if(!els.length){this._setState("paused");if(seekMs!=null)this._ep(seekMs);return;}
+        this.cleanups.push(armed.restore);
         this.animations=[];
-        for(const {el,et,toState} of targets){
-          const restore=this._arm(el,et,toState);
-          requestAnimationFrame(()=>{if(this._gen!==gen)return;const running=el.getAnimations();
-            for(const a of running){a.pause();a.playbackRate=this.rate;this.animations.push(a);}
-            const t=this._pendingSeek??seekMs;
-            if(t!=null){for(const a of this.animations){try{a.currentTime=t;}catch{}}this._ep(t);}
-          });
-          this.cleanups.push(restore);}
+        requestAnimationFrame(()=>{if(this._gen!==gen)return;
+          const running=[];for(const el of els){for(const a of el.getAnimations()){a.pause();a.playbackRate=this.rate;running.push(a);}}
+          this.animations=running;
+          const t=this._pendingSeek??seekMs;
+          if(t!=null){for(const a of this.animations){try{a.currentTime=t;}catch{}}this._ep(t);}
+        });
         this._setState("paused");
         if(seekMs!=null)this._ep(seekMs);
+      }
+      // Snapshot/restore the toggled state on a root element.
+      _snapshotState(el,toggleTokens){
+        const attrs={},classes={};
+        for(const t of toggleTokens){const s=String(t).trim();
+          if(s[0]===".")classes[s.slice(1)]=el.classList.contains(s.slice(1));
+          else if(s[0]==="["){const m=s.match(/^\[\s*([\w-]+)/);if(m)attrs[m[1]]=el.getAttribute(m[1]);}}
+        return {attrs,classes};
+      }
+      _restoreState(el,snap){
+        for(const c in snap.classes){if(snap.classes[c])el.classList.add(c);else el.classList.remove(c);}
+        for(const n in snap.attrs){const v=snap.attrs[n];if(v==null)el.removeAttribute(n);else el.setAttribute(n,v);}
+      }
+      _setRootState(el,target,toggleTokens){
+        for(const t of toggleTokens)_applyStateToken(el,t,false);
+        if(target)_applyStateToken(el,target,true);
+      }
+      // Arm a whole phase by toggling the REAL driving state on its stateTarget,
+      // so the actual CSS animates every member in the correct direction (open
+      // base→state, close state→base). Edited timings are applied inline on the
+      // member elements so they override the source. Returns {els, restore} or
+      // null to fall back to per-member arming.
+      _armPhase(entry,root){
+        const fromState=entry.fromState??null, toState=entry.toState??null;
+        if(![fromState,toState].every(_tokenToggleable))return null; // pseudo states → legacy
+        const toggleTokens=[fromState,toState].filter(Boolean);
+        if(!toggleTokens.length)return null;
+        const memberEls=[];
+        for(const m of (entry.members||[])){
+          if(!m.selector||!m.lanes||!m.lanes.length)continue;
+          let els=[];try{els=Array.from(document.querySelectorAll(m.selector));}catch{}
+          for(const el of els)memberEls.push({el,lanes:m.lanes});
+        }
+        if(!memberEls.length)return null;
+        const savedRoot=this._snapshotState(root,toggleTokens);
+        const savedStyles=memberEls.map(({el})=>el.style.cssText);
+        // 1. suppress transitions and commit the FROM state
+        for(const {el} of memberEls)el.style.transition="none";
+        this._setRootState(root,fromState,toggleTokens);
+        void root.offsetWidth;for(const {el} of memberEls)void el.offsetWidth;
+        // 2. apply the (possibly edited) per-member timings inline
+        for(const {el,lanes} of memberEls){
+          el.style.transition=lanes.map(t=>`${t.property} ${formatCssTime(t.durationMs)} ${t.easing} ${formatCssTime(t.delayMs)}`).join(", ");
+        }
+        // 3. toggle to the TO state → real CSS transitions fire on every member
+        this._setRootState(root,toState,toggleTokens);
+        const restore=()=>{try{this._restoreState(root,savedRoot);}catch{}
+          memberEls.forEach(({el},i)=>{try{el.style.cssText=savedStyles[i];}catch{}});};
+        return {els:memberEls.map(m=>m.el),restore};
+      }
+      // Resolve an entry to armed element(s) + a restore fn. Phase items with a
+      // toggleable stateTarget use _armPhase; everything else uses per-target arm.
+      _armAll(entry){
+        if(entry&&entry.kind==="phase"&&entry.stateTarget&&typeof document!=="undefined"){
+          let root=null;try{root=document.querySelector(entry.stateTarget);}catch{}
+          if(root){const r=this._armPhase(entry,root);if(r)return r;}
+        }
+        const targets=this._targets(entry);
+        const els=[],restores=[];
+        for(const {el,et,toState} of targets){restores.push(this._arm(el,et,toState));els.push(el);}
+        return {els,restore:()=>{for(const c of restores){try{c();}catch{}}}};
       }
       seek(timeMs){
         if(this.state==="idle")return;
@@ -1460,17 +1508,17 @@
         return ()=>{try{el.style.cssText=saved;}catch{}};
       }
       _playCss(entry,gen){
-        const targets=this._targets(entry);
+        const armed=this._armAll(entry);
+        const els=armed.els;
         this.animations=[];
-        if(!targets.length){this._finish();return;}
-        let pending=targets.length;
-        for(const {el,et,toState} of targets){
-          const restore=this._arm(el,et,toState);
-          requestAnimationFrame(()=>{if(this._gen!==gen)return;const running=el.getAnimations();for(const a of running){a.playbackRate=this.rate;this.animations.push(a);}this._startPL();
-            // resolve the whole group when every target's animations have settled
-            const onDone=()=>{if(this._gen!==gen||this.state!=="playing")return;pending--;if(pending>0)return;if(this.loop&&this._current){this.play(this._current);}else{this._finish();}};
-            if(running.length>0){Promise.allSettled(running.map(a=>a.finished)).then(onDone);}else{onDone();}});
-          this.cleanups.push(restore);}}
+        if(!els.length){this._finish();return;}
+        this.cleanups.push(armed.restore);
+        requestAnimationFrame(()=>{if(this._gen!==gen)return;
+          const running=[];for(const el of els){for(const a of el.getAnimations()){a.playbackRate=this.rate;running.push(a);}}
+          this.animations=running;this._startPL();
+          const onDone=()=>{if(this._gen!==gen||this.state!=="playing")return;if(this.loop&&this._current){this.play(this._current);}else{this._finish();}};
+          if(running.length>0){Promise.allSettled(running.map(a=>a.finished)).then(onDone);}else{onDone();}
+        });}
       _startPL(){this._stopPL();const tick=()=>{if(this.animations.length>0){let cur=0;for(const a of this.animations){const c=Number(a.currentTime)||0;if(c>cur)cur=c;}this._ep(cur);}this._rafId=requestAnimationFrame(tick);};this._rafId=requestAnimationFrame(tick);}
       _stopPL(){if(this._rafId!==null){cancelAnimationFrame(this._rafId);this._rafId=null;}}
       _ep(p){for(const fn of this.progressListeners)fn(p);}
@@ -1482,7 +1530,7 @@
       observer=null;rafId=null;running=false;paused=false;
       constructor(root,reg){this.root=root;this.registry=reg;}
       pause(){this.paused=true;} unpause(){this.paused=false;this._sched();}
-      start(){if(this.running)return;this.running=true;_txInstallCapture();this.scan();this.observer=new MutationObserver(()=>this._sched());this.observer.observe(this.root,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});}
+      start(){if(this.running)return;this.running=true;this.scan();this.observer=new MutationObserver(()=>this._sched());this.observer.observe(this.root,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]});}
       stop(){this.running=false;this.observer?.disconnect();this.observer=null;if(this.rafId!==null){cancelAnimationFrame(this.rafId);this.rafId=null;}}
       _sched(){if(this.rafId!==null)return;this.rafId=requestAnimationFrame(()=>{this.rafId=null;if(this.running&&!this.paused)this.scan();});}
       scan(){const seen=new Map();const w=document.createTreeWalker(this.root,NodeFilter.SHOW_ELEMENT);let n=w.currentNode;while(n){if(n instanceof HTMLElement)this._proc(n,seen);n=w.nextNode();}this.registry.replaceAll(Array.from(seen.values()));}
@@ -1494,7 +1542,11 @@
         const durs=(s.transitionDuration||"0s").split(",");
         const dels=(s.transitionDelay||"0s").split(",");
         const eass=splitCssValues(s.transitionTimingFunction||"ease");
-        const z=zipTransitionLists(props,durs,dels,eass);
+        let z=zipTransitionLists(props,durs,dels,eass);
+        // If we've live-applied edited timings here, keep the entry pinned to the
+        // ORIGINAL source lanes so its id/overrides stay stable across rescans.
+        const _lb=_TX_LIVE_BASE.get(el);
+        if(_lb){ if(_lb.z&&_lb.z.length) z=_lb.z; else return; }
         if(!z.length||z.every(x=>x.durationMs===0&&x.delayMs===0))return;
         const pDur=z[0].durationMs,pDel=z[0].delayMs,pEase=z[0].easing;
         const allP=z.map(x=>x.property);
@@ -1512,19 +1564,11 @@
     const TimelineCtx = createContext(null);
     function useReg(){const{registry}=useContext(TimelineCtx);return useSyncExternalStore(useCallback(cb=>registry.subscribe(cb),[registry]),useCallback(()=>registry.getAll(),[registry]),useCallback(()=>registry.getAll(),[registry]));}
     function useActive(){const{activeId,setActiveId,registry}=useContext(TimelineCtx);const active=useSyncExternalStore(useCallback(cb=>registry.subscribe(cb),[registry]),useCallback(()=>activeId?registry.getEffective(activeId):undefined,[registry,activeId]),useCallback(()=>activeId?registry.getEffective(activeId):undefined,[registry,activeId]));return{active,setActiveId};}
-    function usePlayback(){const{preview,registry,activeId}=useContext(TimelineCtx);const state=useSyncExternalStore(useCallback(cb=>preview.subscribe(cb),[preview]),useCallback(()=>preview.getState(),[preview]),useCallback(()=>preview.getState(),[preview]));
-      return{state,play:useCallback(()=>{if(!activeId)return;const e=registry.getEffective(activeId);if(e)preview.play(e);},[preview,registry,activeId]),pause:useCallback(()=>preview.pause(),[preview]),resume:useCallback(()=>preview.resume(),[preview]),restart:useCallback(()=>{if(!activeId)return;const e=registry.getEffective(activeId);if(e)preview.restart(e);},[preview,registry,activeId]),stop:useCallback(()=>preview.stop(),[preview])};}
     function usePropOverride(){const{registry,activeId}=useContext(TimelineCtx);return{setPropOverride:useCallback((prop,o)=>{if(activeId)registry.setPropOverride(activeId,prop,o);},[registry,activeId])};}
 
     // ── components ──
-    const BASE_SCALE_MS = 5000;
-    const ZOOM_MIN = 25;
-    const ZOOM_MAX = 400;
-    const ZOOM_DEFAULT = 100;
-    const scaleFromZoom = zoom => Math.round(BASE_SCALE_MS * 100 / zoom);
     const LABEL_W = 150;
     const CLOSE_MS = 150;
-    const SPEEDS = [0.25, 0.5, 1, 2];
     const DURATION_TOKENS = [
       {label:"Duration-fast", ms:150, usage:"Quick state changes — hovers, toggles, button presses, dropdown & modal close, text swaps."},
       {label:"Duration-medium", ms:250, usage:"Standard UI motion — icon swaps, dropdown & modal open, sliding tabs, page slides."},
@@ -1538,8 +1582,6 @@
       {label:"Long", ms:300, usage:"Pronounced wait — use sparingly to draw attention."},
     ];
     function cx(...a){ return a.filter(Boolean).join(" "); }
-    function fmtTimecode(ms){ const m=Math.floor(ms/60000); const s=Math.floor((ms%60000)/1000); const c=Math.floor((ms%1000)/10); const p=n=>String(n).padStart(2,"0"); return p(m)+":"+p(s)+":"+p(c); }
-    function fmtSpeed(s){ return s+"x"; }
 
     // ── icons ──
     // Exact SVGs exported from the Logram ❖ Design System Figma file (no recreations).
@@ -1572,13 +1614,6 @@
       const w = +(size * vw / m).toFixed(2), ht = +(size * vh / m).toFixed(2);
       return h("svg",{width:w,height:ht,viewBox:ic.vb,fill:"none",xmlns:"http://www.w3.org/2000/svg",
         style:{display:"block"},dangerouslySetInnerHTML:{__html:ic.svg}});
-    }
-
-    function usePreviewTime(){
-      const{preview}=useContext(TimelineCtx);
-      const[ms,setMs]=useState(0);
-      useEffect(()=>preview.onProgress(setMs),[preview]);
-      return ms;
     }
 
     // portaled, origin-aware dropdown surface (transitions.dev menu-dropdown)
@@ -1897,7 +1932,7 @@
       return out;
     }
 
-    function Header({entries,active,onSelect,onReset,onCopy,copied,loop,setLoop,snap,setSnap,onMinimize,onRefine,refineActive,onAccept,acceptState,acceptDisabled,acceptError,scanning}){
+    function Header({entries,active,onSelect,onReset,onCopy,copied,snap,setSnap,onMinimize,onRefine,refineActive,onAccept,acceptState,acceptDisabled,acceptError,scanning}){
       const[pick,setPick]=useState(false);
       const[setg,setSetg]=useState(false);
       const pickRef=useRef(null), gearRef=useRef(null);
@@ -1936,7 +1971,6 @@
           scanning?"Grouping…":entries.length+" transition"+(entries.length===1?"":"s")+" found"),
         h("button",{ref:gearRef,className:cx("tl-icon-btn",setg&&"is-active"),title:"Settings",onClick:()=>setSetg(v=>!v)},h(Ic,{name:"gear"})),
         h(Dropdown,{open:setg,onClose:()=>setSetg(false),triggerRef:gearRef,width:210,align:"right"},
-          h(MenuItem,{onClick:()=>setLoop(v=>!v),right:loop&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},"Loop playback"),
           h(MenuItem,{onClick:()=>setSnap(v=>!v),right:snap&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},"Snap to grid")),
         h("span",{className:"t-tt-wrap"},
           h("button",{className:"tl-sec-btn t-tt-trigger",disabled:!active,onClick:onReset},"Reset"),
@@ -1977,7 +2011,7 @@
       );
     }
 
-    function PropTrack({property, member, delayMs, durationMs, selected, dragging, onSelect, onReorder, onDelayChange, onDurationChange, snap, scaleMs, lockDuration}){
+    function PropTrack({property, member, delayMs, durationMs, selected, dragging, onSelect, onReorder, onDelayChange, onDurationChange, snap, scaleMs, lockDuration, labelW}){
       const trackRef=useRef(null);
       const grid = snap ? 25 : 1;
       const pxToMs=useCallback(px=>{if(!trackRef.current)return 0;const w=trackRef.current.getBoundingClientRect().width;return Math.round((px/w)*scaleMs/grid)*grid;},[grid,scaleMs]);
@@ -2005,7 +2039,7 @@
 
       const delPct=(delayMs/scaleMs)*100; const durPct=(durationMs/scaleMs)*100;
       return h("div",{className:cx("tl-prop-row",selected&&"selected",dragging&&"reordering",lockDuration&&"is-spring"),onClick:onSelect},
-        h("div",{className:"tl-prop-head"},
+        h("div",{className:"tl-prop-head",style:labelW!=null?{flexBasis:labelW+"px"}:undefined},
           h("span",{className:"tl-prop-grip",title:"Drag to reorder",onMouseDown:onReorder},h(Ic,{name:"dots"})),
           h("span",{className:"tl-prop-label"},
             member&&h("span",{className:"tl-prop-member"},member),
@@ -2388,50 +2422,31 @@
       );
     }
 
-    function ScrubZone({scaleMs}){
-      const { preview, registry, activeId } = useContext(TimelineCtx);
-      const areaRef = useRef(null);
-      const startedRef = useRef(false);
-
-      const pxToMs = useCallback(clientX=>{
-        if(!areaRef.current) return 0;
-        const rect = areaRef.current.getBoundingClientRect();
-        const ratio = Math.max(0, Math.min((clientX - rect.left) / rect.width, 1));
-        return ratio * scaleMs;
-      },[scaleMs]);
-
-      const doSeek = useCallback(ms=>{
-        if(preview.getState()==="idle" && !startedRef.current){
-          if(!activeId) return;
-          const entry = registry.getEffective(activeId);
-          if(!entry) return;
-          startedRef.current = true;
-          preview.playPaused(entry, ms);
-        } else {
-          preview.seek(ms);
-        }
-      },[preview,registry,activeId]);
-
-      const startScrub = useCallback(e=>{
-        e.preventDefault();
-        startedRef.current = false;
-        doSeek(pxToMs(e.clientX));
-        const onMove = e2 => doSeek(pxToMs(e2.clientX));
-        const onUp = () => { startedRef.current = false; window.removeEventListener("mousemove",onMove); window.removeEventListener("mouseup",onUp); };
-        window.addEventListener("mousemove",onMove);
-        window.addEventListener("mouseup",onUp);
-      },[doSeek,pxToMs]);
-
-      return h("div",{className:"tl-scrub-zone",ref:areaRef,onMouseDown:startScrub});
-    }
-
     function Tracks({et, selLane, setSelLane, onPropChange, snap, scaleMs}){
-      const t = usePreviewTime();
-      const ratio = Math.min(t / scaleMs, 1);
       const ROW_H = 48;
       const rowsRef = useRef(null);
+      const tracksRef = useRef(null);
       const [order, setOrder] = useState([]);
       const [dragLane, setDragLane] = useState(null);
+      // Width of the label column (shared by the ruler spacer + every prop-row
+      // head). Draggable via the divider; the bars column is flex:1 so it just
+      // takes the remaining space and the bars stay proportional to scaleMs.
+      const LABEL_MIN = 96, LABEL_TRACK_MIN = 160;
+      const [labelW, setLabelW] = useState(LABEL_W);
+      const [colDragging, setColDragging] = useState(false);
+      const startColResize = useCallback(e=>{
+        e.preventDefault(); e.stopPropagation();
+        const startX = e.clientX, startW = labelW;
+        const maxW = tracksRef.current
+          ? Math.max(LABEL_MIN, tracksRef.current.getBoundingClientRect().width - LABEL_TRACK_MIN)
+          : 360;
+        setColDragging(true);
+        document.body.style.cursor = "col-resize"; document.body.style.userSelect = "none";
+        const onMove = e2 => setLabelW(Math.max(LABEL_MIN, Math.min(maxW, startW + (e2.clientX - startX))));
+        const onUp = () => { setColDragging(false); document.body.style.cursor=""; document.body.style.userSelect="";
+          window.removeEventListener("mousemove",onMove); window.removeEventListener("mouseup",onUp); };
+        window.addEventListener("mousemove",onMove); window.addEventListener("mouseup",onUp);
+      },[labelW]);
       const laneKey = et.map(x=>x.laneId).join("|");
       useEffect(()=>{
         const ids = et.map(x=>x.laneId);
@@ -2463,7 +2478,7 @@
         const onUp = ()=>{ setDragLane(null); window.removeEventListener("mousemove",onMove); window.removeEventListener("mouseup",onUp); };
         window.addEventListener("mousemove",onMove); window.addEventListener("mouseup",onUp);
       },[setSelLane]);
-      const majorStep = scaleMs <= 10000 ? 1000 : scaleMs <= 25000 ? 5000 : 10000;
+      const majorStep = scaleMs <= 2000 ? 500 : scaleMs <= 10000 ? 1000 : scaleMs <= 25000 ? 5000 : 10000;
       const minorStep = majorStep / 4;
       const ruler=[];
       for(let ms=0; ms<=scaleMs; ms+=majorStep){
@@ -2474,26 +2489,23 @@
         if(ms%majorStep===0) continue;
         ruler.push(h("span",{key:"t"+ms,className:"tick",style:{left:((ms/scaleMs)*100)+"%"}}));
       }
-      return h("div",{className:"tl-tracks"},
+      return h("div",{className:"tl-tracks",ref:tracksRef},
         h("div",{className:"tl-ruler-row"},
-          h("div",{className:"tl-ruler-spacer"}),
+          h("div",{className:"tl-ruler-spacer",style:{flexBasis:labelW+"px"}}),
           h("div",{className:"tl-ruler"},...ruler)),
         h("div",{className:"tl-rows",ref:rowsRef},
           ...orderedRows.map(row=>h(PropTrack,{
             key:row.laneId, property:row.property, member:row.member,
             delayMs:row.delayMs, durationMs:row.durationMs, lockDuration:!!row.spring,
-            selected:row.laneId===selLane, dragging:row.laneId===dragLane, snap, scaleMs,
+            selected:row.laneId===selLane, dragging:row.laneId===dragLane, snap, scaleMs, labelW,
             onSelect:()=>setSelLane(row.laneId),
             onReorder:e=>startReorder(row.laneId,e),
             onDelayChange:ms=>onPropChange(row.laneId,{delayMs:ms}),
             onDurationChange:ms=>onPropChange(row.laneId,{durationMs:ms}),
           }))),
-        h(ScrubZone,{scaleMs}),
-        h("div",{className:"tl-playhead-layer"},
-          h("div",{className:"tl-playhead",style:{left:(ratio*100)+"%"}},
-            h("svg",{className:"tl-playhead-head",viewBox:"0 0 16.666 24",width:"16.666",height:"24",fill:"none"},
-              h("path",{d:"M13.666 7.333C13.666 11.609 9.333 15.666 9.333 19.942L9.333 24L7.333 24L7.333 19.942C7.333 15.666 3 11.609 3 7.333C3 4.387 5.387 2 8.333 2C11.279 2 13.666 4.387 13.666 7.333Z",fill:"#1A7AFF"}))),
-        ),
+        h("div",{className:cx("tl-col-resizer",colDragging&&"dragging"),style:{left:labelW+"px"},
+          onMouseDown:startColResize,title:"Drag to resize columns","aria-label":"Resize label column",role:"separator"},
+          h("span",{className:"tl-col-resizer-line"})),
       );
     }
 
@@ -2518,65 +2530,34 @@
       );
     }
 
-    function Body({entry, onPropChange, state, play, pause, resume, restart, stop, speed, setSpeed, snap}){
+    function Body({entry, onPropChange, snap}){
       const et = entry.effectiveTimings || [];
       const [selLane, setSelLane] = useState(et[0]?.laneId ?? null);
-      const [zoom, setZoom] = useState(ZOOM_DEFAULT);
-      const scaleMs = scaleFromZoom(zoom);
+      // No playback: the real component is the preview. The track scale just
+      // auto-fits the longest lane (duration+delay) with a little headroom so
+      // the static bars stay readable across short and long transitions.
+      const maxEnd = et.reduce((m,t)=>Math.max(m,(t.durationMs||0)+(t.delayMs||0)),0);
+      const scaleMs = Math.max(500, Math.ceil((maxEnd*1.15)/250)*250);
       useEffect(()=>{
         if(et.length && !et.find(t=>t.laneId===selLane)) setSelLane(et[0]?.laneId);
       },[et,selLane]);
 
       return h("div",{className:"tl-body"},
         h("div",{className:"tl-main"},
-          h(Transport,{state,disabled:!entry,onPlay:play,onPause:pause,onResume:resume,onRestart:restart,onStop:stop,speed,setSpeed,zoom,setZoom}),
           h(Tracks,{et,selLane,setSelLane,onPropChange,snap,scaleMs}),
         ),
         h(Inspector,{entry,selLane,onPropChange,snap}),
       );
     }
 
-    function Transport({state,disabled,onPlay,onPause,onResume,onRestart,onStop,speed,setSpeed,zoom,setZoom}){
-      const t = usePreviewTime();
-      const spRef = useRef(null);
-      const [sp,setSp] = useState(false);
-      const playing = state==="playing";
-      const onMain = () => playing ? onPause() : state==="paused" ? onResume() : onPlay();
-      return h("div",{className:"tl-transport"},
-        h("div",{className:"tl-transport-left"},
-          h("span",{className:"tl-timecode"}, fmtTimecode(t)),
-          h("button",{ref:spRef,className:cx("tl-ghost-btn","tl-speed",sp&&"is-active"),onClick:()=>setSp(v=>!v)},
-            fmtSpeed(speed), h("span",{className:"tl-ghost-chev"},h(Ic,{name:"chevron"}))),
-          h(Dropdown,{open:sp,onClose:()=>setSp(false),triggerRef:spRef,width:120,align:"left"},
-            SPEEDS.map(s=>h(MenuItem,{key:s,active:s===speed,onClick:()=>{setSpeed(s);setSp(false);},
-              right:s===speed&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},fmtSpeed(s)))) ),
-        h("div",{className:"tl-transport-center"},
-          h("button",{className:"tl-play-btn",disabled,onClick:onMain,title:playing?"Pause":"Play"},
-            h("span",{className:"t-icon-swap","data-state":playing?"b":"a"},
-              h("span",{className:"t-icon","data-icon":"a"},h(Ic,{name:"play",size:12})),
-              h("span",{className:"t-icon","data-icon":"b"},h(Ic,{name:"pause",size:16}))))),
-        h("div",{className:"tl-transport-right"},
-          h("div",{className:"tl-zoom",title:"Timeline zoom"},
-            h("div",{className:"tl-zoom-track","aria-hidden":true}),
-            h("input",{type:"range",min:ZOOM_MIN,max:ZOOM_MAX,value:zoom,
-              onChange:e=>setZoom(Number(e.target.value))})),
-          h("span",{className:"t-tt-wrap"},
-            h("button",{className:"tl-icon-btn ghost t-tt-trigger",disabled,"aria-label":"Replay",onClick:onRestart},h(Ic,{name:"restart"})),
-            h("span",{className:"t-tt tl-tt-below",role:"tooltip"},"Replay")),
-        ),
-      );
-    }
-
     function TimelinePanel(){
       const entries=useReg(); const{active,setActiveId}=useActive();
-      const{state,play,pause,resume,restart,stop}=usePlayback(); const{setPropOverride}=usePropOverride();
-      const{registry,preview}=useContext(TimelineCtx);
+      const{setPropOverride}=usePropOverride();
+      const{registry}=useContext(TimelineCtx);
       const[copied,setCopied]=useState(false);
       const[minimized,setMinimized]=useState(false);
       const[panelHeight,setPanelHeight]=useState(440);
       const[resizing,setResizing]=useState(false);
-      const[speed,setSpeed]=useState(1);
-      const[loop,setLoop]=useState(false);
       const[snap,setSnap]=useState(true);
       // ── refine ──
       const[refineOpen,setRefineOpen]=useState(false);
@@ -2676,8 +2657,59 @@
       const panelMinH=200;
       const panelMaxH=useCallback(()=>Math.round(window.innerHeight*0.92),[]);
       useEffect(()=>{if(!active&&entries.length>0)setActiveId(entries[0].id);},[active,entries,setActiveId]);
-      useEffect(()=>{preview.setRate(speed);},[preview,speed]);
-      useEffect(()=>{preview.setLoop(loop);},[preview,loop]);
+      // ── live styling ──────────────────────────────────────────────────────
+      // With playback gone, the real component IS the preview. So whenever a
+      // transition has edits, mirror its effective timings onto the live
+      // element(s) as an inline `transition`, and revert when edits are cleared.
+      // Interacting with the component then animates with the edited values.
+      const liveAppliedRef=useRef(new Map()); // el → {prevInline, css}
+      useEffect(()=>{
+        if(typeof document==="undefined")return;
+        const applied=liveAppliedRef.current;
+        const desired=new Map(); // el → css
+        const add=(els,css)=>{ for(const el of els){ if(!el||(el.closest&&el.closest("[data-timeline-panel]")))continue; desired.set(el,css); } };
+        for(const item of entries){
+          const ov=registry.getPropOverrides(item.id);
+          if(!ov||!Object.keys(ov).length)continue; // only edited transitions go live
+          if(item.kind==="phase"){
+            for(const m of (item.members||[])){
+              if(!m.selector||!m.lanes||!m.lanes.length)continue;
+              let els=[];try{els=Array.from(document.querySelectorAll(m.selector));}catch{}
+              add(els,transitionLanesToCss(m.lanes));
+            }
+          }else{
+            const lanes=item.effectiveTimings||[];
+            if(!lanes.length)continue;
+            const els=((item.bindings&&item.bindings.elements)||[]).map(w=>w.deref&&w.deref()).filter(Boolean);
+            add(els,transitionLanesToCss(lanes));
+          }
+        }
+        // apply new / changed
+        for(const [el,css] of desired){
+          const cur=applied.get(el);
+          if(cur&&cur.css===css)continue;
+          if(!cur){
+            const s=getComputedStyle(el);
+            const z=zipTransitionLists((s.transitionProperty||"").split(","),(s.transitionDuration||"0s").split(","),(s.transitionDelay||"0s").split(","),splitCssValues(s.transitionTimingFunction||"ease"));
+            _TX_LIVE_BASE.set(el,{z});
+            applied.set(el,{prevInline:el.style.transition||"",css});
+          }else applied.set(el,{prevInline:cur.prevInline,css});
+          try{el.style.transition=css;}catch{}
+        }
+        // revert elements that no longer have edits
+        for(const [el,rec] of Array.from(applied)){
+          if(desired.has(el))continue;
+          try{el.style.transition=rec.prevInline;}catch{}
+          _TX_LIVE_BASE.delete(el);
+          applied.delete(el);
+        }
+      },[entries,registry]);
+      // restore everything on unmount
+      useEffect(()=>()=>{
+        const applied=liveAppliedRef.current;
+        for(const [el,rec] of applied){ try{el.style.transition=rec.prevInline;}catch{} _TX_LIVE_BASE.delete(el); }
+        applied.clear();
+      },[]);
       const startResize=useCallback(e=>{
         e.preventDefault();
         const startY=e.clientY; const startH=panelHeight;
@@ -2740,11 +2772,24 @@
       // Auto-run the grouped scan once, after the flat DOM scan has populated.
       // The agent reads the source and returns Open/Close phases; if no agent is
       // live (or the relay is down) we silently keep the flat DOM scan.
+      // Lifecycle is tied to `registry` only (a stable ref), never to
+      // `entries.length`. On dynamic pages the DOM scanner makes entries.length
+      // fluctuate; keying the effect on it tore down the in-flight poll before
+      // the agent answered and the once-guard blocked a restart → permanent
+      // "Grouping…". Here a single run waits for flat entries to appear, fires
+      // one scan job, then polls to completion regardless of DOM churn; only an
+      // actual unmount cancels it.
       useEffect(()=>{
-        if(didGroupScanRef.current||!entries.length)return;
-        didGroupScanRef.current=true;
-        let cancelled=false;
-        (async()=>{
+        if(didGroupScanRef.current)return;
+        let stopped=false;
+        const run=async()=>{
+          while(!stopped){
+            const flat0=registry.getAll().filter(e=>e.kind!=="phase");
+            if(flat0.length)break;
+            await new Promise(r=>setTimeout(r,300));
+          }
+          if(stopped||didGroupScanRef.current)return;
+          didGroupScanRef.current=true;
           setGroupScanState("scanning");
           const flat=registry.getAll().filter(e=>e.kind!=="phase");
           const raw=flat.map(e=>({label:e.label,selector:e.bindings&&e.bindings.selector,
@@ -2752,18 +2797,19 @@
             timings:(e.baseLanes||[]).map(l=>({property:l.property,durationMs:l.durationMs,delayMs:l.delayMs,easing:l.easing}))}));
           try{
             const{id}=await relayCreateJob({kind:"scan",url:location.href,raw});
-            for(let i=0;i<240&&!cancelled;i++){
+            for(let i=0;i<520&&!stopped;i++){
               await new Promise(r=>setTimeout(r,500));
               const job=await relayGetJob(id);
-              if(cancelled)return;
+              if(stopped)return;
               if(job.status==="done"){const groups=(job.result&&job.result.groups)||[];if(groups.length)registry.setGroups(groups);setGroupScanState("done");return;}
               if(job.status==="error"){setGroupScanState("error");return;}
             }
-            if(!cancelled)setGroupScanState("error");
-          }catch(e){ if(!cancelled)setGroupScanState("error"); /* relay down → stay flat */ }
-        })();
-        return ()=>{cancelled=true;};
-      },[entries.length,registry]);
+            if(!stopped)setGroupScanState("error");
+          }catch(e){ if(!stopped)setGroupScanState("error"); /* relay down → stay flat */ }
+        };
+        run();
+        return ()=>{stopped=true;};
+      },[registry]);
 
       // whole-component open/close uses the transitions.dev panel reveal:
       // keep the panel mounted while it animates, flip data-open on the next
@@ -2812,12 +2858,11 @@
           h("div",{className:"tl-panel-body"},
             h("div",{className:"tl-panel-main"},
               h(Header,{entries,active,onSelect:setActiveId,onReset:resetOverrides,onCopy:copyValues,copied,
-                loop,setLoop,snap,setSnap,onMinimize:()=>setMinimized(true),onRefine:openRefine,refineActive:refineOpen,
+                snap,setSnap,onMinimize:()=>setMinimized(true),onRefine:openRefine,refineActive:refineOpen,
                 onAccept,acceptState,acceptDisabled:computeChanges(active).length===0,acceptError,
                 scanning:groupScanState==="scanning"}),
               active
-                ?h(Body,{entry:active,onPropChange:(prop,o)=>setPropOverride(prop,o),
-                    state,play,pause,resume,restart,stop,speed,setSpeed,snap})
+                ?h(Body,{entry:active,onPropChange:(prop,o)=>setPropOverride(prop,o),snap})
                 :h("div",{className:"tl-empty"},"Select a transition to inspect and edit it")),
             h(RefinePanel,{open:refineOpen,onClose:()=>setRefineOpen(false),phase:refinePhase,label:refineLabel,
               refineType,onType:changeRefineType,suggestions:refineSuggestions,summary:refineSummary,error:refineError,
@@ -2937,16 +2982,16 @@
     }
 
     function App(){
-      const rootRef=useRef(null);const registry=useMemo(()=>new TransitionRegistry(),[]);const preview=useMemo(()=>new PreviewController(),[]);const[activeId,setActiveId]=useState(null);
-      useEffect(()=>{const root=rootRef.current??document.body;const scanner=new DomScanner(root,registry);preview.setScanner(scanner);scanner.start();return()=>{scanner.stop();preview.setScanner(null);};},[registry,preview]);
-      const ctx=useMemo(()=>({registry,preview,activeId,setActiveId}),[registry,preview,activeId]);
+      const rootRef=useRef(null);const registry=useMemo(()=>new TransitionRegistry(),[]);const[activeId,setActiveId]=useState(null);
+      useEffect(()=>{const root=rootRef.current??document.body;const scanner=new DomScanner(root,registry);scanner.start();return()=>{scanner.stop();};},[registry]);
+      const ctx=useMemo(()=>({registry,activeId,setActiveId}),[registry,activeId]);
       // Demo-only tweak controls: hidden by default. Append ?controls to the URL
       // to show them for testing. (This whole block is below the inject CUT_MARKER,
       // so it never ships in the injected build.)
       const showControls=(()=>{try{return new URLSearchParams(location.search).has("controls");}catch(e){return false;}})();
       return h(TimelineCtx.Provider,{value:ctx},
         showControls&&h(PanelControls),
-        h("div",{ref:rootRef,className:"demo-root"},h("div",{className:"demo-header"},h("h1",null,"Timeline Inspector \u2014 Demo"),h("p",null,"CSS transitions are automatically detected. Select one below, drag the bars to edit timing, then Play.")),
+        h("div",{ref:rootRef,className:"demo-root"},h("div",{className:"demo-header"},h("h1",null,"Timeline Inspector \u2014 Demo"),h("p",null,"CSS transitions are automatically detected. Select one below, drag the bars to edit timing, then interact with the component itself to preview it.")),
           h("div",{className:"demo-grid"},h(BoxResize),h(BoxOpacity),h(BoxSlide),h(BoxColor))),
         h(TimelinePanel));
     }
