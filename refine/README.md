@@ -53,8 +53,10 @@ After `--llm`, make sure the CLI is authenticated once: run `cursor-agent` to lo
 You can also point the relay at any one-shot agent CLI via `REFINE_AGENT_CMD` (the relay feeds it the prompt on stdin and reads a JSON result from stdout):
 
 ```bash
-REFINE_AGENT_CMD='cursor-agent -p' npm run relay   # or: codex exec -  |  claude -p
+REFINE_AGENT_CMD='cursor-agent -p --trust --force' npm run relay   # or: codex exec -  |  claude -p
 ```
+
+For `cursor-agent` the relay auto-appends any missing `-p`/`--trust`/`--force`, so headless jobs never stall on the workspace-trust prompt (a bare `cursor-agent` goes interactive and exits 1). `-p` = headless/print mode (prompt on stdin), `--trust` = trust the workspace without prompting (only valid with `--print`), `--force` = auto-allow tool calls so apply/scan jobs don't hang on approval.
 
 The CLI must have the `transitions-dev` skill available (the prompt tells it to read the skill).
 

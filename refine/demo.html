@@ -31,9 +31,14 @@
       --c-line: #ededf0; --c-hairline: rgba(0,0,0,0.04); --c-hairline2: rgba(0,0,0,0.06);
       /* shadow recipes (exact Figma) */
       --ring: inset 0 0 0 1px rgba(0,0,0,0.06), inset 0 -1px 0 0 rgba(0,0,0,0.06), inset 0 0 0 1px rgba(196,196,196,0.1);
-      --ring-blue: inset 0 0 0 1px rgba(0,102,215,0.1), inset 0 -1px 0 0 rgba(0,0,0,0.06), inset 0 0 0 1px rgba(196,196,196,0.1);
+      /* blue button inset ring (exact Figma node 580:753) */
+      --ring-blue: inset 0 0 0 1px rgba(0,101,208,0.1), inset 0 -1px 0 0 rgba(3,66,142,0.15);
       --ring-fill: inset 0 0 0 1px rgba(0,0,0,0.02), inset 0 -1px 0 0 rgba(0,0,0,0.06), inset 0 0 0 1px rgba(196,196,196,0.1);
       --drop: 0 1px 3px 0 rgba(0,0,0,0.04);
+      /* topbar button drop shadow — exact Figma node 580:753 (navy-tinted) */
+      --drop-btn: 0 1px 3px 0 rgba(4,41,117,0.08);
+      /* secondary/raised white button (Reset, Settings, Copy, Accept) — exact spec */
+      --shadow-btn: 0 1px 3px 0 rgba(0,0,0,0.04), inset 0 0 0 1px rgba(0,0,0,0.06), inset 0 -1px 0 0 rgba(0,0,0,0.10), inset 0 0 0 1px rgba(196,196,196,0.10);
       --drop-line: 0 1px 3px 0 rgba(0,0,0,0.08);
       --shadow-border: 0 0 0 1px rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.06), 0 2px 4px 0 rgba(0,0,0,0.04);
       --shadow-border-hover: 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px -1px rgba(0,0,0,0.08), 0 2px 4px 0 rgba(0,0,0,0.06);
@@ -53,6 +58,16 @@
       /* transitions.dev — easing motion tokens (verbatim from skill _root.css) */
       --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);   /* shared standard ease-out */
       --morph-ease: cubic-bezier(0.34, 1.25, 0.64, 1);
+      --morph-open-dur: 350ms;
+      --morph-close-dur: 250ms;
+      --morph-close-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --morph-r-closed: 40px;
+      --morph-r-open: 20px;
+      --morph-fade-dur: 200ms;
+      --morph-slide: 40px;
+      --morph-rotate: 45deg;
+      --morph-scale: 0.97;
+      --morph-blur: 2px;
       --check-ease-bob: cubic-bezier(0.34, 1.35, 0.64, 1);
       --badge-pop-ease: cubic-bezier(0.34, 1.36, 0.64, 1);
       --digit-ease: cubic-bezier(0.34, 1.45, 0.64, 1);
@@ -89,23 +104,93 @@
     .card h2 { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: #171717; }
     .card p  { font-size: 12px; color: var(--c-ruler); margin-bottom: 16px; line-height: 1.5; }
 
-    .box-resize { width: 80px; height: 80px; background: #ef6c6c; border-radius: 8px; cursor: pointer;
-      transition: width 0.4s ease-out, height 0.4s ease-out, background 0.4s ease-out, border-radius 0.3s ease; }
-    .box-resize.expanded { width: 180px; height: 140px; background: #6c8eef; border-radius: 24px; }
+    /* Anchor sized to the OPEN footprint so the box grows up-and-left out of the corner. */
+    .morph-stage { position: relative; width: 183px; height: 172px; margin: 8px auto 0; }
 
-    .box-opacity { width: 100px; height: 80px; background: #38c172; border-radius: 10px; cursor: pointer;
-      transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out; }
-    .box-opacity.faded { opacity: 0.15; transform: scale(0.85); }
+    /* Plus → menu morph — verbatim from transitions.dev skill (20-plus-menu-morph.md).
+       Closed: a small circular button. Open: a rounded panel.
+       Width/height/border-radius animate; the open state uses a
+       bouncier ease than the close. */
+    .t-morph {
+      position: absolute;
+      inset: auto 0 0 auto;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--morph-r-closed);
+      overflow: hidden;
+      background: #fff;
+      box-shadow: var(--card-shadow);
+      transition:
+        width var(--morph-close-dur) var(--morph-close-ease),
+        height var(--morph-close-dur) var(--morph-close-ease),
+        border-radius var(--morph-close-dur) var(--morph-close-ease);
+    }
+    .t-morph[data-open="true"] {
+      width: 183px;
+      height: 172px;
+      border-radius: var(--morph-r-open);
+      transition:
+        width 400ms var(--morph-ease),
+        height var(--morph-open-dur) var(--morph-ease),
+        border-radius var(--morph-open-dur) var(--morph-ease);
+    }
+    /* Plus fades + slides out and the icon rotates into an ×. */
+    .t-morph-plus {
+      position: absolute;
+      inset: auto 0 0 auto;
+      width: 40px; height: 40px;
+      display: grid; place-items: center;
+      border: 0; background: transparent; cursor: pointer;
+      color: var(--c-text);
+      transition:
+        opacity var(--morph-fade-dur) var(--morph-close-ease),
+        transform var(--morph-open-dur) var(--morph-close-ease),
+        filter var(--morph-fade-dur) var(--morph-close-ease);
+    }
+    .t-morph-plus svg {
+      transition: transform var(--morph-open-dur) var(--morph-close-ease);
+    }
+    .t-morph[data-open="true"] .t-morph-plus {
+      opacity: 0;
+      transform: translateX(calc(-1 * var(--morph-slide)));
+      filter: blur(var(--morph-blur));
+      pointer-events: none;
+    }
+    .t-morph[data-open="true"] .t-morph-plus svg {
+      transform: scale(var(--morph-scale)) rotate(var(--morph-rotate));
+    }
+    /* Menu starts slid in + scaled + blurred; reveals on open. */
+    .t-morph-menu {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transform: translateX(var(--morph-slide)) scale(var(--morph-scale));
+      filter: blur(var(--morph-blur));
+      pointer-events: none;
+      transition:
+        opacity var(--morph-fade-dur) var(--morph-close-ease),
+        transform var(--morph-open-dur) var(--morph-close-ease),
+        filter var(--morph-fade-dur) var(--morph-close-ease);
+    }
+    .t-morph[data-open="true"] .t-morph-menu {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      filter: blur(0);
+      pointer-events: auto;
+    }
+    /* menu contents */
+    .t-morph-menu { padding: 12px; display: flex; flex-direction: column; }
+    .t-morph-menu .morph-title { font-size: 12px; font-weight: 600; color: var(--c-text-mut);
+      padding: 4px 8px 8px; }
+    .t-morph-menu button.morph-item { display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 9px 8px; border: 0; background: transparent; border-radius: 8px;
+      font: inherit; font-size: 13px; color: var(--c-text); text-align: left; cursor: pointer;
+      transition: background 120ms ease; }
+    .t-morph-menu button.morph-item:hover { background: var(--c-ghost-h); }
 
-    .box-slide { width: 60px; height: 60px; background: #ef9c6c; border-radius: 50%; cursor: pointer;
-      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.5s ease; }
-    .box-slide.moved { transform: translateX(160px); background: #c96cef; }
-
-    .box-color { width: 100%; height: 60px; border-radius: 10px; cursor: pointer;
-      background: linear-gradient(135deg, #e9e9ef, #d6d6e0);
-      transition: background 0.8s ease, box-shadow 0.8s ease; }
-    .box-color.lit { background: linear-gradient(135deg, #6c8eef, #ef6c9c);
-      box-shadow: 0 0 30px rgba(108, 142, 239, 0.4); }
+    @media (prefers-reduced-motion: reduce) {
+      .t-morph, .t-morph-plus, .t-morph-menu { transition: none !important; }
+    }
     /* @inject-skip-end */
 
     /* ───────────────────── timeline panel ───────────────────── */
@@ -154,7 +239,7 @@
     .tl-pill-count.is-single { width: 20px; padding: 0; }
 
     /* ── header row ── */
-    .tl-header { flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+    .tl-header { flex: none; position: relative; z-index: 40; display: flex; align-items: center; gap: 8px; padding: 7.5px 14px;
       border-bottom: 1px solid var(--c-line); }
     .tl-header-label { font-size: 13px; font-weight: 500; line-height: 18px; color: var(--c-text-mut2); white-space: nowrap; }
     .tl-header-count { margin-left: auto; font-size: 13px; line-height: 18px; color: var(--c-count); white-space: nowrap; }
@@ -166,10 +251,9 @@
     .tl-header .tl-sec-btn,
     .tl-header .tl-accept-btn,
     .tl-header .tl-refine-btn { border-radius: 60px; }
-    .tl-accept-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px;
-      border: none; cursor: pointer; font-weight: 500; font-size: 13px; line-height: 14px; color: #17181C;
-      background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.04),
-        inset 0 0 0 1px rgba(0,0,0,0.06), inset 0 -1px 0 0 rgba(0,0,0,0.06), inset 0 0 0 1px rgba(196,196,196,0.10);
+    .tl-accept-btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px;
+      border: none; cursor: pointer; font: inherit; font-weight: 500; font-size: 13px; line-height: 14px; color: #17181C;
+      background: #fff; box-shadow: var(--shadow-btn);
       transition: background 140ms ease, scale 140ms ease, opacity 140ms ease; }
     .tl-accept-btn > svg { width: 16px; height: 16px; color: #17181C; flex: none; }
     .tl-accept-btn:hover:not(:disabled) { background: #f9f9f9; }
@@ -191,30 +275,38 @@
     .tl-ghost-btn .tl-dim { color: var(--c-text-faint); font-weight: 500; }
     .tl-ghost-chev { display: flex; color: var(--c-ruler); }
 
-    /* icon button: flat secondary fill, no drop shadow (matches design-system secondary) */
+    /* icon button: secondary fill, raised with the shared Figma button shadow */
     .tl-icon-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none;
       width: 36px; height: 36px; border: none; border-radius: 8px; background: var(--c-sec);
+      box-shadow: var(--shadow-btn);
       color: var(--c-text-mut2); cursor: pointer; transition: background 0.12s ease, color 0.12s ease, scale 0.12s ease; }
     .tl-icon-btn:hover:not(:disabled), .tl-icon-btn.is-active { background: var(--c-sec-h); }
     .tl-icon-btn:active:not(:disabled) { background: var(--c-sec-a); scale: 0.96; }
     .tl-icon-btn:disabled { opacity: 0.5; cursor: default; }
-    .tl-icon-btn.ghost { background: transparent; }
+    .tl-icon-btn.ghost { background: transparent; box-shadow: none; }
     .tl-icon-btn.ghost:hover:not(:disabled) { background: var(--c-sec); }
+    /* header Settings + Copy use the same white styling as the Reset button */
+    .tl-header .tl-icon-btn:not(.ghost) { background: #fff; }
+    .tl-header .tl-icon-btn:not(.ghost):hover:not(:disabled),
+    .tl-header .tl-icon-btn:not(.ghost).is-active { background: #f9f9f9; }
+    .tl-header .tl-icon-btn:not(.ghost):active:not(:disabled) { background: #f9f9f9; scale: 0.96; }
 
-    /* secondary button (Reset): flat grey fill, no shadow */
+    /* secondary button (Reset): Figma default is white, raised with the shared
+       button shadow; hover/pressed darken to #f9f9f9 (matches Accept states) */
     .tl-sec-btn { display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border: none;
-      border-radius: 8px; background: var(--c-sec); color: var(--c-text); font: inherit; font-size: 13px;
+      border-radius: 8px; background: #fff; box-shadow: var(--shadow-btn);
+      color: var(--c-text); font: inherit; font-size: 13px;
       font-weight: 500; cursor: pointer; transition: background 0.12s ease, scale 0.12s ease; white-space: nowrap; }
-    .tl-sec-btn:hover:not(:disabled) { background: var(--c-sec-h); }
-    .tl-sec-btn:active:not(:disabled) { background: var(--c-sec-a); scale: 0.96; }
+    .tl-sec-btn:hover:not(:disabled) { background: #f9f9f9; }
+    .tl-sec-btn:active:not(:disabled) { background: #f9f9f9; scale: 0.96; }
     .tl-sec-btn:disabled { opacity: 0.5; cursor: default; }
 
     /* blue button (Refine) — Figma Frame 427319678: layered fill + inset ring + drop shadow */
     .tl-refine-btn { position: relative; isolation: isolate;
       display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px;
       border: none; border-radius: 8px; background: transparent; color: var(--c-blue);
-      box-shadow: var(--drop);
-      box-shadow: 0 1px 3px 0 color(display-p3 0 0 0 / 0.04);
+      box-shadow: var(--drop-btn);
+      box-shadow: 0 1px 3px 0 color(display-p3 0.0157 0.1608 0.4588 / 0.08);
       font: inherit; font-size: 13px; font-weight: 500; line-height: 14px;
       cursor: pointer; white-space: nowrap; transition: color 0.12s ease; }
     .tl-refine-btn::before { content: ""; position: absolute; inset: 0; border-radius: inherit;
@@ -223,7 +315,7 @@
       transition: background 0.12s ease; z-index: 0; }
     .tl-refine-btn::after { content: ""; position: absolute; inset: 0; border-radius: inherit;
       box-shadow: var(--ring-blue);
-      box-shadow: inset 0 0 0 1px color(display-p3 0 0.3942 0.8155 / 0.10), inset 0 -1px 0 0 color(display-p3 0 0 0 / 0.06), inset 0 0 0 1px color(display-p3 0.7674 0.7674 0.7674 / 0.10);
+      box-shadow: inset 0 0 0 1px color(display-p3 0 0.3961 0.8157 / 0.10), inset 0 -1px 0 0 color(display-p3 0.0118 0.2588 0.5569 / 0.15);
       pointer-events: none; z-index: 2; }
     .tl-refine-btn > * { position: relative; z-index: 1; }
     /* Figma: wand icon stroke is #0073E5, distinct from the #0071e2 label */
@@ -251,15 +343,15 @@
 
     /* ── body / floating cards row ── */
     .tl-body { display: flex; flex: 1; min-height: 0; gap: 0; }
-    .tl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .tl-main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
     .tl-inspector { flex: 0 0 280px; padding: 14px 16px 18px; display: flex; flex-direction: column;
       border-left: 1px solid var(--c-line); min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
     .tl-insp-title { font-size: 13px; font-weight: 500; line-height: 18px; color: #171717; margin-bottom: 12px; text-transform: capitalize; }
     .tl-insp-label { font-size: 12px; line-height: 18px; color: #737373; margin: 10px 0 6px; }
 
     /* ── tracks / ruler ── */
-    .tl-tracks { position: relative; flex: 1; }
-    .tl-ruler-row { display: flex; height: 30px; border-bottom: 1px solid var(--c-line); }
+    .tl-tracks { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .tl-ruler-row { flex: none; display: flex; height: 30px; border-bottom: 1px solid var(--c-line); }
     .tl-ruler-spacer { flex: 0 0 150px; border-right: 1px solid var(--c-line); }
     .tl-ruler { position: relative; flex: 1; margin-left: 16px; }
     .tl-ruler .maj { position: absolute; top: 9px; font-size: 12px; line-height: 14px; color: var(--c-ruler); transform: translateX(-50%); white-space: nowrap; }
@@ -272,22 +364,25 @@
     .tl-prop-row.selected { background: #fafafa; }
     .tl-prop-head { flex: 0 0 150px; display: flex; align-items: center; gap: 8px; padding-left: 12px;
       padding-right: 10px; overflow: hidden; border-right: 1px solid var(--c-line); }
-    .tl-prop-grip { display: flex; color: #cccdd4; flex: none; cursor: grab; }
-    .tl-prop-grip:active { cursor: grabbing; }
-    .tl-rows { position: relative; }
-    .tl-prop-row.reordering { background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.10);
-      position: relative; z-index: 5; cursor: grabbing; }
-    .tl-prop-row.reordering .tl-prop-grip { color: var(--c-ruler); cursor: grabbing; }
-    .tl-prop-label { font-size: 13px; font-weight: 500; line-height: 18px; color: var(--c-text-mut2); white-space: nowrap; overflow: hidden;
-      text-overflow: ellipsis; text-transform: capitalize; display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .tl-rows { position: relative; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    /* no overflow:hidden here — the member chip's outset ring would get clipped
+       top/bottom; the property name's ellipsis is handled by .tl-prop-prop. */
+    .tl-prop-label { font-size: 13px; font-weight: 500; line-height: 18px; color: var(--c-text-mut2); white-space: nowrap;
+      text-transform: capitalize; display: flex; align-items: center; gap: 6px; min-width: 0; }
     .tl-prop-row.selected .tl-prop-label { color: #171717; }
-    .tl-prop-member { flex: none; font-size: 11px; font-weight: 600; line-height: 14px; padding: 1px 6px; border-radius: 60px;
-      background: var(--c-sec, rgba(0,0,0,0.05)); color: var(--c-text-faint); text-transform: none; max-width: 96px;
-      overflow: hidden; text-overflow: ellipsis; }
-    .tl-prop-row.selected .tl-prop-member { color: var(--c-text-mut2); }
+    /* member chip — Figma node 580:3567: 63×20 white pill, 1px hairline ring, Inter Regular 11px #696969 (text centered, 1px above/below) */
+    .tl-prop-member { flex: none; box-sizing: border-box; display: inline-block; height: 20px; vertical-align: middle;
+      font-size: 11px; font-weight: 400; line-height: 20px; padding: 0 6px; border-radius: 50px;
+      background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.08); color: #696969; text-transform: none; max-width: 96px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* selection must NOT restyle the chip — single Figma style in every row state */
+    .tl-prop-row.selected .tl-prop-member { background: #fff; color: #696969; box-shadow: 0 0 0 1px rgba(0,0,0,0.08); }
     .tl-prop-prop { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-    .tl-insp-member { display: inline-block; font-size: 11px; font-weight: 600; line-height: 14px; padding: 1px 6px; border-radius: 60px;
-      background: var(--c-sec, rgba(0,0,0,0.05)); color: var(--c-text-faint); text-transform: none; margin-right: 6px; vertical-align: middle; }
+    /* inspector member chip — mirrors right-column chip (Figma 580:3567) */
+    .tl-insp-member { box-sizing: border-box; display: inline-block; height: 20px; vertical-align: middle; margin-right: 6px;
+      font-size: 11px; font-weight: 400; line-height: 20px; padding: 0 6px; border-radius: 50px;
+      background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.08); color: #696969; text-transform: none;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     /* 16px left inset of the plot area (kept in sync with the ruler) */
     .tl-prop-track { position: relative; flex: 1; user-select: none; margin-left: 16px; }
     /* timeline line — capsule (fully rounded), Figma #eeeeef default / #e9e9e9 hover */
@@ -328,7 +423,8 @@
     /* inner slider fill — Figma button/tiny: soft drop shadow + inset ring give the
        "raised block" look (shadow 0 1px 3px @4%, hairline border, bottom 1px). */
     .tl-field-fill { position: absolute; left: 0; top: 0; bottom: 0; min-width: 36px; border-radius: 8px;
-      background: var(--c-fill); box-shadow: var(--drop), var(--ring-fill);
+      background: var(--c-fill);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.02), inset 0 -1px 0 0 rgba(0,0,0,0.08), inset 0 0 0 1px rgba(191,191,191,0.10), 0 1px 3px 0 rgba(0,0,0,0.06);
       pointer-events: none; transition: background 0.12s ease, opacity 0.12s ease; z-index: 1; }
     .tl-field.is-dragging .tl-field-fill { background: var(--c-fill-a); }
     .tl-field.is-dragging .tl-field-label { opacity: 0.7; }
@@ -445,31 +541,9 @@
     .tl-seg-btn:hover:not(.is-active) { background: rgba(170,170,170,0.06); color: #17181c; }
     .tl-seg-btn.is-active { background: rgba(170,170,170,0.1); color: #17181c; }
 
-    /* position preview (animated marker à la easing.dev) */
-    .tl-preview { margin-top: 8px; background: #fff; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--c-hairline);
-      padding: 8px 12px 14px; }
-    .tl-preview-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .tl-preview-title { font-size: 11px; font-weight: 600; color: var(--c-text-mut); }
-    .tl-preview-btn { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px 0 7px;
-      border: none; border-radius: 6px; background: var(--c-field-bg); color: var(--c-text-mut2);
-      font: inherit; font-size: 11px; font-weight: 500; cursor: pointer;
-      transition: background 0.12s ease, scale 0.12s ease; }
-    .tl-preview-btn:hover { background: var(--c-sec-h); }
-    .tl-preview-btn:active { scale: 0.96; }
-    .tl-preview-track { position: relative; height: 16px; }
-    .tl-preview-rail { position: absolute; left: 0; right: 0; top: 50%; height: 2px; transform: translateY(-50%);
-      background: var(--c-track); border-radius: 2px; }
-    .tl-preview-end { position: absolute; top: 50%; width: 2px; height: 8px; transform: translateY(-50%);
-      background: #d0d0d6; border-radius: 2px; }
-    .tl-preview-end.left { left: 0; }
-    .tl-preview-end.right { right: 0; }
-    .tl-preview-dot { position: absolute; left: 0; top: 50%; width: 14px; height: 14px; margin-top: -7px;
-      border-radius: 50%; background: var(--c-blue); box-shadow: 0 1px 3px rgba(0,0,0,0.25);
-      will-change: transform; }
-
-    /* menu section header (non-clickable) */
-    .tl-menu-group { padding: 9px 10px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em;
-      text-transform: uppercase; color: var(--c-text-faint); pointer-events: none; }
+    /* menu section header (non-clickable) — Figma node 580:1696 dropdown */
+    .tl-menu-group { padding: 12px 8px 8px; font-size: 11px; font-weight: 400; line-height: 14px;
+      color: #8b8b8b; pointer-events: none; }
     .tl-menu-group:first-child { padding-top: 4px; }
 
     /* spring params box (reuses bounce row layout) */
@@ -497,10 +571,19 @@
       display: flex; align-items: center; justify-content: center;
       background: #fff; border-radius: 12px; box-shadow: var(--card-shadow); }
 
-    /* ── shared dropdown surface ── */
+    /* ── shared dropdown surface (Figma node 580:1696) ──
+       container: rounded-12 p-8 + menu shadow; rows: h-40 rounded-8 px-12,
+       Inter Medium 13/16 #1b1b1b label with #979797 suffix; section headers:
+       Inter Regular 11/14 #8b8b8b, pt-12 pb-8 pl-12, no divider. */
     .tl-menu { background: #fff; border-radius: 12px; padding: 6px; box-shadow: var(--menu-shadow); }
-    .tl-menu-item { display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 6px 10px;
-      border-radius: 7px; font-size: 13px; color: var(--c-text-strong); cursor: pointer;
+    /* full-bleed divider: negative side margins cancel the .tl-menu 6px padding so
+       the line spans the whole dropdown width; no top gap. */
+    .tl-menu-search { margin: 0 -6px 6px; padding: 0 6px 6px; border-bottom: 1px solid var(--c-line); }
+    .tl-menu-search-input { width: 100%; height: 32px; box-sizing: border-box; border: none; outline: none;
+      background: transparent; font: inherit; font-size: 13px; line-height: 16px; color: #1b1b1b; padding: 0 8px; }
+    .tl-menu-search-input::placeholder { color: #999; }
+    .tl-menu-item { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 8px;
+      border-radius: 8px; font-size: 13px; font-weight: 500; line-height: 16px; color: #1b1b1b; cursor: pointer;
       transition: background 0.1s ease, box-shadow 0.1s ease; }
     .tl-menu-item:hover { background: #f4f4f5; }
     .tl-menu-item:active { background: #ededee; }
@@ -508,15 +591,14 @@
     .tl-menu-item.disabled { color: var(--c-disabled); pointer-events: none; }
     .tl-menu-item-label { flex: 1; min-width: 0; display: flex; align-items: center; }
     .tl-menu-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .tl-menu-dim { color: var(--c-text-faint); }
+    .tl-menu-dim { color: #979797; }
     .tl-menu-help { color: #c4c4cc; margin-left: 10px; flex: none; cursor: help; }
     .tl-menu-help:hover { color: var(--c-ruler); }
     .tl-menu-help svg { display: block; }
     .tl-menu-check { display: flex; color: var(--c-text-strong); flex: none; }
-    .tl-menu-empty { padding: 10px; color: var(--c-disabled); font-size: 13px; }
-    .tl-menu-section { padding: 8px 10px 4px; font-size: 11px; font-weight: 600; line-height: 14px;
-      letter-spacing: 0.02em; text-transform: uppercase; color: var(--c-text-faint); }
-    .tl-menu-section:not(:first-child) { margin-top: 2px; border-top: 1px solid var(--c-border, rgba(0,0,0,0.06)); padding-top: 8px; }
+    .tl-menu-empty { padding: 10px 8px; color: var(--c-disabled); font-size: 13px; }
+    .tl-menu-section { padding: 12px 8px 8px; font-size: 11px; font-weight: 400; line-height: 14px;
+      color: #8b8b8b; }
 
     /* ═════ transitions.dev — menu dropdown (verbatim) ═════ */
     .t-dropdown {
@@ -596,6 +678,7 @@
       background: var(--tt-bg);
       color: var(--tt-fg);
       white-space: nowrap;
+      z-index: 100;
       box-shadow:
         0 0 0 1px rgba(0, 0, 0, 0.06),
         0 2px 6px 0 rgba(0, 0, 0, 0.05),
@@ -710,7 +793,8 @@
     /* refine panel slides in from the right using transitions.dev panel reveal
        tokens (translate + opacity + cross-blur, per-phase open/close dur/ease). */
     .tl-refine-panel {
-      position: absolute; top: 0; right: 0; bottom: 0; z-index: 6;
+      /* must sit above the header (z-index:40) so it overlays the whole panel */
+      position: absolute; top: 0; right: 0; bottom: 0; z-index: 50;
       width: var(--refine-w, 360px); max-width: 100%; overflow: hidden;
       --panel-translate-x: var(--panel-close-distance);
       --panel-scale-now: var(--panel-scale-close);
@@ -818,10 +902,7 @@
       border: none; border-radius: 60px; cursor: pointer;
       font: inherit; font-size: 13px; font-weight: 500; line-height: 14px; color: #0073e5;
       background: rgba(0,115,229,0.04); text-shadow: 0 1px 3px rgba(0,0,0,0.04);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04),
-        inset 0 0 0 1px rgba(0,101,208,0.10),
-        inset 0 -1px 0 0 rgba(0,0,0,0.06),
-        inset 0 0 0 1px rgba(196,196,196,0.10);
+      box-shadow: var(--drop-btn), var(--ring-blue);
       --resize-dur: 300ms; --resize-ease: cubic-bezier(0.22, 1, 0.36, 1);
       transition: width var(--resize-dur) var(--resize-ease),
         height var(--resize-dur) var(--resize-ease),
@@ -998,12 +1079,6 @@
     // Motion tokens are the verbatim cubic-beziers shipped by the transitions.dev
     // skill (_root.css); the "Common" set are the standard easings.net curves.
     const EASING_LIBRARY = [
-      { group:"Standard" },
-      { label:"Linear", value:"linear" },
-      { label:"Ease", value:"ease" },
-      { label:"Ease in", value:"ease-in" },
-      { label:"Ease out", value:"ease-out" },
-      { label:"Ease in-out", value:"ease-in-out" },
       { group:"Motion tokens (transitions.dev)" },
       { label:"Smooth out", value:"cubic-bezier(0.22, 1, 0.36, 1)", usage:"The transitions.dev default — dropdown, modal, panel, tabs, page slides, accordion." },
       { label:"Standard close", value:"cubic-bezier(0.4, 0, 0.2, 1)", usage:"Material-style accelerate→decelerate. Used for badge close / calm exits." },
@@ -1012,25 +1087,6 @@
       { label:"Morph open", value:"cubic-bezier(0.34, 1.25, 0.64, 1)", usage:"Plus-to-menu morph open — gentle bouncy expand." },
       { label:"Check bob", value:"cubic-bezier(0.34, 1.35, 0.64, 1)", usage:"Success check bob — playful settle on confirmation." },
       { label:"Big overshoot", value:"cubic-bezier(0.34, 3.85, 0.64, 1)", usage:"Avatar group hover return — aggressive, spring-like overshoot." },
-      { group:"Common (easings.net)" },
-      { label:"Sine in", value:"cubic-bezier(0.12, 0, 0.39, 0)" },
-      { label:"Sine out", value:"cubic-bezier(0.61, 1, 0.88, 1)" },
-      { label:"Sine in-out", value:"cubic-bezier(0.37, 0, 0.63, 1)" },
-      { label:"Cubic in", value:"cubic-bezier(0.32, 0, 0.67, 0)" },
-      { label:"Cubic out", value:"cubic-bezier(0.33, 1, 0.68, 1)" },
-      { label:"Cubic in-out", value:"cubic-bezier(0.65, 0, 0.35, 1)" },
-      { label:"Quart in", value:"cubic-bezier(0.5, 0, 0.75, 0)" },
-      { label:"Quart out", value:"cubic-bezier(0.25, 1, 0.5, 1)" },
-      { label:"Quart in-out", value:"cubic-bezier(0.76, 0, 0.24, 1)" },
-      { label:"Expo in", value:"cubic-bezier(0.7, 0, 0.84, 0)" },
-      { label:"Expo out", value:"cubic-bezier(0.16, 1, 0.3, 1)" },
-      { label:"Expo in-out", value:"cubic-bezier(0.87, 0, 0.13, 1)" },
-      { label:"Circ in", value:"cubic-bezier(0.55, 0, 1, 0.45)" },
-      { label:"Circ out", value:"cubic-bezier(0, 0.55, 0.45, 1)" },
-      { label:"Circ in-out", value:"cubic-bezier(0.85, 0, 0.15, 1)" },
-      { label:"Back in", value:"cubic-bezier(0.36, 0, 0.66, -0.56)" },
-      { label:"Back out", value:"cubic-bezier(0.34, 1.56, 0.64, 1)" },
-      { label:"Back in-out", value:"cubic-bezier(0.68, -0.6, 0.32, 1.6)" },
       { group:"Custom" },
       { label:"cubic-bezier(\u2026)", value:"__cubic" },
       { label:"custom", value:"__custom" },
@@ -1193,338 +1249,6 @@
       }
     }
 
-    // ── preview controller ──
-    // ── transition capture ──
-    // Real-world transitions are usually triggered by interaction (hover, a
-    // click on a *different* button, focus, JS state) — not by clicking the
-    // element that carries the transition. So we observe transitions as they
-    // actually run and remember each property's from/to computed values; the
-    // preview then replays them with no synthetic click required.
-    const _txCapture = new WeakMap(); // Element -> Map<prop,{from,to}>
-    let _txInstalled = false;
-    function _txCamel(p){return p.replace(/-([a-z])/g,(_,c)=>c.toUpperCase());}
-    function _txOnRun(e){
-      const el=e.target, prop=e.propertyName;
-      if(!el||!prop||typeof el.getAnimations!=="function")return;
-      if(el.closest&&el.closest("[data-timeline-panel]"))return;
-      try{
-        const ck=_txCamel(prop);
-        const anims=el.getAnimations();
-        let anim=anims.find(a=>a.transitionProperty===prop);
-        if(!anim)anim=anims.find(a=>{try{const k=a.effect&&a.effect.getKeyframes();return k&&k.length&&(ck in k[0]||ck in k[k.length-1]);}catch{return false;}});
-        if(!anim||!anim.effect)return;
-        const kf=anim.effect.getKeyframes();
-        if(!kf||kf.length<2)return;
-        const from=kf[0][ck], to=kf[kf.length-1][ck];
-        if(from==null||to==null)return;
-        let rec=_txCapture.get(el); if(!rec){rec=new Map();_txCapture.set(el,rec);}
-        rec.set(prop,{from:String(from),to:String(to)});
-      }catch{}
-    }
-    function _txInstallCapture(){
-      if(_txInstalled||typeof document==="undefined")return;
-      _txInstalled=true;
-      // capture phase + the bubbling transitionrun event reaches document
-      document.addEventListener("transitionrun",_txOnRun,true);
-    }
-    // from/to recovered from a previously observed real run
-    function _txCaptured(el,et){
-      const rec=_txCapture.get(el);if(!rec)return null;
-      const from={},to={};let n=0;
-      for(const t of et){const c=rec.get(t.property);if(c){from[t.property]=c.from;to[t.property]=c.to;n++;}}
-      return n?{from,to}:null;
-    }
-    // Discover the transition's end-state WITHOUT interaction by reading the
-    // stylesheets: find rules that set a transitioning prop and represent a
-    // *state* of the element (a :hover/:focus pseudo, or a toggled class/attr
-    // like `.modal.open`). from = current computed value, to = the rule's value.
-    const _TX_STATE_PSEUDO=/:{1,2}(hover|focus|focus-visible|focus-within|active|checked|enabled|disabled|target|visited|link|valid|invalid|placeholder-shown|default)\b(\([^)]*\))?/g;
-    function _txReduceLast(el,sel){
-      const parts=sel.split(/(\s*[>+~]\s*|\s+)/);
-      let i=parts.length-1;while(i>=0&&/^\s*[>+~]?\s*$/.test(parts[i]))i--;
-      if(i<0)return null;
-      const toks=parts[i].match(/[.#]?[\w-]+|\[[^\]]*\]|::?[\w-]+(?:\([^)]*\))?|\*/g)||[];
-      let dropped=false,hasId=false;
-      const kept=toks.filter(tk=>{
-        if(tk[0]==="."){const ok=el.classList.contains(tk.slice(1));if(ok)hasId=true;else dropped=true;return ok;}
-        if(tk[0]==="["){let ok;try{ok=el.matches(tk);}catch{ok=false;}if(ok)hasId=true;else dropped=true;return ok;}
-        if(tk[0]==="#"){const ok=el.id&&("#"+el.id)===tk;if(ok)hasId=true;else dropped=true;return ok;}
-        if(tk[0]===":"){dropped=true;return false;} // pseudo = the state delta
-        return true; // tag / *
-      });
-      // Only a real *variant of this element*: we must have removed a state token
-      // AND kept a class/id/attr that ties the rule to el. Dropping every class to
-      // land on a bare tag/`*` would falsely match unrelated rules.
-      if(!dropped||!hasId)return null;
-      parts[i]=kept.join("");
-      return parts.join("");
-    }
-    function _txIsStateOf(el,sel){
-      try{if(el.matches(sel))return false;}catch{return false;}
-      const noP=sel.replace(_TX_STATE_PSEUDO,"").trim();
-      if(noP&&noP!==sel){try{if(el.matches(noP))return true;}catch{}}
-      const red=_txReduceLast(el,sel);
-      if(red&&red!==sel){try{if(el.matches(red))return true;}catch{}}
-      return false;
-    }
-    function _txScanRules(rules,el,props,to){
-      for(const rule of rules){
-        // Read style rules directly. NOTE: in browsers with CSS Nesting a plain
-        // CSSStyleRule also has a (usually empty) .cssRules, so test selectorText
-        // first — don't treat every style rule as a grouping rule.
-        const decl=rule.style;
-        if(decl&&rule.selectorText){
-          let sets=false;for(const p of props){if(decl.getPropertyValue(p)){sets=true;break;}}
-          if(sets){
-            for(const sub of rule.selectorText.split(",")){
-              const s=sub.trim();if(!s)continue;
-              if(_txIsStateOf(el,s)){for(const p of props){const v=decl.getPropertyValue(p);if(v&&!(p in to))to[p]=v.trim();}}
-            }
-          }
-        }
-        // Recurse into @media / @supports / @layer and any nested rules.
-        if(rule.cssRules&&rule.cssRules.length){
-          try{if(rule.media&&!window.matchMedia(rule.media.mediaText).matches)continue;}catch{}
-          _txScanRules(rule.cssRules,el,props,to);
-        }
-      }
-    }
-    function _txDiscover(el,et){
-      if(typeof document==="undefined"||!el.matches)return null;
-      const props=et.map(t=>t.property).filter(p=>p&&p!=="all");
-      if(!props.length)return null;
-      const to={};
-      for(const sheet of Array.from(document.styleSheets||[])){
-        let rules;try{rules=sheet.cssRules;}catch{continue;} // cross-origin sheet
-        if(rules)_txScanRules(rules,el,props,to);
-      }
-      const keys=Object.keys(to);if(!keys.length)return null;
-      const cs=getComputedStyle(el);const from={};
-      for(const p of keys)from[p]=cs.getPropertyValue(p)||cs[_txCamel(p)]||"";
-      return {from,to};
-    }
-    // Toggle a phase's state class/attribute (e.g. ".is-open" or "[data-open]")
-    // and read the resulting computed values, so a phase plays its real end-state
-    // even when the source uses a toggled class the DOM isn't currently in.
-    function _txToState(el,et,toState){
-      if(typeof document==="undefined"||!el.matches||!toState)return null;
-      const props=et.map(t=>t.property).filter(p=>p&&p!=="all");
-      if(!props.length)return null;
-      const s=String(toState).trim();
-      let applied=null; // {undo}
-      try{
-        if(s[0]==="."){const c=s.slice(1);if(c&&!el.classList.contains(c)){el.classList.add(c);applied=()=>el.classList.remove(c);}}
-        else if(s[0]==="["){
-          const m=s.match(/^\[\s*([\w-]+)\s*(?:([~|^$*]?=)\s*"?([^"\]]*)"?\s*)?\]$/);
-          if(m){const name=m[1],val=m[3]!=null?m[3]:"";if(el.getAttribute(name)!==val){el.setAttribute(name,val);applied=()=>el.removeAttribute(name);}}
-        }
-      }catch{}
-      if(!applied)return null; // already in that state, or unparseable
-      const cs=getComputedStyle(el);const to={};
-      for(const p of props)to[p]=cs.getPropertyValue(p)||cs[_txCamel(p)]||"";
-      try{applied();}catch{}
-      const cs0=getComputedStyle(el);const from={};
-      for(const p of props)from[p]=cs0.getPropertyValue(p)||cs0[_txCamel(p)]||"";
-      const keys=Object.keys(to).filter(p=>to[p]!=null&&to[p]!==""&&to[p]!==from[p]);
-      if(!keys.length)return null;
-      const f={},t={};for(const p of keys){f[p]=from[p];t[p]=to[p];}
-      return {from:f,to:t};
-    }
-
-    // Add/remove a single state token (".class" or "[attr=val]"/"[attr]") on an
-    // element. Returns false for tokens we can't toggle (e.g. pseudo ":hover").
-    function _applyStateToken(el,token,add){
-      const s=String(token||"").trim();
-      if(!s)return true;
-      if(s[0]==="."){const c=s.slice(1);if(!c)return false;if(add)el.classList.add(c);else el.classList.remove(c);return true;}
-      if(s[0]==="["){
-        const m=s.match(/^\[\s*([\w-]+)\s*(?:[~|^$*]?=\s*"?([^"\]]*)"?\s*)?\]$/);
-        if(!m)return false;
-        const name=m[1],val=m[2]!=null?m[2]:"";
-        if(add)el.setAttribute(name,val);else el.removeAttribute(name);
-        return true;
-      }
-      return false; // pseudo (:hover/:focus) or unrecognised → not class-toggleable
-    }
-    function _tokenToggleable(token){
-      const s=String(token||"").trim();
-      return !s || s[0]==="."||s[0]==="[";
-    }
-
-    class PreviewController {
-      state="idle"; listeners=new Set(); cleanups=[]; animations=[]; progressListeners=new Set(); _rafId=null; scanner=null; _gen=0;
-      rate=1; loop=false; _current=null;
-      setScanner(s){this.scanner=s;} getState(){return this.state;}
-      setRate(r){this.rate=r;for(const a of this.animations){try{a.playbackRate=r;}catch{}}}
-      setLoop(v){this.loop=v;}
-      subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn);}
-      onProgress(fn){this.progressListeners.add(fn);return()=>this.progressListeners.delete(fn);}
-      play(entry){this.stop();this._gen++;this._current=entry;
-        if(this.scanner)this.scanner.pause();this._playCss(entry,this._gen);this._setState("playing");}
-      // Resolve a selectable item to a flat list of {el, et, toState} arm targets.
-      // Phase items fan out to their members (selector may match several elements,
-      // e.g. staggered items); flat items use their bound DOM elements.
-      _targets(entry){
-        const out=[];
-        if(entry.kind==="phase"){
-          for(const m of (entry.members||[])){
-            if(!m.selector||!m.lanes||!m.lanes.length)continue;
-            let els=[];try{els=Array.from(document.querySelectorAll(m.selector));}catch{}
-            for(const el of els)out.push({el,et:m.lanes,toState:m.toState});
-          }
-          return out;
-        }
-        if(!entry.bindings||entry.bindings.type!=="css")return out;
-        const et=entry.effectiveTimings||entry.properties.map(p=>({property:p,durationMs:entry.durationMs,delayMs:entry.delayMs,easing:entry.easing}));
-        for(const wr of entry.bindings.elements){const el=wr.deref&&wr.deref();if(el)out.push({el,et,toState:null});}
-        return out;
-      }
-      pause(){if(this.state!=="playing")return;for(const a of this.animations){try{a.pause();}catch{}}this._stopPL();this._setState("paused");}
-      resume(){if(this.state!=="paused")return;for(const a of this.animations){try{a.play();}catch{}}this._startPL();this._setState("playing");}
-      stop(){this._stopPL();for(const a of this.animations){try{a.cancel();}catch{}}this.animations=[];for(const c of this.cleanups)c();this.cleanups=[];this._ep(0);if(this.scanner)this.scanner.unpause();this._setState("idle");}
-      restart(entry){this.stop();requestAnimationFrame(()=>this.play(entry));}
-      playPaused(entry,seekMs){
-        this.stop();this._gen++;const gen=this._gen;
-        this._pendingSeek=seekMs;
-        if(this.scanner)this.scanner.pause();
-        const armed=this._armAll(entry);
-        const els=armed.els;
-        if(!els.length){this._setState("paused");if(seekMs!=null)this._ep(seekMs);return;}
-        this.cleanups.push(armed.restore);
-        this.animations=[];
-        requestAnimationFrame(()=>{if(this._gen!==gen)return;
-          const running=[];for(const el of els){for(const a of el.getAnimations()){a.pause();a.playbackRate=this.rate;running.push(a);}}
-          this.animations=running;
-          const t=this._pendingSeek??seekMs;
-          if(t!=null){for(const a of this.animations){try{a.currentTime=t;}catch{}}this._ep(t);}
-        });
-        this._setState("paused");
-        if(seekMs!=null)this._ep(seekMs);
-      }
-      // Snapshot/restore the toggled state on a root element.
-      _snapshotState(el,toggleTokens){
-        const attrs={},classes={};
-        for(const t of toggleTokens){const s=String(t).trim();
-          if(s[0]===".")classes[s.slice(1)]=el.classList.contains(s.slice(1));
-          else if(s[0]==="["){const m=s.match(/^\[\s*([\w-]+)/);if(m)attrs[m[1]]=el.getAttribute(m[1]);}}
-        return {attrs,classes};
-      }
-      _restoreState(el,snap){
-        for(const c in snap.classes){if(snap.classes[c])el.classList.add(c);else el.classList.remove(c);}
-        for(const n in snap.attrs){const v=snap.attrs[n];if(v==null)el.removeAttribute(n);else el.setAttribute(n,v);}
-      }
-      _setRootState(el,target,toggleTokens){
-        for(const t of toggleTokens)_applyStateToken(el,t,false);
-        if(target)_applyStateToken(el,target,true);
-      }
-      // Arm a whole phase by toggling the REAL driving state on its stateTarget,
-      // so the actual CSS animates every member in the correct direction (open
-      // base→state, close state→base). Edited timings are applied inline on the
-      // member elements so they override the source. Returns {els, restore} or
-      // null to fall back to per-member arming.
-      _armPhase(entry,root){
-        const fromState=entry.fromState??null, toState=entry.toState??null;
-        if(![fromState,toState].every(_tokenToggleable))return null; // pseudo states → legacy
-        const toggleTokens=[fromState,toState].filter(Boolean);
-        if(!toggleTokens.length)return null;
-        const memberEls=[];
-        for(const m of (entry.members||[])){
-          if(!m.selector||!m.lanes||!m.lanes.length)continue;
-          let els=[];try{els=Array.from(document.querySelectorAll(m.selector));}catch{}
-          for(const el of els)memberEls.push({el,lanes:m.lanes});
-        }
-        if(!memberEls.length)return null;
-        const savedRoot=this._snapshotState(root,toggleTokens);
-        const savedStyles=memberEls.map(({el})=>el.style.cssText);
-        // 1. suppress transitions and commit the FROM state
-        for(const {el} of memberEls)el.style.transition="none";
-        this._setRootState(root,fromState,toggleTokens);
-        void root.offsetWidth;for(const {el} of memberEls)void el.offsetWidth;
-        // 2. apply the (possibly edited) per-member timings inline
-        for(const {el,lanes} of memberEls){
-          el.style.transition=lanes.map(t=>`${t.property} ${formatCssTime(t.durationMs)} ${t.easing} ${formatCssTime(t.delayMs)}`).join(", ");
-        }
-        // 3. toggle to the TO state → real CSS transitions fire on every member
-        this._setRootState(root,toState,toggleTokens);
-        const restore=()=>{try{this._restoreState(root,savedRoot);}catch{}
-          memberEls.forEach(({el},i)=>{try{el.style.cssText=savedStyles[i];}catch{}});};
-        return {els:memberEls.map(m=>m.el),restore};
-      }
-      // Resolve an entry to armed element(s) + a restore fn. Phase items with a
-      // toggleable stateTarget use _armPhase; everything else uses per-target arm.
-      _armAll(entry){
-        if(entry&&entry.kind==="phase"&&entry.stateTarget&&typeof document!=="undefined"){
-          let root=null;try{root=document.querySelector(entry.stateTarget);}catch{}
-          if(root){const r=this._armPhase(entry,root);if(r)return r;}
-        }
-        const targets=this._targets(entry);
-        const els=[],restores=[];
-        for(const {el,et,toState} of targets){restores.push(this._arm(el,et,toState));els.push(el);}
-        return {els,restore:()=>{for(const c of restores){try{c();}catch{}}}};
-      }
-      seek(timeMs){
-        if(this.state==="idle")return;
-        if(this.state==="playing"){for(const a of this.animations){try{a.pause();}catch{}}this._stopPL();this._setState("paused");}
-        for(const a of this.animations){try{a.currentTime=timeMs;}catch{}}
-        this._ep(timeMs);
-        this._pendingSeek=timeMs;
-      }
-      _finish(){this._stopPL();if(this.animations.length>0){let end=0;for(const a of this.animations){const t=a.effect?.getTiming();const e=(t?.delay??0)+(Number(t?.duration)||0);if(e>end)end=e;}this._ep(end);}this.animations=[];for(const c of this.cleanups)c();this.cleanups=[];if(this.scanner)this.scanner.unpause();this._setState("idle");}
-      // Arm an element so its transition runs now, without needing the user to
-      // trigger it first. Priority:
-      //   1. a previously observed real run (exact),
-      //   2. end-state discovered from the stylesheets (hover/focus/toggled class),
-      //   3. a synthetic opacity/transform pulse to preview the timing,
-      //   4. click the element (last resort, may have side effects).
-      // Returns a restore fn.
-      _arm(el,et,toState){
-        const saved=el.style.cssText;
-        const tv=et.map(t=>`${t.property} ${formatCssTime(t.durationMs)} ${t.easing} ${formatCssTime(t.delayMs)}`).join(", ");
-        // toState (a phase's driving class/attr) is the most reliable source of
-        // the real end-state; fall back to a captured run, then CSSOM discovery.
-        const states=(toState&&_txToState(el,et,toState))||_txCaptured(el,et)||_txDiscover(el,et);
-        if(states){
-          const props=et.map(t=>t.property).filter(p=>states.from[p]!=null&&states.to[p]!=null);
-          if(props.length){
-            el.style.transition="none";
-            for(const p of props)el.style.setProperty(p,states.from[p]);
-            void el.offsetWidth; // commit the from-state before transitioning
-            el.style.transition=tv;
-            for(const p of props)el.style.setProperty(p,states.to[p]);
-            return ()=>{try{el.style.cssText=saved;}catch{}};
-          }
-        }
-        const synth=et.filter(t=>t.property==="opacity"||t.property==="transform"||t.property==="all");
-        if(synth.length){
-          const dur=Math.max(...et.map(t=>(t.durationMs||0)+(t.delayMs||0)))||et[0].durationMs||300;
-          const ease=et[0].easing||"ease";
-          const hasOp=synth.some(t=>t.property!=="transform"),hasTr=synth.some(t=>t.property!=="opacity");
-          const k0={},k1={},k2={};
-          if(hasOp){k0.opacity=1;k1.opacity=0.35;k2.opacity=1;}
-          if(hasTr){k0.transform="none";k1.transform="translateY(8px)";k2.transform="none";}
-          try{el.animate([k0,k1,k2],{duration:dur,easing:ease,fill:"none"});return ()=>{};}catch{}
-        }
-        el.style.transition=tv;el.click();
-        return ()=>{try{el.style.cssText=saved;}catch{}};
-      }
-      _playCss(entry,gen){
-        const armed=this._armAll(entry);
-        const els=armed.els;
-        this.animations=[];
-        if(!els.length){this._finish();return;}
-        this.cleanups.push(armed.restore);
-        requestAnimationFrame(()=>{if(this._gen!==gen)return;
-          const running=[];for(const el of els){for(const a of el.getAnimations()){a.playbackRate=this.rate;running.push(a);}}
-          this.animations=running;this._startPL();
-          const onDone=()=>{if(this._gen!==gen||this.state!=="playing")return;if(this.loop&&this._current){this.play(this._current);}else{this._finish();}};
-          if(running.length>0){Promise.allSettled(running.map(a=>a.finished)).then(onDone);}else{onDone();}
-        });}
-      _startPL(){this._stopPL();const tick=()=>{if(this.animations.length>0){let cur=0;for(const a of this.animations){const c=Number(a.currentTime)||0;if(c>cur)cur=c;}this._ep(cur);}this._rafId=requestAnimationFrame(tick);};this._rafId=requestAnimationFrame(tick);}
-      _stopPL(){if(this._rafId!==null){cancelAnimationFrame(this._rafId);this._rafId=null;}}
-      _ep(p){for(const fn of this.progressListeners)fn(p);}
-      _setState(s){this.state=s;for(const fn of this.listeners)fn(s);}
-    }
-
     // ── scanner ──
     class DomScanner {
       observer=null;rafId=null;running=false;paused=false;
@@ -1567,7 +1291,7 @@
     function usePropOverride(){const{registry,activeId}=useContext(TimelineCtx);return{setPropOverride:useCallback((prop,o)=>{if(activeId)registry.setPropOverride(activeId,prop,o);},[registry,activeId])};}
 
     // ── components ──
-    const LABEL_W = 150;
+    const LABEL_W = 200;
     const CLOSE_MS = 150;
     const DURATION_TOKENS = [
       {label:"Duration-fast", ms:150, usage:"Quick state changes — hovers, toggles, button presses, dropdown & modal close, text swaps."},
@@ -1605,6 +1329,8 @@
     };
     ICONS.minimize = ICONS.chevron;
     ICONS.close = {vb:"0 0 16 16", svg:`<path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`};
+    // dots-vertical (Figma node 580:4819) — vertical "⋮" overflow icon
+    ICONS.dotsv = {vb:"0 0 16 16", svg:`<path fill-rule="evenodd" clip-rule="evenodd" d="M6.66667 8C6.66667 7.26362 7.26362 6.66667 8 6.66667C8.73638 6.66667 9.33333 7.26362 9.33333 8C9.33333 8.73638 8.73638 9.33333 8 9.33333C7.26362 9.33333 6.66667 8.73638 6.66667 8Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M6.66667 3.33333C6.66667 2.59695 7.26362 2 8 2C8.73638 2 9.33333 2.59695 9.33333 3.33333C9.33333 4.06971 8.73638 4.66667 8 4.66667C7.26362 4.66667 6.66667 4.06971 6.66667 3.33333Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M6.66667 12.6667C6.66667 11.9303 7.26362 11.3333 8 11.3333C8.73638 11.3333 9.33333 11.9303 9.33333 12.6667C9.33333 13.403 8.73638 14 8 14C7.26362 14 6.66667 13.403 6.66667 12.6667Z" fill="currentColor"/>`};
     function Ic({name, size=16}){
       const ic = ICONS[name];
       if(!ic) return null;
@@ -1817,7 +1543,10 @@
       },[phase]);
       if(!render)return null;
 
-      const pending = suggestions.filter(s=>!appliedIds[s.id]);
+      // one scan returns both kinds; each tab shows only its own:
+      // Replace transition → kind "replace"; Small refinements → token tweaks.
+      const visible = suggestions.filter(s=> refineType==="replace" ? s.kind==="replace" : s.kind!=="replace");
+      const pending = visible.filter(s=>!appliedIds[s.id]);
       const agentMode = mode==="llm";
       // null (unknown / still probing) is treated as ready so the panel doesn't
       // flash the "unavailable" copy before /health resolves.
@@ -1854,7 +1583,7 @@
           h("div",{className:"tl-refine-unavail-text"},error||"The agent reported an error."));
         foot = startBtn({label:"Try again"});
       } else if(phase==="done"){
-        if(suggestions.length===0){
+        if(visible.length===0){
           const emptyMsg = refineType==="replace"
             ? "I didn't find any transition that would be a good fit as a replacement."
             : "Already aligned to the transitions.dev motion tokens. Nothing to refine.";
@@ -1862,9 +1591,9 @@
             h("p",{className:"tl-refine-idle-text"},emptyMsg));
           foot = startBtn({label:"Scan again"});
         } else {
-          body = h(RefineResults,{summary,suggestions,appliedIds,onApply});
+          body = h(RefineResults,{summary:refineType==="replace"?null:summary,suggestions:visible,appliedIds,onApply});
           foot = pending.length>1
-            ? h("button",{className:"pc-btn primary",style:{flex:1},onClick:onApplyAll},"Apply all ("+pending.length+")")
+            ? h("button",{className:"pc-btn primary",style:{flex:1},onClick:()=>pending.forEach(onApply)},"Apply all ("+pending.length+")")
             : startBtn({label:"Scan again"});
         }
       } else { // idle
@@ -1889,7 +1618,7 @@
           h("div",{className:"tl-refine-head"},
             h("div",{className:"tl-refine-titles"},
               h("h3",null,"Refine"),
-              h("p",null,label?("Tuning "+label):"Transitions review")),
+              h("p",null,label||"Transitions review")),
             h("div",{className:"tl-refine-actions"},
               h("button",{ref:modeRef,className:cx("tl-refine-mode",modeOpen&&"is-open"),
                 "aria-haspopup":"menu","aria-expanded":modeOpen?"true":"false",onClick:()=>setModeOpen(v=>!v)},
@@ -1932,10 +1661,12 @@
       return out;
     }
 
-    function Header({entries,active,onSelect,onReset,onCopy,copied,snap,setSnap,onMinimize,onRefine,refineActive,onAccept,acceptState,acceptDisabled,acceptError,scanning}){
+    function Header({entries,active,onSelect,onReset,onCopy,copied,snap,setSnap,onMinimize,onRefine,refineActive,onAccept,acceptState,acceptDisabled,acceptError,scanning,onRescan}){
       const[pick,setPick]=useState(false);
       const[setg,setSetg]=useState(false);
       const pickRef=useRef(null), gearRef=useRef(null);
+      const[q,setQ]=useState("");
+      useEffect(()=>{if(!pick)setQ("");},[pick]); // reset search when the picker closes
       // Split selectable items into agent groups (component → phases) and the
       // flat, ungrouped DOM transitions, preserving order.
       const groupList=[]; const groupMap=new Map(); const flatItems=[];
@@ -1946,6 +1677,12 @@
           g.phases.push(e);
         }else flatItems.push(e);
       }
+      // live filter for the search input (matches phase/group/flat labels)
+      const ql=q.trim().toLowerCase();
+      const fGroups=groupList.map(g=>({...g,phases:g.phases.filter(e=>!ql||
+        ((e.phaseLabel||"")+" "+(e.groupLabel||"")+" "+(e.label||"")).toLowerCase().includes(ql))})).filter(g=>g.phases.length);
+      const fFlat=flatItems.filter(e=>!ql||(e.label||"").toLowerCase().includes(ql));
+      const noMatches=!!ql&&fGroups.length===0&&fFlat.length===0;
       const phaseItem=(e)=>h(MenuItem,{key:e.id,active:active&&e.id===active.id,onClick:()=>{onSelect(e.id);setPick(false);},
         right:active&&e.id===active.id&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},
         h("span",null,e.phaseLabel,h("span",{className:"tl-menu-dim"}," "+e.durationMs+"ms")));
@@ -1959,28 +1696,32 @@
                 :h("span",{className:"tl-dim"},"None"),
           h("span",{className:"tl-ghost-chev"},h(Ic,{name:"chevron"}))),
         h(Dropdown,{open:pick,onClose:()=>setPick(false),triggerRef:pickRef,width:Math.max(240,(pickRef.current&&pickRef.current.offsetWidth)||240),align:"left"},
+          h("div",{className:"tl-menu-search"},
+            h("input",{className:"tl-menu-search-input",type:"text",placeholder:"Search",value:q,autoFocus:true,
+              onChange:e=>setQ(e.target.value),
+              onKeyDown:e=>{e.stopPropagation();if(e.key==="Escape"){if(q)setQ("");else setPick(false);}}})),
           entries.length===0
             ? h("div",{className:"tl-menu-empty"},"No transitions found")
-            : h(React.Fragment,null,
-                ...groupList.map(g=>h(React.Fragment,{key:g.id},
-                  h("div",{className:"tl-menu-section"},g.label),
-                  ...g.phases.map(phaseItem))),
-                flatItems.length>0&&groupList.length>0&&h("div",{className:"tl-menu-section"},"Ungrouped"),
-                ...flatItems.map(flatItem))),
+            : noMatches
+              ? h("div",{className:"tl-menu-empty"},"No matches")
+              : h(React.Fragment,null,
+                  ...fGroups.map(g=>h(React.Fragment,{key:g.id},
+                    h("div",{className:"tl-menu-section"},g.label),
+                    ...g.phases.map(phaseItem))),
+                  fFlat.length>0&&fGroups.length>0&&h("div",{className:"tl-menu-section"},"Ungrouped"),
+                  ...fFlat.map(flatItem))),
         h("span",{className:"tl-header-count"},
           scanning?"Grouping…":entries.length+" transition"+(entries.length===1?"":"s")+" found"),
-        h("button",{ref:gearRef,className:cx("tl-icon-btn",setg&&"is-active"),title:"Settings",onClick:()=>setSetg(v=>!v)},h(Ic,{name:"gear"})),
+        h("button",{ref:gearRef,className:cx("tl-icon-btn",setg&&"is-active"),title:"Settings",onClick:()=>setSetg(v=>!v)},h(Ic,{name:"dotsv"})),
         h(Dropdown,{open:setg,onClose:()=>setSetg(false),triggerRef:gearRef,width:210,align:"right"},
-          h(MenuItem,{onClick:()=>setSnap(v=>!v),right:snap&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},"Snap to grid")),
+          h(MenuItem,{onClick:()=>setSnap(v=>!v),right:snap&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},"Snap to grid"),
+          h(MenuItem,{disabled:!active,onClick:()=>{onCopy&&onCopy();setSetg(false);},
+            right:copied&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},copied?"Copied":"Copy values"),
+          h(MenuItem,{disabled:scanning,onClick:()=>{setSetg(false);onRescan&&onRescan();}},
+            scanning?"Rescanning…":"Rescan transitions")),
         h("span",{className:"t-tt-wrap"},
           h("button",{className:"tl-sec-btn t-tt-trigger",disabled:!active,onClick:onReset},"Reset"),
           h("span",{className:"t-tt tl-tt-below",role:"tooltip"},"Reset values")),
-        h("span",{className:"t-tt-wrap"},
-          h("button",{className:"tl-icon-btn t-tt-trigger",disabled:!active,"aria-label":"Copy values",onClick:onCopy},
-            h("span",{className:"t-icon-swap","data-state":copied?"b":"a"},
-              h("span",{className:"t-icon","data-icon":"a"},h(Ic,{name:"copy"})),
-              h("span",{className:"t-icon","data-icon":"b"},h(Ic,{name:"check"})))),
-          h("span",{className:"t-tt tl-tt-below",role:"tooltip"},copied?"Copied":"Copy values")),
         h("span",{className:"t-tt-wrap"},
           h("button",{className:cx("tl-accept-btn",acceptState==="saving"&&"is-saving",acceptState==="done"&&"is-done"),
             disabled:!active||acceptDisabled||acceptState==="saving"||acceptState==="done",onClick:onAccept,"aria-label":"Accept changes to your code"},
@@ -2011,7 +1752,7 @@
       );
     }
 
-    function PropTrack({property, member, delayMs, durationMs, selected, dragging, onSelect, onReorder, onDelayChange, onDurationChange, snap, scaleMs, lockDuration, labelW}){
+    function PropTrack({property, member, delayMs, durationMs, selected, onSelect, onDelayChange, onDurationChange, snap, scaleMs, lockDuration, labelW}){
       const trackRef=useRef(null);
       const grid = snap ? 25 : 1;
       const pxToMs=useCallback(px=>{if(!trackRef.current)return 0;const w=trackRef.current.getBoundingClientRect().width;return Math.round((px/w)*scaleMs/grid)*grid;},[grid,scaleMs]);
@@ -2038,9 +1779,8 @@
       },[delayMs,durationMs,pxToMs,grid,scaleMs,onSelect,onDelayChange,onDurationChange,lockDuration]);
 
       const delPct=(delayMs/scaleMs)*100; const durPct=(durationMs/scaleMs)*100;
-      return h("div",{className:cx("tl-prop-row",selected&&"selected",dragging&&"reordering",lockDuration&&"is-spring"),onClick:onSelect},
+      return h("div",{className:cx("tl-prop-row",selected&&"selected",lockDuration&&"is-spring"),onClick:onSelect},
         h("div",{className:"tl-prop-head",style:labelW!=null?{flexBasis:labelW+"px"}:undefined},
-          h("span",{className:"tl-prop-grip",title:"Drag to reorder",onMouseDown:onReorder},h(Ic,{name:"dots"})),
           h("span",{className:"tl-prop-label"},
             member&&h("span",{className:"tl-prop-member"},member),
             h("span",{className:"tl-prop-prop"},property))),
@@ -2129,18 +1869,25 @@
     }
 
     // shared plot geometry for both the easing curve and the spring curve.
-    // (Figma easing frame node 13044:2506: 269×162 with generous H margins + tight V margins.)
-    const CURVE = { VBW:269, VBH:162, PAD_X:60, PAD_Y:16 };
+    // Compact, landscape box: small horizontal padding (bezier x is clamped 0..1
+    // so there is no horizontal overshoot to reserve room for) makes the curve
+    // fill the width, while PAD_Y keeps the 0..1 band vertically centered with
+    // equal headroom above/below so overshoot/undershoot handles (clamped to the
+    // -0.5..1.5 range) stay visible instead of being clipped at the edges.
+    const CURVE = { VBW:269, VBH:150, PAD_X:30, PAD_Y:42 };
 
     function EasingEditor({easing, cubic, spring, durationMs, propKey, apply}){
       const [tab, setTab] = useState(spring ? "springs" : "easing");
       // when the user selects a different property, reflect that property's mode
       useEffect(()=>{ setTab(spring ? "springs" : "easing"); /* eslint-disable-next-line */ }, [propKey]);
 
-      // remember the last real (non-spring) easing so we can restore it when
-      // switching back from the Springs tab.
+      // remember the last real (non-spring) easing + duration so we can restore
+      // them when switching back from the Springs tab (the spring overwrites the
+      // duration with its derived settle time).
       const lastEasingRef = useRef("ease");
+      const lastEaseDurRef = useRef(durationMs);
       useEffect(()=>{ if(!spring && easing && !/^linear\(/.test(easing)) lastEasingRef.current = easing; }, [easing, spring]);
+      useEffect(()=>{ if(!spring && durationMs!=null) lastEaseDurRef.current = durationMs; }, [durationMs, spring]);
 
       const applySpring = useCallback((stiffness,damping,mass,name)=>{
         const sim = simulateSpring(stiffness,damping,mass);
@@ -2153,7 +1900,7 @@
           if(!spring){ const p=SPRING_PRESETS[0]; applySpring(p.stiffness,p.damping,p.mass,p.label); }
         } else {
           setTab("easing");
-          if(spring) apply({ spring:null, easing:lastEasingRef.current||"ease" });
+          if(spring) apply({ spring:null, easing:lastEasingRef.current||"ease", durationMs:lastEaseDurRef.current });
         }
       },[spring,apply,applySpring]);
 
@@ -2182,59 +1929,6 @@
             h(EasingTab,{easing,cubic,setEasing:v=>apply({easing:v, spring:null})})),
           h("div",{className:"t-page",ref:springPageRef,"data-page-id":"2","aria-hidden":tab!=="springs"},
             h(SpringTab,{spring,applySpring})),
-        ),
-        h(PositionPreview,{easing, durationMs}),
-      );
-    }
-
-    // Animated position preview (à la easing.dev): a marker travels left→right
-    // using the live timing function + duration, pauses, returns, and loops.
-    // Works for any timing function — cubic-bezier keywords or a spring's linear().
-    function PositionPreview({easing, durationMs}){
-      const trackRef = useRef(null);
-      const dotRef = useRef(null);
-      const [playing, setPlaying] = useState(false);
-      const safeEasing = (!easing || easing.trim()==="") ? "linear" : easing;
-      const dur = Math.max(120, durationMs || 0);
-
-      useEffect(()=>{
-        if(!playing) return;
-        const dot = dotRef.current, track = trackRef.current;
-        if(!dot || !track) return;
-        let cancelled = false, anim = null, timer = null, atRight = false;
-        const GAP = 480, DOT = 14;
-        const travel = ()=> Math.max(0, track.clientWidth - DOT - 8);
-        const step = ()=>{
-          if(cancelled) return;
-          const from = atRight ? travel() : 0;
-          const to   = atRight ? 0 : travel();
-          try {
-            anim = dot.animate(
-              [{transform:`translateX(${from}px)`},{transform:`translateX(${to}px)`}],
-              {duration:dur, easing:safeEasing, fill:"forwards"});
-          } catch {
-            anim = dot.animate(
-              [{transform:`translateX(${from}px)`},{transform:`translateX(${to}px)`}],
-              {duration:dur, easing:"linear", fill:"forwards"});
-          }
-          anim.onfinish = ()=>{ if(cancelled) return; atRight = !atRight; timer = setTimeout(step, GAP); };
-        };
-        step();
-        return ()=>{ cancelled = true; if(anim){try{anim.cancel();}catch{}} if(timer)clearTimeout(timer); };
-      },[playing, safeEasing, dur]);
-
-      return h("div",{className:"tl-preview"},
-        h("div",{className:"tl-preview-head"},
-          h("span",{className:"tl-preview-title"},"Position Preview"),
-          h("button",{className:"tl-preview-btn",onClick:()=>setPlaying(p=>!p)},
-            h(Ic,{name:playing?"pause":"play",size:11}),
-            h("span",null,playing?"Pause":"Play")),
-        ),
-        h("div",{className:"tl-preview-track",ref:trackRef},
-          h("span",{className:"tl-preview-rail"}),
-          h("span",{className:"tl-preview-end left"}),
-          h("span",{className:"tl-preview-end right"}),
-          h("span",{className:"tl-preview-dot",ref:dotRef}),
         ),
       );
     }
@@ -2423,11 +2117,9 @@
     }
 
     function Tracks({et, selLane, setSelLane, onPropChange, snap, scaleMs}){
-      const ROW_H = 48;
       const rowsRef = useRef(null);
       const tracksRef = useRef(null);
       const [order, setOrder] = useState([]);
-      const [dragLane, setDragLane] = useState(null);
       // Width of the label column (shared by the ruler spacer + every prop-row
       // head). Draggable via the divider; the bars column is flex:1 so it just
       // takes the remaining space and the bars stay proportional to scaleMs.
@@ -2457,27 +2149,6 @@
         });
       },[laneKey]);
       const orderedRows = order.map(p=>et.find(x=>x.laneId===p)).filter(Boolean);
-      const startReorder = useCallback((laneId,e)=>{
-        e.preventDefault(); e.stopPropagation();
-        setSelLane(laneId);
-        setDragLane(laneId);
-        const top = rowsRef.current ? rowsRef.current.getBoundingClientRect().top : 0;
-        const onMove = e2=>{
-          const idx = Math.floor((e2.clientY - top) / ROW_H);
-          setOrder(prev=>{
-            const cur = prev.indexOf(laneId);
-            if(cur<0) return prev;
-            const target = Math.max(0, Math.min(prev.length-1, idx));
-            if(target===cur) return prev;
-            const next = prev.slice();
-            next.splice(cur,1);
-            next.splice(target,0,laneId);
-            return next;
-          });
-        };
-        const onUp = ()=>{ setDragLane(null); window.removeEventListener("mousemove",onMove); window.removeEventListener("mouseup",onUp); };
-        window.addEventListener("mousemove",onMove); window.addEventListener("mouseup",onUp);
-      },[setSelLane]);
       const majorStep = scaleMs <= 2000 ? 500 : scaleMs <= 10000 ? 1000 : scaleMs <= 25000 ? 5000 : 10000;
       const minorStep = majorStep / 4;
       const ruler=[];
@@ -2497,9 +2168,8 @@
           ...orderedRows.map(row=>h(PropTrack,{
             key:row.laneId, property:row.property, member:row.member,
             delayMs:row.delayMs, durationMs:row.durationMs, lockDuration:!!row.spring,
-            selected:row.laneId===selLane, dragging:row.laneId===dragLane, snap, scaleMs, labelW,
+            selected:row.laneId===selLane, snap, scaleMs, labelW,
             onSelect:()=>setSelLane(row.laneId),
-            onReorder:e=>startReorder(row.laneId,e),
             onDelayChange:ms=>onPropChange(row.laneId,{delayMs:ms}),
             onDurationChange:ms=>onPropChange(row.laneId,{durationMs:ms}),
           }))),
@@ -2609,8 +2279,10 @@
           const et=active.effectiveTimings||[];
           const timings=et.map(t=>({property:t.property,durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing}));
           const selector=(active.bindings&&active.bindings.selector)||(et[0]&&et[0].selector)||null;
+          // always scan for BOTH kinds (token tweaks + a whole-transition replacement)
+          // in one pass; the tabs just filter which kind they show.
           const{id}=await relayCreateJob({transitionId:active.id,label:active.label,selector,
-            phase:active.phase||null,group:active.groupLabel||null,timings,mode,refineType});
+            phase:active.phase||null,group:active.groupLabel||null,timings,mode,refineType:"both"});
           setRefineJobId(id);
         }catch(e){
           setRefinePhase("error");
@@ -2618,7 +2290,9 @@
         }
       },[active,refineMode,refineType,refreshHealth]);
       const changeRefineMode=useCallback((mode)=>{setRefineMode(mode);setRefinePhase("idle");refreshHealth();},[refreshHealth]);
-      const changeRefineType=useCallback((t)=>{setRefineType(t);setRefinePhase("idle");},[]);
+      // switching tabs only changes which kind of suggestion is shown — it never
+      // interrupts a scan or discards results, since one scan covers both kinds.
+      const changeRefineType=useCallback((t)=>{setRefineType(t);},[]);
       // poll the relay while a job is running
       useEffect(()=>{
         if(!refineJobId||refinePhase!=="scanning")return;
@@ -2769,47 +2443,81 @@
       },[active]);
       // reset Accept feedback when switching transitions
       useEffect(()=>{setAcceptState("idle");setAcceptError(null);},[active&&active.id]);
-      // Auto-run the grouped scan once, after the flat DOM scan has populated.
-      // The agent reads the source and returns Open/Close phases; if no agent is
-      // live (or the relay is down) we silently keep the flat DOM scan.
-      // Lifecycle is tied to `registry` only (a stable ref), never to
-      // `entries.length`. On dynamic pages the DOM scanner makes entries.length
-      // fluctuate; keying the effect on it tore down the in-flight poll before
-      // the agent answered and the once-guard blocked a restart → permanent
-      // "Grouping…". Here a single run waits for flat entries to appear, fires
-      // one scan job, then polls to completion regardless of DOM churn; only an
-      // actual unmount cancels it.
+      // The grouped scan asks the agent to read the source and return Open/Close
+      // phases — an expensive LLM round-trip. So it runs ONLY:
+      //   1. the first time this page is ever opened (nothing cached), or
+      //   2. on demand via Settings → "Rescan transitions".
+      // The result is cached in localStorage by page path. A plain reload
+      // re-hydrates the groups instantly and NEVER touches the agent. Use
+      // "Rescan transitions" after the page's transitions actually change.
+      const GROUP_STORE_KEY="tlGroups:"+location.pathname;
+      // content signature of the flat transitions — so cached groups invalidate
+      // automatically when the page's transitions change (e.g. the demo content
+      // was swapped under the same pathname). Computed from the SETTLED flat set.
+      const flatSig=useCallback((flat)=>flat.map(e=>[e.label,e.bindings&&e.bindings.selector,(e.properties||[]).join(","),e.durationMs,e.delayMs,e.easing].join("|")).sort().join("\u00a7"),[]);
+      const readGroupCache=useCallback(()=>{
+        try{const c=JSON.parse(localStorage.getItem(GROUP_STORE_KEY)||"null");
+          return c&&Array.isArray(c.groups)&&c.groups.length?c:null;}catch{return null;}
+      },[GROUP_STORE_KEY]);
+      // monotonic token so an unmount or a newer rescan supersedes an in-flight poll
+      const scanTokenRef=useRef(0);
+      const runGroupScan=useCallback(async()=>{
+        const token=++scanTokenRef.current;
+        setGroupScanState("scanning");
+        // wait for the flat DOM scan to settle (count stable twice) so the agent
+        // sees every transition, not a partial set discovered progressively.
+        let prev=-1,stable=0;
+        while(scanTokenRef.current===token){
+          const n=registry.getAll().filter(e=>e.kind!=="phase").length;
+          if(n>0&&n===prev){if(++stable>=2)break;}else stable=0;
+          prev=n;
+          await new Promise(r=>setTimeout(r,300));
+        }
+        if(scanTokenRef.current!==token)return;
+        const flat=registry.getAll().filter(e=>e.kind!=="phase");
+        if(!flat.length){setGroupScanState("idle");return;}
+        // valid cache (same content signature) → apply instantly, skip the agent.
+        // A stale cache (different sig, e.g. content changed) falls through to a
+        // fresh scan and is overwritten below.
+        const sig=flatSig(flat);
+        const cached=readGroupCache();
+        if(cached&&cached.sig===sig){registry.setGroups(cached.groups);setGroupScanState("done");return;}
+        setGroupScanState("scanning");
+        const raw=flat.map(e=>({label:e.label,selector:e.bindings&&e.bindings.selector,
+          properties:e.properties,
+          timings:(e.baseLanes||[]).map(l=>({property:l.property,durationMs:l.durationMs,delayMs:l.delayMs,easing:l.easing}))}));
+        try{
+          const{id}=await relayCreateJob({kind:"scan",url:location.href,raw});
+          for(let i=0;i<520;i++){
+            if(scanTokenRef.current!==token)return; // superseded / unmounted
+            await new Promise(r=>setTimeout(r,500));
+            if(scanTokenRef.current!==token)return;
+            const job=await relayGetJob(id);
+            if(job.status==="done"){
+              const groups=(job.result&&job.result.groups)||[];
+              if(groups.length){registry.setGroups(groups);
+                try{localStorage.setItem(GROUP_STORE_KEY,JSON.stringify({groups,sig,ts:Date.now()}));}catch{}}
+              setGroupScanState("done");return;}
+            if(job.status==="error"){setGroupScanState("error");return;}
+          }
+          setGroupScanState("error");
+        }catch(e){ setGroupScanState("error"); /* relay down → stay flat, retry next open */ }
+      },[registry,GROUP_STORE_KEY,flatSig,readGroupCache]);
+      // manual "Rescan transitions" — drop the cache and force a fresh agent scan
+      const rescanTransitions=useCallback(()=>{
+        try{localStorage.removeItem(GROUP_STORE_KEY);}catch{}
+        runGroupScan();
+      },[runGroupScan,GROUP_STORE_KEY]);
+      // On mount, run the group resolver once. It waits for the flat scan to
+      // settle, then either re-applies cached groups (when the content signature
+      // matches — a pure cache read, no agent) or kicks off a fresh agent scan
+      // (first open OR the page's transitions changed since last cache).
       useEffect(()=>{
         if(didGroupScanRef.current)return;
-        let stopped=false;
-        const run=async()=>{
-          while(!stopped){
-            const flat0=registry.getAll().filter(e=>e.kind!=="phase");
-            if(flat0.length)break;
-            await new Promise(r=>setTimeout(r,300));
-          }
-          if(stopped||didGroupScanRef.current)return;
-          didGroupScanRef.current=true;
-          setGroupScanState("scanning");
-          const flat=registry.getAll().filter(e=>e.kind!=="phase");
-          const raw=flat.map(e=>({label:e.label,selector:e.bindings&&e.bindings.selector,
-            properties:e.properties,
-            timings:(e.baseLanes||[]).map(l=>({property:l.property,durationMs:l.durationMs,delayMs:l.delayMs,easing:l.easing}))}));
-          try{
-            const{id}=await relayCreateJob({kind:"scan",url:location.href,raw});
-            for(let i=0;i<520&&!stopped;i++){
-              await new Promise(r=>setTimeout(r,500));
-              const job=await relayGetJob(id);
-              if(stopped)return;
-              if(job.status==="done"){const groups=(job.result&&job.result.groups)||[];if(groups.length)registry.setGroups(groups);setGroupScanState("done");return;}
-              if(job.status==="error"){setGroupScanState("error");return;}
-            }
-            if(!stopped)setGroupScanState("error");
-          }catch(e){ if(!stopped)setGroupScanState("error"); /* relay down → stay flat */ }
-        };
-        run();
-        return ()=>{stopped=true;};
-      },[registry]);
+        didGroupScanRef.current=true;
+        runGroupScan();
+        return ()=>{scanTokenRef.current++;};
+      },[runGroupScan]);
 
       // whole-component open/close uses the transitions.dev panel reveal:
       // keep the panel mounted while it animates, flip data-open on the next
@@ -2860,7 +2568,7 @@
               h(Header,{entries,active,onSelect:setActiveId,onReset:resetOverrides,onCopy:copyValues,copied,
                 snap,setSnap,onMinimize:()=>setMinimized(true),onRefine:openRefine,refineActive:refineOpen,
                 onAccept,acceptState,acceptDisabled:computeChanges(active).length===0,acceptError,
-                scanning:groupScanState==="scanning"}),
+                scanning:groupScanState==="scanning",onRescan:rescanTransitions}),
               active
                 ?h(Body,{entry:active,onPropChange:(prop,o)=>setPropOverride(prop,o),snap})
                 :h("div",{className:"tl-empty"},"Select a transition to inspect and edit it")),
@@ -2877,10 +2585,36 @@
     }
 
     // ── demo boxes ──
-    function BoxResize(){const[on,set]=useState(false);return h("div",{className:"card"},h("h2",null,"Resize + Color"),h("p",null,"Click to toggle. Transitions: width, height, background, border-radius."),h("div",{"data-testid":"resize-box",className:"box-resize"+(on?" expanded":""),onClick:()=>set(v=>!v)}));}
-    function BoxOpacity(){const[on,set]=useState(false);return h("div",{className:"card"},h("h2",null,"Opacity + Scale"),h("p",null,"Click to fade. Uses ease-in-out at 600ms."),h("div",{"data-testid":"opacity-box",className:"box-opacity"+(on?" faded":""),onClick:()=>set(v=>!v)}));}
-    function BoxSlide(){const[on,set]=useState(false);return h("div",{className:"card"},h("h2",null,"Slide + Bounce"),h("p",null,"Click to slide. Custom cubic-bezier with overshoot."),h("div",{"data-testid":"slide-box",className:"box-slide"+(on?" moved":""),onClick:()=>set(v=>!v)}));}
-    function BoxColor(){const[on,set]=useState(false);return h("div",{className:"card"},h("h2",null,"Gradient Glow"),h("p",null,"Click to light up. 800ms background + box-shadow."),h("div",{"data-testid":"glow-box",className:"box-color"+(on?" lit":""),onClick:()=>set(v=>!v)}));}
+    // Plus → menu morph — transitions.dev (20-plus-menu-morph.md). The trigger
+    // button morphs into the panel it opens; CSS owns the morph, JS only flips
+    // data-open and mirrors it to aria-expanded, closing on outside-click / Escape.
+    function BoxMorph(){
+      const[open,setOpen]=useState(false);
+      const ref=useRef(null);
+      useEffect(()=>{
+        const onDoc=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};
+        const onKey=e=>{if(e.key==="Escape")setOpen(false);};
+        document.addEventListener("click",onDoc);
+        document.addEventListener("keydown",onKey);
+        return()=>{document.removeEventListener("click",onDoc);document.removeEventListener("keydown",onKey);};
+      },[]);
+      const item=(label,icon)=>h("button",{className:"morph-item",type:"button",onClick:()=>setOpen(false)},
+        h(Ic,{name:icon,size:16}),label);
+      return h("div",{className:"card"},
+        h("h2",null,"Plus \u2192 Menu morph"),
+        h("p",null,"Click the + button. The circular trigger morphs into the menu it opens \u2014 width, height & corner radius animate while the plus cross-fades into the panel."),
+        h("div",{className:"morph-stage"},
+          h("div",{className:"t-morph","data-open":String(open),ref},
+            h("div",{className:"t-morph-menu","aria-hidden":!open},
+              h("div",{className:"morph-title"},"Create"),
+              item("New file","copy"),
+              item("Upload","restart"),
+              item("Settings","gear")),
+            h("button",{className:"t-morph-plus",type:"button","aria-expanded":String(open),"aria-label":"Open menu",
+              onClick:e=>{e.stopPropagation();setOpen(v=>!v);}},
+              h("svg",{width:20,height:20,viewBox:"0 0 20 20",fill:"none"},
+                h("path",{d:"M10 4.5v11M4.5 10h11",stroke:"currentColor","strokeWidth":1.8,"strokeLinecap":"round"}))))));
+    }
 
     // ── live controls for the whole-panel reveal transition (demo harness) ──
     // transitions.dev motion tokens (values lifted verbatim from the skill's _root.css)
@@ -2991,8 +2725,8 @@
       const showControls=(()=>{try{return new URLSearchParams(location.search).has("controls");}catch(e){return false;}})();
       return h(TimelineCtx.Provider,{value:ctx},
         showControls&&h(PanelControls),
-        h("div",{ref:rootRef,className:"demo-root"},h("div",{className:"demo-header"},h("h1",null,"Timeline Inspector \u2014 Demo"),h("p",null,"CSS transitions are automatically detected. Select one below, drag the bars to edit timing, then interact with the component itself to preview it.")),
-          h("div",{className:"demo-grid"},h(BoxResize),h(BoxOpacity),h(BoxSlide),h(BoxColor))),
+        h("div",{ref:rootRef,className:"demo-root"},h("div",{className:"demo-header"},h("h1",null,"Timeline Inspector \u2014 Demo"),h("p",null,"A single transitions.dev element: the plus \u2192 menu morph. Its transitions are auto-detected \u2014 select one below, drag the bars to edit timing, then interact with the component itself to preview the change.")),
+          h("div",{className:"demo-grid"},h(BoxMorph))),
         h(TimelinePanel));
     }
 

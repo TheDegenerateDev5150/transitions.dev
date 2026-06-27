@@ -16,7 +16,9 @@
 //          and POSTs the result back. This is the default, install-free path.
 //       b) A headless CLI: start the relay with REFINE_AGENT_CMD set and the
 //          relay spawns it once per job (stdin = prompt, stdout = JSON).
-//          e.g.  REFINE_AGENT_CMD='cursor-agent -p' npm run relay
+//          e.g.  REFINE_AGENT_CMD='cursor-agent -p --trust --force' npm run relay
+//          (for cursor-agent the relay auto-appends any missing -p/--trust/--force
+//          so headless jobs don't fail the workspace-trust prompt.)
 //
 // Run: node server/relay.mjs   (or: npm run relay)
 
@@ -31,7 +33,23 @@ import { buildInjectModule } from "./inject.mjs";
 
 const PORT = Number(process.env.REFINE_RELAY_PORT) || 7331;
 const AUTO = process.env.REFINE_AUTO !== "0";
-const AGENT_CMD = process.env.REFINE_AGENT_CMD || null;
+
+// A bare `cursor-agent` goes interactive: it prints "⚠ Workspace Trust Required"
+// and exits 1, so every headless refine/scan/apply job fails. Force the headless
+// trio whenever the command is cursor-agent: -p (print/headless, reads the prompt
+// from stdin), --trust (trust the workspace without prompting; only valid with
+// --print), and --force (auto-allow tool calls so apply/scan don't hang on
+// approval). Append only the missing flags; leave non-cursor-agent commands alone.
+function augmentAgentCmd(cmd) {
+  if (!cmd || !/(^|\s|\/)cursor-agent(\s|$)/.test(cmd)) return cmd;
+  const has = (...flags) => flags.some((f) => new RegExp(`(^|\\s)${f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`).test(cmd));
+  const extra = [];
+  if (!has("-p", "--print")) extra.push("-p");
+  if (!has("--trust")) extra.push("--trust");
+  if (!has("-f", "--force", "--yolo")) extra.push("--force");
+  return extra.length ? `${cmd} ${extra.join(" ")}` : cmd;
+}
+const AGENT_CMD = augmentAgentCmd(process.env.REFINE_AGENT_CMD || null);
 const AGENT_TIMEOUT_MS = Number(process.env.REFINE_AGENT_TIMEOUT_MS) || 120000;
 const LONGPOLL_MS = Number(process.env.REFINE_LONGPOLL_MS) || 25000;
 // Grace window after a `/refine live` agent's last poll during which LLM mode is
@@ -109,7 +127,8 @@ function nextPendingLlm() {
 
 function buildPrompt(job) {
   const r = job.request || {};
-  const refineType = (r.refineType || "small") === "replace" ? "replace" : "small";
+  const rawType = r.refineType || "small";
+  const refineType = rawType === "replace" ? "replace" : rawType === "both" ? "both" : "small";
   const lines = [
     "You are refining ONE CSS transition against the transitions.dev library and motion tokens.",
     "Read the transitions-dev skill's SKILL.md (look in .agents/skills/transitions-dev/ or ~/.agents/skills/transitions-dev/) and apply its `transitions refine` behaviour, `## Motion tokens`, and `## Decision rules`.",
@@ -124,6 +143,12 @@ function buildPrompt(job) {
     lines.push(
       "refineType is \"replace\": suggest a WHOLE-TRANSITION replacement ONLY — do NOT propose motion-token tweaks (no kind \"duration\"/\"delay\"/\"easing\").",
       "Run the skill's `## Decision rules` on the inferred usage, pick the SINGLE best-fit transitions.dev recipe, and read its reference file (e.g. 06-modal.md) for the real timings/easing. Emit ONE suggestion with kind \"replace\": set its `patch` to the recipe's recommended duration/easing for the property that already transitions (or \"all\") so Apply works live, add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. Never invent timings — quote the reference file. If no recipe genuinely fits the usage, return an empty suggestions array.",
+    );
+  } else if (refineType === "both") {
+    lines.push(
+      "refineType is \"both\": produce TWO independent groups in the SAME suggestions array — the UI shows them in separate tabs, so include each group whenever it applies.",
+      "(1) Motion-token tweaks (kind \"duration\"/\"delay\"/\"easing\"): for each declaration, propose the token value only where it DIFFERS from the current one.",
+      "(2) Whole-transition replacement (kind \"replace\"): ALWAYS evaluate one — run the skill's `## Decision rules` on the inferred usage, pick the SINGLE best-fit transitions.dev recipe, and read its reference file (e.g. 06-modal.md) for the real timings/easing. Emit at most ONE \"replace\" suggestion: set its `patch` to the recipe's recommended duration/easing for the property that already transitions (or \"all\"), add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. Never invent timings — quote the reference file. If no recipe genuinely fits the usage, simply omit the replace suggestion.",
     );
   } else {
     lines.push(
@@ -326,7 +351,7 @@ async function answerJob(job) {
       if (!AGENT_CMD) {
         throw new Error(
           "LLM mode needs an agent CLI. Restart the relay with REFINE_AGENT_CMD set " +
-            "(e.g. REFINE_AGENT_CMD='cursor-agent -p' npm run relay), or switch to the Deterministic tab."
+            "(e.g. REFINE_AGENT_CMD='cursor-agent -p --trust --force' npm run relay), or switch to the Deterministic tab."
         );
       }
       job.statusLog.push({ message: "Asking your agent…", at: now() });
