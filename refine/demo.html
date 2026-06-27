@@ -2981,11 +2981,13 @@
         // Capped (~12s) so a page with no resolvable flat entries can never hang
         // the panel on "Grouping…" — it falls through to the empty-flat check below.
         let prev=-1,stable=0,iters=0;
-        while(scanTokenRef.current===token&&iters++<40){
+        while(scanTokenRef.current===token&&iters++<60){
           const n=registry.getAll().filter(e=>e.kind!=="phase").length;
-          if(n>0&&n===prev){if(++stable>=2)break;}else stable=0;
+          // two consecutive equal reads is enough; at 150ms ticks that's ~300ms
+          // instead of the old ~900ms, shaving dead time off every scan.
+          if(n>0&&n===prev){if(++stable>=1)break;}else stable=0;
           prev=n;
-          await new Promise(r=>setTimeout(r,300));
+          await new Promise(r=>setTimeout(r,150));
         }
         if(scanTokenRef.current!==token)return;
         const flat=registry.getAll().filter(e=>e.kind!=="phase");
@@ -3002,9 +3004,9 @@
           timings:(e.baseLanes||[]).map(l=>({property:l.property,durationMs:l.durationMs,delayMs:l.delayMs,easing:l.easing}))}));
         try{
           const{id}=await relayCreateJob({kind:"scan",url:location.href,raw});
-          for(let i=0;i<520;i++){
+          for(let i=0;i<500;i++){
             if(scanTokenRef.current!==token)return; // superseded / unmounted
-            await new Promise(r=>setTimeout(r,500));
+            await new Promise(r=>setTimeout(r,300));
             if(scanTokenRef.current!==token)return;
             const job=await relayGetJob(id);
             if(job.status==="done"){

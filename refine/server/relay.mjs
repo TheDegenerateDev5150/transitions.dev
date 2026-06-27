@@ -50,7 +50,26 @@ function augmentAgentCmd(cmd) {
   return extra.length ? `${cmd} ${extra.join(" ")}` : cmd;
 }
 const AGENT_CMD = augmentAgentCmd(process.env.REFINE_AGENT_CMD || null);
+// Pin a fast model for scan jobs. Grouping is a structured task that doesn't
+// need a heavy reasoning model, and the user's *default* model may be a slow one
+// (Opus / GPT-5.5) — forcing a fast model here keeps the initial scan snappy.
+// Override with REFINE_SCAN_MODEL=""  to fall back to the agent's default.
+const SCAN_MODEL = process.env.REFINE_SCAN_MODEL ?? "composer-2.5-fast";
 const AGENT_TIMEOUT_MS = Number(process.env.REFINE_AGENT_TIMEOUT_MS) || 120000;
+
+// Inject `--model <m>` into a `cursor-agent …` command (after the binary).
+// IMPORTANT: `--model` and the SCAN_MODEL slug (e.g. "composer-2.5-fast") are
+// cursor-agent-specific. If a user wired a different CLI (Codex, Claude Code, …)
+// into REFINE_AGENT_CMD, appending the flag would be invalid and break the scan,
+// so we leave non-cursor commands untouched — those agents still get the speedup
+// from the trimmed scan prompt. Also a no-op when the model is empty
+// (REFINE_SCAN_MODEL="") or a model is already pinned explicitly.
+function withModel(cmd, model) {
+  if (!cmd || !model) return cmd;
+  if (!/cursor-agent/.test(cmd)) return cmd; // not cursor-agent → don't touch
+  if (/(^|\s)--model(\s|=)/.test(cmd)) return cmd; // respect an explicit choice
+  return cmd.replace(/^(\s*\S+)/, `$1 --model ${model}`);
+}
 const LONGPOLL_MS = Number(process.env.REFINE_LONGPOLL_MS) || 25000;
 // Grace window after a `/refine live` agent's last poll during which LLM mode is
 // still reported "available". Kept well above LONGPOLL_MS so the normal gaps
@@ -260,21 +279,19 @@ function buildScanPrompt(job) {
   return [
     "You are GROUPING UI transitions by reading the user's SOURCE CODE. A naive DOM scan only sees each element's current computed transition — it cannot tell open from close, and lists related elements separately. Fix that.",
     "",
-    "Raw DOM-detected transitions (JSON) — use as hints to locate the components, not as the final answer:",
+    "Raw DOM-detected transitions (JSON). These timings are ALREADY ACCURATE for the component's CURRENT on-screen state — treat them as ground truth, do NOT re-derive them from source:",
     JSON.stringify({ url: r.url, raw: r.raw }, null, 2),
     "",
+    "To stay fast, read as little source as you need — only to (a) group elements into components, (b) recover the OPPOSITE phase (e.g. close) that isn't in the DOM right now, and (c) find the toggled state. Do not open files just to re-read timings you were already given.",
+    "",
     "Steps:",
-    "1. Identify each animated UI component (dropdown, modal, tooltip, accordion, drawer, toast…). Read its source (CSS/CSS Modules, styled-components/emotion, Tailwind, inline styles, Motion/Framer variants).",
-    "2. For each component, split into PHASES — typically `open` and `close` (a hover-only component may have a single phase). Open and close often live on different selectors (e.g. `.is-open` vs `.is-closing`) with different timings; report BOTH even though only one is in the DOM right now.",
+    "1. Identify each animated UI component (dropdown, modal, tooltip, accordion, drawer, toast…). The provided `label`/`selector`/`properties` usually make the grouping obvious; only read source when the grouping is genuinely unclear.",
+    "2. For each component, split into PHASES — typically `open` and `close` (a hover-only component may have a single phase). The phase matching the CURRENT DOM state reuses the provided timings verbatim. The OPPOSITE phase often lives on a different selector (e.g. `.is-open` vs `.is-closing`) with different timings — read source for that one. Report BOTH even though only one is in the DOM right now.",
     "3. PHASE STATE — how the phase is driven (REQUIRED for playback to work). For each phase provide:",
     "   - `stateTarget`: a CSS selector for the ONE element whose class/attribute is toggled to drive the whole phase (e.g. the dropdown root, the `.modal`, the element with `[data-open]`). It MUST resolve in the live DOM RIGHT NOW, in any state — so it must NOT itself contain the toggled state (write `.t-morph`, never `.t-morph[data-open=\"true\"]`).",
     "   - `fromState` and `toState`: the class/attribute on `stateTarget` at the START and END of this phase, as a token: a class `\".is-open\"`, an attribute `\"[data-open=\\\"true\\\"]\"`, or `null`/`\"\"` for the base/no-class state. OPEN usually goes base→open (`fromState:null`, `toState:\".is-open\"`); CLOSE goes open→base (`fromState:\".is-open\"`, `toState:null`). Get the DIRECTION right — open must animate into the open look, close must animate back out.",
-    "4. For each phase, list its MEMBER elements (panel, backdrop, the staggered items…). Give each member a stable `id`, a human `label`, a CSS `selector`, and its real `propertyTimings`. The member `selector` MUST resolve in the live DOM RIGHT NOW regardless of phase — use the BASE element selector and do NOT bake the phase's toggled class/attribute into it (write `.t-morph .t-morph-plus`, never `.t-morph[data-open=\"true\"] .t-morph-plus`). The toggled state belongs only in the phase's `stateTarget`/`toState`.",
-    "5. TIMINGS MUST BE EXACT AND PER-PROPERTY. This is the most common mistake — do not make it:",
-    "   - List one `propertyTimings` entry per animated property. Read EACH property's own duration/delay/easing from the shorthand `transition:` list (or the property-specific longhand). Do NOT copy one property's duration onto the others, and do NOT use the phase's longest/representative duration for every lane.",
-    "   - Resolve CSS custom properties (e.g. `var(--morph-fade-dur)`) to concrete numbers by following the `:root`/scope where they're defined; convert `s`→ms (`0.25s`→250). Never emit a `var(...)` or a guess.",
-    "   - It is normal and expected for properties within one phase to differ (e.g. opacity/filter 200ms but transform 350ms). If every property in a phase ends up identical, re-read the source — you probably collapsed them by mistake.",
-    "   - Open and close usually have DIFFERENT durations/easings; report each from its own rule.",
+    "4. For each phase, list its MEMBER elements (panel, backdrop, the staggered items…). Give each member a stable `id`, a human `label`, a CSS `selector`, and its `propertyTimings`. For the phase that matches the current DOM, COPY each member's `propertyTimings` straight from the provided `raw.timings` (same per-property duration/delay/easing) — don't change numbers you were handed. The member `selector` MUST resolve in the live DOM RIGHT NOW regardless of phase — use the BASE element selector and do NOT bake the phase's toggled class/attribute into it (write `.t-morph .t-morph-plus`, never `.t-morph[data-open=\"true\"] .t-morph-plus`). The toggled state belongs only in the phase's `stateTarget`/`toState`.",
+    "5. TIMINGS ARE PER-PROPERTY. For the OPPOSITE phase you read from source: list one `propertyTimings` entry per animated property with its own duration/delay/easing; resolve CSS custom properties (e.g. `var(--morph-fade-dur)`) to concrete numbers and convert `s`→ms (`0.25s`→250); never emit a `var(...)` or a guess. Open and close usually have DIFFERENT durations/easings. (The current-state phase just reuses the provided numbers.)",
     "",
     "Output ONLY a JSON object — no prose, no markdown fences — shaped exactly like:",
     '{"summary":"Grouped 3 components.","groups":[{"id":"dropdown","label":"Dropdown","component":"src/Dropdown.tsx","phases":[{"id":"dropdown:open","phase":"open","label":"Open","stateTarget":".dropdown","fromState":null,"toState":".is-open","members":[{"id":"panel","label":"Panel","selector":".dropdown .dropdown-panel","propertyTimings":[{"property":"opacity","durationMs":200,"delayMs":0,"easing":"ease-out"},{"property":"transform","durationMs":200,"delayMs":0,"easing":"cubic-bezier(0.22, 1, 0.36, 1)"}]}]},{"id":"dropdown:close","phase":"close","label":"Close","stateTarget":".dropdown","fromState":".is-open","toState":null,"members":[{"id":"panel","label":"Panel","selector":".dropdown .dropdown-panel","propertyTimings":[{"property":"opacity","durationMs":150,"delayMs":0,"easing":"ease-in"},{"property":"transform","durationMs":150,"delayMs":0,"easing":"ease-in"}]}]}]}]}',
@@ -340,7 +357,7 @@ async function answerJob(job) {
         );
       }
       job.statusLog.push({ message: "Reading components from source…", at: now() });
-      result = await runAgentCmd(AGENT_CMD, buildScanPrompt(job), parseScanOutput);
+      result = await runAgentCmd(withModel(AGENT_CMD, SCAN_MODEL), buildScanPrompt(job), parseScanOutput);
       job.result = { groups: result.groups, summary: result.summary };
       job.status = "done";
       job.updatedAt = now();

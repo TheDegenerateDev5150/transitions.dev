@@ -203,21 +203,31 @@ separately. You fix that by reading the source. The request looks like:
 }
 ```
 
+**Be fast.** The `raw.timings` are already accurate for each element's *current*
+on-screen state — treat them as ground truth and reuse them verbatim. Read as
+little source as you need: only to (a) group elements into components, (b)
+recover the *opposite* phase (e.g. close) that isn't in the DOM right now, and
+(c) find the toggled state. Don't open files just to re-read timings you were
+already given.
+
 Do this:
 
 1. **Identify each animated component** the raw entries belong to (dropdown,
-   modal, tooltip, accordion, drawer, toast…). Use the selectors/labels as hints,
-   then read the source — plain CSS / CSS Modules, styled-components/emotion,
-   Tailwind, inline styles, or Motion/Framer variants.
+   modal, tooltip, accordion, drawer, toast…). The selectors/labels usually make
+   this obvious — only read source (plain CSS / CSS Modules,
+   styled-components/emotion, Tailwind, inline styles, Motion/Framer variants)
+   when the grouping is genuinely unclear.
 2. **Split each component into phases** — usually `open` and `close` (a hover-only
-   component can be a single phase). Open and close often live on different
-   selectors (`.is-open` vs `.is-closing`) with different timings; report **both**
-   even though only one is in the DOM right now.
+   component can be a single phase). The phase matching the current DOM reuses the
+   provided timings; the *opposite* phase often lives on a different selector
+   (`.is-open` vs `.is-closing`) with different timings — read source for that one.
+   Report **both** even though only one is in the DOM right now.
 3. **List each phase's members** — the elements that animate in that phase. Give
    each a stable `id`, a human `label`, a live-resolvable CSS `selector`, an
    optional `toState` hint (the class/attribute that drives the phase, e.g.
-   `.is-open`), and its real `propertyTimings`. **Quote the real timings from the
-   source — never invent.**
+   `.is-open`), and its `propertyTimings`. For the current-state phase, **copy the
+   provided `raw.timings` verbatim**; for the opposite phase, **quote the real
+   timings from source — never invent.**
 4. **Post the groups** (this completes the job):
 
    ```bash
