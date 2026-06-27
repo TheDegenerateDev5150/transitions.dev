@@ -2466,8 +2466,10 @@
         setGroupScanState("scanning");
         // wait for the flat DOM scan to settle (count stable twice) so the agent
         // sees every transition, not a partial set discovered progressively.
-        let prev=-1,stable=0;
-        while(scanTokenRef.current===token){
+        // Capped (~12s) so a page with no resolvable flat entries can never hang
+        // the panel on "Grouping…" — it falls through to the empty-flat check below.
+        let prev=-1,stable=0,iters=0;
+        while(scanTokenRef.current===token&&iters++<40){
           const n=registry.getAll().filter(e=>e.kind!=="phase").length;
           if(n>0&&n===prev){if(++stable>=2)break;}else stable=0;
           prev=n;
@@ -2503,11 +2505,16 @@
           setGroupScanState("error");
         }catch(e){ setGroupScanState("error"); /* relay down → stay flat, retry next open */ }
       },[registry,GROUP_STORE_KEY,flatSig,readGroupCache]);
-      // manual "Rescan transitions" — drop the cache and force a fresh agent scan
+      // manual "Rescan transitions" — drop the cache AND clear the in-memory
+      // groups first. Once groups claim every DOM transition the snapshot has no
+      // "flat" entries left, so the settle loop above would otherwise spin forever
+      // waiting for a flat count that never arrives. Clearing groups re-surfaces
+      // the flat entries the agent needs to re-group.
       const rescanTransitions=useCallback(()=>{
         try{localStorage.removeItem(GROUP_STORE_KEY);}catch{}
+        registry.clearGroups();
         runGroupScan();
-      },[runGroupScan,GROUP_STORE_KEY]);
+      },[runGroupScan,GROUP_STORE_KEY,registry]);
       // On mount, run the group resolver once. It waits for the flat scan to
       // settle, then either re-applies cached groups (when the content signature
       // matches — a pure cache read, no agent) or kicks off a fresh agent scan
