@@ -415,14 +415,14 @@
     @media (prefers-reduced-motion: reduce) { .tl-col-resizer-line { transition: none; } }
 
     /* ── value field (slider + input) — exact Figma "Value slider and input" ── */
-    .tl-field-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-    .tl-field { position: relative; flex: 1; min-width: 0; height: 36px; border-radius: 8px;
+    .tl-field-wrap { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .tl-field { position: relative; flex: 1; min-width: 0; height: 32px; border-radius: 8px;
       background: var(--c-field-bg); transition: box-shadow 0.12s ease; }
     /* focused: dual inset ring (Figma Focused state) */
     .tl-field.is-editing { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.14), inset 0 0 0 0.5px rgba(255,255,255,0.06); }
     /* inner slider fill — Figma button/tiny: soft drop shadow + inset ring give the
        "raised block" look (shadow 0 1px 3px @4%, hairline border, bottom 1px). */
-    .tl-field-fill { position: absolute; left: 0; top: 0; bottom: 0; min-width: 36px; border-radius: 8px;
+    .tl-field-fill { position: absolute; left: 0; top: 0; bottom: 0; min-width: 32px; border-radius: 8px;
       background: var(--c-fill);
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.02), inset 0 -1px 0 0 rgba(0,0,0,0.08), inset 0 0 0 1px rgba(191,191,191,0.10), 0 1px 3px 0 rgba(0,0,0,0.06);
       pointer-events: none; transition: background 0.12s ease, opacity 0.12s ease; z-index: 1; }
@@ -439,13 +439,13 @@
       text-align: right; border: none; background: transparent; font: inherit; font-size: 13px; font-weight: 500;
       color: var(--c-text); outline: none; z-index: 4; font-variant-numeric: tabular-nums; }
     /* thumb at the right edge of the fill (Figma #767676 2×20px, inset 8px, hover 60% / drag 100%) */
-    .tl-field-thumb { position: absolute; right: 8px; top: 8px; height: 20px; width: 2px;
+    .tl-field-thumb { position: absolute; right: 8px; top: 7px; height: 18px; width: 2px;
       background: var(--c-thumb); border-radius: 20px; opacity: 0; pointer-events: none;
       transition: opacity 0.12s ease; z-index: 3; }
     .tl-field:hover .tl-field-thumb { opacity: 0.6; }
     .tl-field.is-dragging .tl-field-thumb { opacity: 1; }
     .tl-field.is-editing .tl-field-thumb { opacity: 0; }
-    .tl-field-chevron { flex: none; width: 36px; height: 36px; border-radius: 8px; display: flex;
+    .tl-field-chevron { flex: none; width: 32px; height: 32px; border-radius: 8px; display: flex;
       align-items: center; justify-content: center; border: none; background: var(--c-field-bg);
       color: var(--c-ruler); cursor: pointer; transition: background 0.12s ease, scale 0.12s ease; }
     .tl-field-chevron:hover { background: var(--c-sec-h); }
@@ -492,7 +492,7 @@
     }
     /* easing select trigger (custom dropdown) */
     /* select trigger — Logram design system (node 13064:2418): flat #f7f7f7 fill */
-    .tl-select { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 36px;
+    .tl-select { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 32px;
       border: none; border-radius: 8px; background: #f7f7f7; padding: 6px 10px 6px 12px;
       font: inherit; font-size: 13px; font-weight: 500; line-height: 16px; color: #1b1b1b; cursor: pointer; text-align: left;
       transition: background 0.12s ease; }
@@ -520,26 +520,75 @@
     .tl-custom-input { height: 30px; border: none; border-radius: 6px; background: var(--c-field-bg); padding: 0 8px;
       font: inherit; font-size: 12px; font-family: monospace; color: var(--c-text); outline: none;
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04); }
-    .tl-bounce { background: #fff; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--c-hairline);
-      padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
-    .tl-bounce-title { font-size: 11px; color: var(--c-text-mut); font-weight: 600; }
-    .tl-bounce-row { display: flex; align-items: center; gap: 8px; }
-    .tl-bounce-row label { font-size: 11px; color: #737373; width: 54px; flex: none; }
-    .tl-bounce-row input[type="range"] { flex: 1; height: 4px; -webkit-appearance: none; appearance: none;
-      background: #e3e3e8; border-radius: 2px; outline: none; }
+    .tl-bounce { background: #fff; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--c-hairline);
+      padding: 12px; display: flex; flex-direction: column; gap: 11px; }
+    .tl-bounce-title { font-size: 11px; color: var(--c-text-mut); font-weight: 600; letter-spacing: 0.01em; }
+    .tl-bounce-row { display: flex; align-items: center; gap: 10px; }
+    .tl-bounce-row label { font-size: 12px; color: #585858; font-weight: 500; width: 58px; flex: none; }
+    .tl-bounce-row input[type="range"] { flex: 1; height: 5px; -webkit-appearance: none; appearance: none;
+      background: #e7e7ec; border-radius: 3px; outline: none; cursor: pointer; transition: filter 0.12s ease; }
+    .tl-bounce-row input[type="range"]:hover { filter: brightness(0.98); }
     .tl-bounce-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
-      width: 12px; height: 12px; border-radius: 50%; background: var(--c-blue); cursor: pointer; }
-    .tl-bounce-val { font-size: 11px; color: var(--c-blue); width: 34px; text-align: right; }
+      width: 14px; height: 14px; border-radius: 50%; background: var(--c-blue); cursor: pointer;
+      border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,113,226,0.4), 0 0 0 0.5px rgba(0,0,0,0.04);
+      transition: transform 0.12s cubic-bezier(0.22,1,0.36,1); }
+    .tl-bounce-row input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.12); }
+    .tl-bounce-row input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.18); }
+    .tl-bounce-row input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%;
+      background: var(--c-blue); cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,113,226,0.4); }
+    .tl-bounce-val { font-size: 12px; font-weight: 600; color: var(--c-blue); width: 38px; text-align: right;
+      font-variant-numeric: tabular-nums; }
     .tl-bounce select { height: 26px; border: none; border-radius: 6px; background: var(--c-field-bg);
       font: inherit; font-size: 11px; color: var(--c-text); outline: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04); flex: 1; }
 
     /* ── Easing / Springs tabs — Logram design system (node 13064:2552): trackless toggle pills ── */
-    .tl-seg { display: flex; align-items: center; gap: 4px; margin-top: 12px; }
+    .tl-seg { display: flex; align-items: center; gap: 4px; margin-top: 10px; }
     .tl-seg-btn { height: 32px; padding: 6px 12px; border: none; border-radius: 8px; background: transparent;
       font: inherit; font-size: 13px; font-weight: 500; line-height: 14px; color: #676767; cursor: pointer;
       transition: background 0.14s ease, color 0.14s ease; }
     .tl-seg-btn:hover:not(.is-active) { background: rgba(170,170,170,0.06); color: #17181c; }
     .tl-seg-btn.is-active { background: rgba(170,170,170,0.1); color: #17181c; }
+
+    /* position preview (animated marker à la easing.dev) — collapsible accordion
+       (transitions.dev · 21-accordion: grid-rows 0fr↔1fr + vertical chevron flip) */
+    .tl-preview { margin-top: 10px; background: #fff; border-radius: 10px;
+      box-shadow: inset 0 0 0 1px var(--c-hairline); overflow: hidden;
+      --acc-dur: 260ms; --acc-ease: cubic-bezier(0.22, 1, 0.36, 1); }
+    .tl-preview-head { display: flex; align-items: center; justify-content: space-between; width: 100%;
+      padding: 9px 12px; border: none; background: transparent; cursor: pointer; font: inherit;
+      border-radius: 10px; transition: background 0.12s ease; }
+    .tl-preview-head:hover { background: rgba(170,170,170,0.06); }
+    .tl-preview-title { font-size: 11px; font-weight: 600; color: var(--c-text-mut); letter-spacing: 0.01em; }
+    .tl-preview-chevron { display: inline-flex; color: var(--c-ruler);
+      transform: scaleY(1); transform-origin: center; transition: transform var(--acc-dur) var(--acc-ease); }
+    .tl-preview[data-open="true"] .tl-preview-chevron { transform: scaleY(-1); }
+    .tl-preview-panel { display: grid; grid-template-rows: 0fr;
+      transition: grid-template-rows var(--acc-dur) var(--acc-ease); }
+    .tl-preview[data-open="true"] .tl-preview-panel { grid-template-rows: 1fr; }
+    .tl-preview-panel-inner { overflow: hidden; opacity: 0; filter: blur(2px); padding: 0 12px 12px;
+      transition: opacity var(--acc-dur) var(--acc-ease), filter var(--acc-dur) var(--acc-ease); }
+    .tl-preview[data-open="true"] .tl-preview-panel-inner { opacity: 1; filter: blur(0); }
+    .tl-preview-controls { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+    .tl-preview-btn { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px 0 7px;
+      border: none; border-radius: 6px; background: var(--c-field-bg); color: var(--c-text-mut2);
+      font: inherit; font-size: 11px; font-weight: 500; cursor: pointer;
+      transition: background 0.12s ease, scale 0.12s ease; }
+    .tl-preview-btn:hover { background: var(--c-sec-h); }
+    .tl-preview-btn:active { scale: 0.96; }
+    .tl-preview-track { position: relative; height: 22px; }
+    .tl-preview-rail { position: absolute; left: 0; right: 0; top: 50%; height: 2px; transform: translateY(-50%);
+      background: var(--c-track); border-radius: 2px; }
+    .tl-preview-end { position: absolute; top: 50%; width: 2px; height: 10px; transform: translateY(-50%);
+      background: #d0d0d6; border-radius: 2px; }
+    .tl-preview-end.left { left: 0; }
+    .tl-preview-end.right { right: 0; }
+    .tl-preview-dot { position: absolute; left: 0; top: 50%; width: 18px; height: 18px; margin-top: -9px;
+      border-radius: 50%; background: var(--c-blue); border: 2px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,113,226,0.4), 0 0 0 0.5px rgba(0,0,0,0.05);
+      will-change: transform; }
+    @media (prefers-reduced-motion: reduce) {
+      .tl-preview-panel, .tl-preview-panel-inner, .tl-preview-chevron { transition: none !important; }
+    }
 
     /* menu section header (non-clickable) — Figma node 580:1696 dropdown */
     .tl-menu-group { padding: 12px 8px 8px; font-size: 11px; font-weight: 400; line-height: 14px;
@@ -547,8 +596,8 @@
     .tl-menu-group:first-child { padding-top: 4px; }
 
     /* spring params box (reuses bounce row layout) */
-    .tl-spring-dur { display: flex; align-items: baseline; gap: 6px; font-size: 11px; color: var(--c-text-mut);
-      padding-top: 2px; border-top: 1px solid var(--c-hairline); margin-top: 2px; }
+    .tl-spring-dur { display: flex; align-items: baseline; gap: 6px; font-size: 12px; color: var(--c-text-mut);
+      padding-top: 10px; border-top: 1px solid var(--c-hairline); margin-top: 0; }
     .tl-spring-dur b { color: var(--c-text); font-weight: 600; font-variant-numeric: tabular-nums; }
     .tl-spring-dur .tl-spring-dur-hint { color: var(--c-text-faint); }
 
@@ -592,9 +641,6 @@
     .tl-menu-item-label { flex: 1; min-width: 0; display: flex; align-items: center; }
     .tl-menu-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .tl-menu-dim { color: #979797; }
-    .tl-menu-help { color: #c4c4cc; margin-left: 10px; flex: none; cursor: help; }
-    .tl-menu-help:hover { color: var(--c-ruler); }
-    .tl-menu-help svg { display: block; }
     .tl-menu-check { display: flex; color: var(--c-text-strong); flex: none; }
     .tl-menu-empty { padding: 10px 8px; color: var(--c-disabled); font-size: 13px; }
     .tl-menu-section { padding: 12px 8px 8px; font-size: 11px; font-weight: 400; line-height: 14px;
@@ -702,11 +748,6 @@
     }
     /* below-variant for triggers near the panel top edge */
     .t-tt.tl-tt-below { bottom: auto; top: calc(100% + 8px); transform-origin: 50% 0; font-size: 12px; }
-    /* usage-variant: right-anchored, multi-line copy for token help icons */
-    .t-tt.tl-tt-usage { left: auto; right: -6px; width: 224px; white-space: normal; text-align: left;
-      font-size: 12px; line-height: 1.45; padding: 9px 11px; transform-origin: 100% 100%;
-      text-wrap: balance; transform: translate(0, 4px) scale(var(--tt-scale)); }
-    .t-tt-wrap:hover .t-tt.tl-tt-usage { transform: translate(0, 0) scale(1); }
 
     /* ═════ transitions.dev — panel reveal (per-phase distance/ease/scale) ═════ */
     /* base = closed / close-end state: resolved travel + scale come from the
@@ -1338,6 +1379,8 @@
     };
     ICONS.minimize = ICONS.chevron;
     ICONS.close = {vb:"0 0 16 16", svg:`<path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`};
+    ICONS.play = {vb:"0 0 16 16", svg:`<path d="M5 3.5L12 8L5 12.5V3.5Z" fill="currentColor"/>`};
+    ICONS.pause = {vb:"0 0 16 16", svg:`<path d="M5 3.5H6.8V12.5H5V3.5ZM9.2 3.5H11V12.5H9.2V3.5Z" fill="currentColor"/>`};
     // dots-vertical (Figma node 580:4819) — vertical "⋮" overflow icon
     ICONS.dotsv = {vb:"0 0 16 16", svg:`<path fill-rule="evenodd" clip-rule="evenodd" d="M6.66667 8C6.66667 7.26362 7.26362 6.66667 8 6.66667C8.73638 6.66667 9.33333 7.26362 9.33333 8C9.33333 8.73638 8.73638 9.33333 8 9.33333C7.26362 9.33333 6.66667 8.73638 6.66667 8Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M6.66667 3.33333C6.66667 2.59695 7.26362 2 8 2C8.73638 2 9.33333 2.59695 9.33333 3.33333C9.33333 4.06971 8.73638 4.66667 8 4.66667C7.26362 4.66667 6.66667 4.06971 6.66667 3.33333Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M6.66667 12.6667C6.66667 11.9303 7.26362 11.3333 8 11.3333C8.73638 11.3333 9.33333 11.9303 9.33333 12.6667C9.33333 13.403 8.73638 14 8 14C7.26362 14 6.66667 13.403 6.66667 12.6667Z" fill="currentColor"/>`};
     function Ic({name, size=16}){
@@ -1720,7 +1763,7 @@
                   fFlat.length>0&&fGroups.length>0&&h("div",{className:"tl-menu-section"},"Ungrouped"),
                   ...fFlat.map(flatItem))),
         h("span",{className:"tl-header-count"},
-          scanning?"Grouping…":entries.length+" transition"+(entries.length===1?"":"s")+" found"),
+          scanning?"Scanning transitions…":entries.length+" transition"+(entries.length===1?"":"s")+" found"),
         h("button",{ref:gearRef,className:cx("tl-icon-btn",setg&&"is-active"),title:"Settings",onClick:()=>setSetg(v=>!v)},h(Ic,{name:"dotsv"})),
         h(Dropdown,{open:setg,onClose:()=>setSetg(false),triggerRef:gearRef,width:210,align:"right"},
           h(MenuItem,{onClick:()=>setSnap(v=>!v),right:snap&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},"Snap to grid"),
@@ -1868,11 +1911,7 @@
           width:(wrapRef.current&&wrapRef.current.offsetWidth)||220,align:"right"},
           (tokens||[]).map(tk=>h(MenuItem,{key:tk.label,active:value===tk.ms,onClick:()=>{onChange(tk.ms);setMenu(false);},
             right:value===tk.ms&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},
-            h("span",{className:"tl-menu-text"},tk.label,h("span",{className:"tl-menu-dim"}," "+tk.ms+"ms")),
-            tk.usage&&h("span",{className:"t-tt-wrap tl-menu-help",
-                onClick:e=>e.stopPropagation(),onMouseDown:e=>e.stopPropagation()},
-              h(Ic,{name:"help",size:13}),
-              h("span",{className:"t-tt tl-tt-usage",role:"tooltip"},tk.usage)))) ),
+            h("span",{className:"tl-menu-text"},tk.label,h("span",{className:"tl-menu-dim"}," "+tk.ms+"ms")))) ),
         readOnly&&readOnlyHint&&h("span",{className:"t-tt",role:"tooltip"},readOnlyHint),
       );
     }
@@ -2011,11 +2050,7 @@
             : h(MenuItem,{key:"e"+i,active:selEaseIdx>=0?i===selEaseIdx:(o.value===mode),
                 onClick:()=>pickEase(o.value),
                 right:(i===selEaseIdx)&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},
-                h("span",{className:"tl-menu-text"},o.label),
-                o.usage&&h("span",{className:"t-tt-wrap tl-menu-help",
-                    onClick:e=>e.stopPropagation(),onMouseDown:e=>e.stopPropagation()},
-                  h(Ic,{name:"help",size:13}),
-                  h("span",{className:"t-tt tl-tt-usage",role:"tooltip"},o.usage))))),
+                h("span",{className:"tl-menu-text"},o.label)))),
         h("div",{className:"tl-cubic-row"},
           ...[0,1,2,3].map(i=>h("input",{key:i,type:"number",step:0.05,min:i%2===0?0:undefined,max:i%2===0?1:undefined,
             value:cb[i],onChange:e=>setCubicVal(i,e.target.value)})),
@@ -2080,11 +2115,7 @@
           SPRING_PRESETS.map(p=>h(MenuItem,{key:p.label,active:p.label===presetName,
             onClick:()=>{applySpring(p.stiffness,p.damping,p.mass,p.label);setSpOpen(false);},
             right:p.label===presetName&&h("span",{className:"tl-menu-check"},h(Ic,{name:"check"}))},
-            h("span",{className:"tl-menu-text"},p.label),
-            p.usage&&h("span",{className:"t-tt-wrap tl-menu-help",
-                onClick:e=>e.stopPropagation(),onMouseDown:e=>e.stopPropagation()},
-              h(Ic,{name:"help",size:13}),
-              h("span",{className:"t-tt tl-tt-usage",role:"tooltip"},p.usage))))),
+            h("span",{className:"tl-menu-text"},p.label)))),
         h("div",{className:"tl-bounce"},
           h("div",{className:"tl-bounce-title"},"Spring physics"),
           h("div",{className:"tl-bounce-row"},
