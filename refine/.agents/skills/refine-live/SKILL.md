@@ -64,11 +64,11 @@ never has to re-run `/refine live`.
      posting suggestions. Everything below (refineType, steps 3–4) is for the
      normal Refine flow.
    - `refineType` chooses what kinds of suggestions to make (it mirrors the
-     panel's two tabs):
+     panel's two tabs). The tabs scan **independently**, so answer only the one
+     you were asked for:
      - `"small"` (or missing) → **Small refinements**: nudge the existing
-       declarations toward the motion tokens (step 3a) **and**, when it's possible
-       and sensible, *also* suggest swapping the whole transition for a
-       transitions.dev recipe (step 3b).
+       declarations toward the motion tokens **only** (step 3a). Do **not**
+       propose a recipe swap here — that's the Replace tab's separate job.
      - `"replace"` → **Replace transition**: suggest a whole-transition recipe
        swap **only** (step 3b). Do **not** propose motion-token tweaks — skip
        step 3a entirely.
@@ -81,50 +81,74 @@ never has to re-run `/refine live`.
      -d '{"message":"Matching to transitions.dev motion tokens…"}'
    ```
 
-3. **Reason about the transition.** Read `transitions-dev` and apply its
-   `transitions refine` behaviour. Which steps you run depends on `refineType`:
-   - `refineType === "small"` → do step 3a **and** step 3b.
-   - `refineType === "replace"` → do step 3b **only** (skip 3a — no token tweaks).
+3. **Answer in ONE shot — speed matters.** Each click should feel instant, so
+   resolve the job from the data below plus what's already in this skill. Do **not**
+   spawn subagents or run a broad codebase search, and do **not** open the
+   transitions-dev `SKILL.md` — its tokens and decision rules are inlined here.
+   - `refineType === "small"` → step 3a only, with **zero file reads**.
+   - `refineType === "replace"` → step 3b only; open **at most the one** recipe
+     reference file you choose.
 
    First, infer each declaration's **usage** from `label` + `selector` (modal
-   close, dropdown open, tooltip, badge, resize, color/theme change…). Every
-   decision below keys off that usage — match on **intent, not the nearest
-   number**.
+   close, dropdown open, tooltip, badge, resize, color/theme change…). Match on
+   **intent, not the nearest number**.
 
-   **3a. Motion-token tweaks (only for `refineType === "small"`).** Using
-   `## Motion tokens`:
-   - Pick the motion token that fits the usage — a modal close wants a fast exit;
-     a color/theme change can be slower; spring/back easings suit playful slides,
-     not opacity.
-   - Only propose a change where the current value actually differs.
+   **3a. Motion-token tweaks (`refineType === "small"` only — no file reads).**
+   Pick the token that fits the usage and propose a change **only where the current
+   value actually differs**.
 
-   **3b. Replace the whole transition (for `small` when sensible, always
-   considered for `replace`).** Judge whether this transition would be better off
-   re-built as one of the twenty-one transitions.dev recipes:
-   - The `transitions-dev` skill stays in the loop — run its `## Decision rules`
-     against the inferred usage to pick the **single** best-fit recipe, then open
-     that recipe's reference file (e.g. `06-modal.md`, `05-menu-dropdown.md`) to
-     read its real timings, easing, distance, scale, and blur.
-   - Only propose a replacement when it is **possible and sensible**: the current
-     declarations are clearly a hand-rolled version of a catalogued recipe, or are
-     missing the structure the usage calls for (e.g. an opacity-only "modal" that
-     should scale, a width tween that should be the card-resize recipe). If the
-     transition already *is* the right recipe, or no recipe genuinely fits, **do
-     not** force one.
-     - For `refineType === "small"`: skip the replace suggestion and let the 3a
-       token tweaks stand alone.
-     - For `refineType === "replace"`: there are no token tweaks to fall back on,
-       so return an **empty** `suggestions` array with a short `summary` saying the
-       transition already fits / no recipe applies.
-   - Emit at most **one** `kind: "replace"` suggestion per job. For `small` it sits
-     alongside the token tweaks (don't drop those); for `replace` it is the only
-     suggestion.
-   - Make its `patch` apply what the panel *can* apply live — the recipe's
-     recommended duration/easing for the property that already transitions (or
-     `"all"`). Name the recipe and its reference file in `title` + `reason` so the
-     user knows the structural parts (keyframes, extra properties, JS hooks) come
-     from running `transitions apply <recipe>` / pasting that reference file. Never
-     invent timings — quote the ones from the reference file.
+   - **Durations:** 40ms Stagger (per-item offset) · 80ms Micro (tooltip delay,
+     shake segment) · 150ms Quick (modal/dropdown close, text swap, tooltip
+     appear) · 250ms Fast (icon swap, dropdown/modal open, tabs slide, page
+     slide) · 350ms Medium (panel/toast close) · 400ms Slow (panel open, skeleton
+     reveal, input clear) · 500ms Very slow (emphasis, badge appear, text reveal,
+     success check).
+   - **Default easing — "Smooth ease out":** `cubic-bezier(0.22, 1, 0.36, 1)`
+     (modal/dropdown/panel open+close, page slide, resize, position change).
+   - **Other on-grid easings — LEAVE UNCHANGED:** `ease-out` (tooltip),
+     `ease-in-out` (icon/text swap, text reveal, skeleton reveal), `linear`
+     (shimmer, pulse, spinner), `cubic-bezier(0.34, 1.36, 0.64, 1)` (badge pop),
+     `cubic-bezier(0.34, 3.85, 0.64, 1)` (avatar return).
+   - **Nudge toward Smooth ease out:** generic `ease`, `ease-in`, or any
+     hand-rolled cubic-bezier()/linear() that isn't a token above.
+
+   **3b. Whole-transition recipe swap (`refineType === "replace"` only — no file
+   reads).** Match the inferred usage to ONE recipe below (this list *is* the
+   decision rules — no SKILL.md or reference-file read needed). Emit ONE
+   `kind: "replace"` suggestion whose `patch` carries the **motion-token**
+   duration/easing for the recipe's phase (open vs close) on the property that
+   already transitions (or `"all"`), with a `reference` field naming the file and
+   the recipe in `title` + `reason`. The patch only drives the live preview —
+   exact keyframes/structure come from the user pasting that reference file, so you
+   never need to open it. If no recipe genuinely fits the usage, return an
+   **empty** `suggestions` array with a short `summary`.
+
+   - Card resize — a container changes width/height on a layout change (`01-card-resize.md`)
+   - Number pop-in — a number/digit updates (`02-number-pop-in.md`)
+   - Notification badge — a small dot/badge appears on a trigger (`03-notification-badge.md`)
+   - Text states swap — text content changes in place (`04-text-states-swap.md`)
+   - Menu dropdown — an anchored surface grows from its trigger (`05-menu-dropdown.md`)
+   - Modal open/close — a centered dialog scales up, softer scale-down on close (`06-modal.md`)
+   - Panel reveal — a surface slides into a region with a cross-blur (`07-panel-reveal.md`)
+   - Page side-by-side — slide between list↔detail or step 1↔step 2 (`08-page-side-by-side.md`)
+   - Icon swap — two icons cross-fade in the same slot (`09-icon-swap.md`)
+   - Success check — a checkmark celebration: fade + rotate + bob + stroke-draw (`10-success-check.md`)
+   - Avatar group hover — hover lifts an item in a horizontal stack (`11-avatar-group-hover.md`)
+   - Error state shake — invalid-input shake (`12-error-state-shake.md`)
+   - Input clear with dissolve — clearing a text field (`13-input-clear-dissolve.md`)
+   - Skeleton loader and reveal — placeholder pulses then swaps to real content (`14-skeleton-reveal.md`)
+   - Shimmer text — in-progress / "thinking" text shimmer (`15-shimmer-text.md`)
+   - Tabs sliding — a moving highlight across segmented options (`16-tabs-sliding.md`)
+   - Tooltip open/close — delayed fade+scale in, instant out (`17-tooltip.md`)
+   - Texts reveal — staggered blurred rise of stacked text lines (`18-texts-reveal.md`)
+   - Card hover tilt — 3D tilt toward the pointer (`19-card-tilt.md`)
+   - Plus to menu morph — a circular trigger becomes the surface it opens (`20-plus-menu-morph.md`)
+   - Accordion expand — a collapsible body grows/shrinks in height (`21-accordion.md`)
+
+   Tie-break: prefer the lower-overhead recipe (card resize over panel reveal,
+   dropdown over modal). Only propose a swap when the current declarations are
+   clearly a hand-rolled version of a recipe or are missing the structure the usage
+   calls for; if the transition already *is* the right recipe, return empty.
 
 4. **Post the result** (this completes the job and renders cards in the panel):
 
@@ -148,9 +172,8 @@ never has to re-run `/refine live`.
      }'
    ```
 
-   The example above is a `small` job (token tweaks). When a recipe genuinely
-   fits, include a `kind: "replace"` card — alongside the token tweaks for
-   `small`, or as the **only** suggestion for `replace`:
+   The example above is a `small` job (token tweaks only). A `replace` job instead
+   returns a single `kind: "replace"` card as its **only** suggestion:
 
    ```json
    {

@@ -28,7 +28,7 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
-import { refineTimings } from "./motion-tokens.mjs";
+import { refineTimings, DURATION_TOKENS, SMOOTH_OUT } from "./motion-tokens.mjs";
 import { buildInjectModule } from "./inject.mjs";
 
 const PORT = Number(process.env.REFINE_RELAY_PORT) || 7331;
@@ -55,6 +55,13 @@ const AGENT_CMD = augmentAgentCmd(process.env.REFINE_AGENT_CMD || null);
 // (Opus / GPT-5.5) — forcing a fast model here keeps the initial scan snappy.
 // Override with REFINE_SCAN_MODEL=""  to fall back to the agent's default.
 const SCAN_MODEL = process.env.REFINE_SCAN_MODEL ?? "composer-2.5-fast";
+// Pin a fast model for refine (suggestion) jobs too. The motion-token vocabulary
+// is inlined into the prompt (see MOTION_TOKENS_BLOCK) so a fast model has every
+// fact it needs for the common token-tweak path — keeping suggestions snappy
+// without falling back to the user's (possibly heavy/slow) default model.
+// Override with REFINE_MODEL="" to use the agent's default model if you ever find
+// the fast model regresses a tricky `replace`/recipe judgement. cursor-agent only.
+const REFINE_MODEL = process.env.REFINE_MODEL ?? "composer-2.5-fast";
 const AGENT_TIMEOUT_MS = Number(process.env.REFINE_AGENT_TIMEOUT_MS) || 120000;
 
 // Inject `--model <m>` into a `cursor-agent …` command (after the binary).
@@ -144,13 +151,57 @@ function nextPendingLlm() {
 
 // ── answering a job (one run per job) ────────────────────────────────────────
 
+// Inlined transitions.dev motion-token vocabulary (mirrors motion-tokens.mjs and
+// the transitions-dev skill's "## Motion tokens"). Embedding it in the refine
+// prompt means the common token-tweak path needs ZERO file reads — only recipe
+// selection (replace/both) still opens the skill + a reference file.
+const MOTION_TOKENS_BLOCK = [
+  "Motion tokens (transitions.dev) — match on USAGE intent, not the nearest number:",
+  "Durations:",
+  ...DURATION_TOKENS.map((t) => `  - ${t.ms}ms ${t.name}: ${t.usage}`),
+  `Default easing "Smooth ease out": ${SMOOTH_OUT}.`,
+  "Token easings (already on-grid — leave unchanged): ease-out, ease-in-out, linear, cubic-bezier(0.34, 1.36, 0.64, 1) (bouncy overshoot, badge pop), cubic-bezier(0.34, 3.85, 0.64, 1) (strong overshoot, avatar return).",
+  'Generic curves to nudge toward "Smooth ease out": "ease", "ease-in", or any hand-rolled cubic-bezier()/linear() that is not a token above.',
+].join("\n");
+
+// Inlined recipe catalog + decision hints (mirrors the transitions-dev skill's
+// "## Quick reference" + "## Decision rules"). Embedding it lets the `replace`
+// path pick a recipe WITHOUT reading SKILL.md — at most it opens the ONE chosen
+// reference file for exact structure/timings.
+const RECIPES_BLOCK = [
+  "transitions.dev recipes — match the inferred USAGE to ONE recipe (reference file in parens):",
+  "- Card resize: a container changes width/height on a layout change (01-card-resize.md)",
+  "- Number pop-in: a number/digit updates (02-number-pop-in.md)",
+  "- Notification badge: a small dot/badge appears on a trigger (03-notification-badge.md)",
+  "- Text states swap: text content changes in place (04-text-states-swap.md)",
+  "- Menu dropdown: an anchored surface grows from its trigger (05-menu-dropdown.md)",
+  "- Modal open/close: a centered dialog scales up, softer scale-down on close (06-modal.md)",
+  "- Panel reveal: a surface slides into a region with a cross-blur (07-panel-reveal.md)",
+  "- Page side-by-side: slide between list<->detail or step1<->step2 (08-page-side-by-side.md)",
+  "- Icon swap: two icons cross-fade in the same slot (09-icon-swap.md)",
+  "- Success check: a checkmark celebration, fade+rotate+bob+stroke-draw (10-success-check.md)",
+  "- Avatar group hover: hover lifts an item in a horizontal stack (11-avatar-group-hover.md)",
+  "- Error state shake: invalid-input shake (12-error-state-shake.md)",
+  "- Input clear with dissolve: clearing a text field (13-input-clear-dissolve.md)",
+  "- Skeleton loader and reveal: placeholder pulses then swaps to real content (14-skeleton-reveal.md)",
+  "- Shimmer text: in-progress/'thinking' text shimmer (15-shimmer-text.md)",
+  "- Tabs sliding: a moving highlight across segmented options (16-tabs-sliding.md)",
+  "- Tooltip open/close: delayed fade+scale in, instant out (17-tooltip.md)",
+  "- Texts reveal: staggered blurred rise of stacked text lines (18-texts-reveal.md)",
+  "- Card hover tilt: 3D tilt toward the pointer (19-card-tilt.md)",
+  "- Plus to menu morph: a circular trigger becomes the surface it opens (20-plus-menu-morph.md)",
+  "- Accordion expand: a collapsible body grows/shrinks in height (21-accordion.md)",
+  "Tie-break: prefer the lower-overhead recipe (card resize over panel reveal, dropdown over modal). If no recipe genuinely fits, return an empty suggestions array.",
+].join("\n");
+
 function buildPrompt(job) {
   const r = job.request || {};
   const rawType = r.refineType || "small";
   const refineType = rawType === "replace" ? "replace" : rawType === "both" ? "both" : "small";
+  const needsRecipe = refineType === "replace" || refineType === "both";
   const lines = [
     "You are refining ONE CSS transition against the transitions.dev library and motion tokens.",
-    "Read the transitions-dev skill's SKILL.md (look in .agents/skills/transitions-dev/ or ~/.agents/skills/transitions-dev/) and apply its `transitions refine` behaviour, `## Motion tokens`, and `## Decision rules`.",
+    MOTION_TOKENS_BLOCK,
     "",
     "Transition context (JSON):",
     JSON.stringify({ label: r.label, selector: r.selector, refineType, timings: r.timings }, null, 2),
@@ -158,21 +209,31 @@ function buildPrompt(job) {
     "Infer each declaration's USAGE (modal close, dropdown open, tooltip, badge, resize, color/theme change…) from the label/selector. Match on usage intent, not the nearest number.",
     "",
   ];
+  if (needsRecipe) {
+    lines.push(
+      "To pick a whole-transition replacement, match the inferred USAGE against the recipe list below (the skill's decision rules are summarised here — do NOT read SKILL.md or any reference file). Derive the `patch`'s duration/easing from the MOTION TOKENS above for the recipe's phase (open vs close), and put the recipe's reference filename in `reference` so the user can paste the full recipe themselves. The patch only drives the live preview; exact keyframes/structure come from that pasted file — so you never need to open it.",
+      "",
+      RECIPES_BLOCK,
+      "",
+    );
+  }
   if (refineType === "replace") {
     lines.push(
       "refineType is \"replace\": suggest a WHOLE-TRANSITION replacement ONLY — do NOT propose motion-token tweaks (no kind \"duration\"/\"delay\"/\"easing\").",
-      "Run the skill's `## Decision rules` on the inferred usage, pick the SINGLE best-fit transitions.dev recipe, and read its reference file (e.g. 06-modal.md) for the real timings/easing. Emit ONE suggestion with kind \"replace\": set its `patch` to the recipe's recommended duration/easing for the property that already transitions (or \"all\") so Apply works live, add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. Never invent timings — quote the reference file. If no recipe genuinely fits the usage, return an empty suggestions array.",
+      "Pick the SINGLE best-fit recipe from the list above. Emit ONE suggestion with kind \"replace\": set its `patch` to the motion-token duration/easing for the recipe's phase on the property that already transitions (or \"all\") so Apply works live, add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. If no recipe genuinely fits the usage, return an empty suggestions array.",
+      "Answer in ONE response — do NOT read or search files.",
     );
   } else if (refineType === "both") {
     lines.push(
       "refineType is \"both\": produce TWO independent groups in the SAME suggestions array — the UI shows them in separate tabs, so include each group whenever it applies.",
       "(1) Motion-token tweaks (kind \"duration\"/\"delay\"/\"easing\"): for each declaration, propose the token value only where it DIFFERS from the current one.",
-      "(2) Whole-transition replacement (kind \"replace\"): ALWAYS evaluate one — run the skill's `## Decision rules` on the inferred usage, pick the SINGLE best-fit transitions.dev recipe, and read its reference file (e.g. 06-modal.md) for the real timings/easing. Emit at most ONE \"replace\" suggestion: set its `patch` to the recipe's recommended duration/easing for the property that already transitions (or \"all\"), add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. Never invent timings — quote the reference file. If no recipe genuinely fits the usage, simply omit the replace suggestion.",
+      "(2) Whole-transition replacement (kind \"replace\"): ALWAYS evaluate one — pick the SINGLE best-fit recipe from the list above. Emit at most ONE \"replace\" suggestion: set its `patch` to the motion-token duration/easing for the recipe's phase on the property that already transitions (or \"all\"), add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. If no recipe genuinely fits, omit the replace suggestion.",
+      "Answer in ONE response — do NOT read or search files.",
     );
   } else {
     lines.push(
-      "refineType is \"small\": FIRST suggest motion-token tweaks — for each declaration, propose the token value only where it DIFFERS from the current one (kind \"duration\"/\"delay\"/\"easing\").",
-      "THEN, when it is possible and sensible, ALSO add at most ONE kind \"replace\" suggestion (alongside, not instead of, the token tweaks): run the skill's `## Decision rules`, pick the SINGLE best-fit recipe, read its reference file for the real timings, set its `patch` to the recipe's recommended duration/easing for the existing property (or \"all\"), add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. Only add it when the transition is clearly a hand-rolled version of a catalogued recipe or is missing structure the usage calls for; otherwise omit it and let the token tweaks stand alone.",
+      "refineType is \"small\": suggest motion-token tweaks ONLY — for each declaration, propose the token value only where it DIFFERS from the current one (kind \"duration\"/\"delay\"/\"easing\"). Do NOT propose a whole-transition replacement (no kind \"replace\") — the Replace tab requests that separately.",
+      "Answer in ONE response using ONLY the data above. Do NOT read or search files, run tools, spawn subagents, or explore the codebase — the motion tokens contain everything you need. This is a quick judgement, not a coding task.",
     );
   }
   lines.push(
@@ -372,7 +433,9 @@ async function answerJob(job) {
         );
       }
       job.statusLog.push({ message: "Asking your agent…", at: now() });
-      result = await runAgentCmd(AGENT_CMD, buildPrompt(job));
+      const t0 = now();
+      result = await runAgentCmd(withModel(AGENT_CMD, REFINE_MODEL), buildPrompt(job));
+      console.log(`  ⏱ refine agent ${job.id.slice(0, 8)} (${job.request?.refineType || "small"}) ${now() - t0}ms`);
     } else {
       job.statusLog.push({ message: "Matching values to the motion tokens…", at: now() });
       result = refineDeterministic(job);

@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Timeline Inspector — Demo</title>
+  <title>Transitions — Refine demo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
+
     /* @inject-skip-start (demo-only global resets — excluded from the injected build) */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     /* @inject-skip-end */
@@ -1460,24 +1461,142 @@
       .tl-scan-beam { animation: none !important; }
       .tl-pill { animation: none !important; }
     }
+
+    /* ── transitions.dev site header (from index.html) ── */
+    :root { --text: #0d0d0d; --text-muted: #6c6c6c; }
+    .header {
+      position: relative; width: 100%; box-sizing: border-box;
+      display: flex; flex-direction: column; align-items: center;
+      padding-top: 48px; padding-bottom: 24px; text-align: center;
+    }
+    .header-icon-wrap {
+      position: relative; width: 136px; height: 140px;
+      margin-top: -43px; margin-bottom: -27px; overflow: visible;
+    }
+    .header-icon-img {
+      position: absolute; left: 0; top: 0; width: 136px; height: 140px;
+      display: block; user-select: none; transform-origin: center;
+      transition:
+        filter 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @media (hover: hover) {
+      .header-icon-wrap:hover .header-icon-img {
+        filter: hue-rotate(60deg) saturate(1.6);
+        transform: rotate(8deg) scale(1.06);
+      }
+    }
+    html[data-theme="dark"] .header-icon-img--light,
+    html:not([data-theme="dark"]) .header-icon-img--dark { display: none; }
+    html:not([data-theme="dark"]) .header-icon-img--light,
+    html[data-theme="dark"] .header-icon-img--dark { display: block; }
+    .title {
+      font-size: 22px; font-weight: 500; line-height: 34px;
+      color: var(--text); letter-spacing: -0.01em;
+    }
+    .subtitle {
+      margin-top: 4px; max-width: 560px; font-size: 15px; font-weight: 400;
+      line-height: 22px; color: var(--text-muted);
+    }
+
+    /* ── demo-mode note ── */
+    .wd-demo-note {
+      display: flex; align-items: center; gap: 8px;
+      max-width: 500px; margin: 0 auto 8px; padding: 7px 14px;
+      font-size: 13px; font-weight: 500; color: var(--c-text-mut, #585858);
+      background: rgba(0,117,237,0.06);
+      border-radius: 999px;
+      box-shadow: inset 0 0 0 1px rgba(0,117,237,0.14);
+    }
+    .wd-demo-note::before {
+      content: ""; width: 7px; height: 7px; border-radius: 50%;
+      background: #0071e2; flex: 0 0 auto;
+    }
+
+    /* ── website demo: Menu dropdown (transitions.dev #05), namespaced .wd-dd-* ── */
+    .wd-dd-wrap { display: flex; justify-content: center; padding: 8px 0 24px; }
+    .wd-dd { position: relative; display: inline-block; font-family: "Inter", system-ui, sans-serif; }
+    .wd-dd-trigger {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 14px; font-size: 14px; font-weight: 500; color: #1b1b1b;
+      background: #fff; border: 0; border-radius: 10px; cursor: pointer;
+      box-shadow: 0 1px 3px 0 rgba(0,0,0,0.04), inset 0 0 0 1px rgba(0,0,0,0.06), inset 0 -1px 0 0 rgba(0,0,0,0.10);
+      transition: background-color 150ms ease, box-shadow 150ms ease;
+    }
+    .wd-dd-trigger:hover { background: #f9f9f9; }
+    .wd-dd-trigger:active { background: #f4f4f4; }
+    .wd-dd-caret { transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1); }
+    .wd-dd.is-open .wd-dd-caret { transform: rotate(180deg); }
+
+    .wd-dd-menu {
+      position: absolute; top: calc(100% + 8px); left: 0;
+      min-width: 208px; padding: 6px;
+      background: #fff; border-radius: 12px;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.05), 0 4px 42px rgba(0,0,0,0.06);
+      transform-origin: top left;
+      transform: scale(0.97);
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        transform 280ms ease,
+        opacity   280ms ease;
+      will-change: transform, opacity;
+      z-index: 5;
+    }
+    .wd-dd.is-open .wd-dd-menu {
+      transform: scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .wd-dd.is-closing .wd-dd-menu {
+      transform: scale(0.99);
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        transform 180ms ease,
+        opacity   180ms ease;
+    }
+    .wd-dd-menu-title {
+      padding: 6px 10px 4px; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.04em; text-transform: uppercase; color: #9b9b9b;
+    }
+    .wd-dd-item {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      padding: 8px 10px; font-size: 13px; font-weight: 500; color: #2f2f2f;
+      background: transparent; border: 0; border-radius: 8px; cursor: pointer;
+      text-align: left;
+      transition: background-color 120ms ease;
+    }
+    .wd-dd-item:hover { background: #f4f4f5; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .wd-dd-menu { transition: none !important; }
+      .wd-dd-caret { transition: none !important; }
+    }
   </style>
 </head>
 <body>
+  <header class="header">
+    <div class="header-icon-wrap" aria-hidden="true">
+      <img class="header-icon-img header-icon-img--light" src="assets/icon%20light%202x.png" alt="" width="136" height="140" decoding="async" />
+      <img class="header-icon-img header-icon-img--dark" src="assets/icon-dark-2x.png?v=2" alt="" width="136" height="140" decoding="async" />
+    </div>
+    <h1 class="title">Transitions</h1>
+    <p class="subtitle">
+      Refine demo — inspect a live transitions.dev component and refine its motion.<br />
+      Agent responses are simulated locally; no relay or LLM required.
+    </p>
+  </header>
+  <div class="wd-demo-note">Demo mode — agent responses are simulated</div>
   <div id="root"></div>
-  <script type="importmap">
-  { "imports": {
-      "react": "https://esm.sh/react@19?dev",
-      "react-dom": "https://esm.sh/react-dom@19?dev",
-      "react-dom/client": "https://esm.sh/react-dom@19/client?dev",
-      "react/jsx-runtime": "https://esm.sh/react@19/jsx-runtime?dev",
-      "border-beam": "https://esm.sh/border-beam@1.2.0?external=react,react-dom"
-  } }
-  </script>
   <script type="module">
-    import React from "react";
-    import { createRoot } from "react-dom/client";
-    import { createPortal } from "react-dom";
-    import { BorderBeam } from "border-beam";
+    // Standalone demo: route the panel's relay client through demo.html's
+    // built-in mock instead of a live relay/LLM/CLI.
+    window.__TX_REFINE_MOCK = true;
+import React from "https://esm.sh/react@19";
+    import { createRoot } from "https://esm.sh/react-dom@19/client";
+    import { createPortal } from "https://esm.sh/react-dom@19";
+    import { BorderBeam } from "https://esm.sh/border-beam@1.2.0?deps=react@19,react-dom@19";
     const { createElement: h, useState, useEffect, useLayoutEffect, useRef, useMemo,
             useCallback, useSyncExternalStore, createContext, useContext } = React;
 
@@ -3846,198 +3965,63 @@
       );
     }
 
-    // ── demo boxes ──
-    // Hardcoded grouping — the transitions.dev agent's initial scan of this demo
-    // (run once via the live relay), baked in so the panel groups the morph
-    // instantly with NO relay/agent round-trip. Member labels are cleaned up from
-    // the agent's output ("Morph container"→"Container", "Morph menu"→"Menu panel").
-    // Edit here if the morph's transitions change, or delete window.__TX_SEED_GROUPS
-    // to fall back to a live agent scan. Shape mirrors relay.mjs buildScanPrompt's
-    // groups[] (the same structure TransitionRegistry.setGroups consumes). This is
-    // below the inject CUT_MARKER, so it never ships in the injected/website build.
-    const _mEO="cubic-bezier(0.22, 1, 0.36, 1)";    // smooth ease-out (open)
-    const _mEM="cubic-bezier(0.34, 1.25, 0.64, 1)"; // morph ease (close settle)
-    const _mpt=(property,durationMs,easing)=>({property,durationMs,delayMs:0,easing});
-    const MORPH_SEED_GROUPS=[
-      {id:"morph",label:"Plus \u2192 menu morph",component:null,phases:[
-        {id:"morph:open",phase:"open",label:"Open",stateTarget:".t-morph",fromState:null,toState:'[data-open="true"]',members:[
-          {id:"morph-container",label:"Container",selector:".t-morph",propertyTimings:[
-            _mpt("width",250,_mEO),_mpt("height",250,_mEO),_mpt("border-radius",250,_mEO)]},
-          {id:"morph-plus",label:"Plus button",selector:".t-morph .t-morph-plus",propertyTimings:[
-            _mpt("opacity",200,_mEO),_mpt("transform",350,_mEO),_mpt("filter",200,_mEO)]},
-          {id:"morph-menu",label:"Menu panel",selector:".t-morph .t-morph-menu",propertyTimings:[
-            _mpt("opacity",200,_mEO),_mpt("transform",350,_mEO),_mpt("filter",200,_mEO)]}]},
-        {id:"morph:close",phase:"close",label:"Close",stateTarget:".t-morph",fromState:'[data-open="true"]',toState:null,members:[
-          {id:"morph-container",label:"Container",selector:".t-morph",propertyTimings:[
-            _mpt("width",400,_mEM),_mpt("height",350,_mEM),_mpt("border-radius",350,_mEM)]},
-          {id:"morph-plus",label:"Plus button",selector:".t-morph .t-morph-plus",propertyTimings:[
-            _mpt("opacity",200,_mEO),_mpt("transform",350,_mEO),_mpt("filter",200,_mEO)]},
-          {id:"morph-menu",label:"Menu panel",selector:".t-morph .t-morph-menu",propertyTimings:[
-            _mpt("opacity",200,_mEO),_mpt("transform",350,_mEO),_mpt("filter",200,_mEO)]}]}]},
-      {id:"morph-item",label:"Menu item hover",component:null,phases:[
-        {id:"morph-item:hover",phase:"hover",label:"Hover",stateTarget:".t-morph-menu button.morph-item",fromState:null,toState:":hover",members:[
-          {id:"morph-item-bg",label:"Menu item",selector:".t-morph-menu button.morph-item",propertyTimings:[
-            _mpt("background",120,"ease")]}]}]},
-    ];
-    if(typeof window!=="undefined")window.__TX_SEED_GROUPS=MORPH_SEED_GROUPS;
-
-    // Plus → menu morph — transitions.dev (20-plus-menu-morph.md). The trigger
-    // button morphs into the panel it opens; CSS owns the morph, JS only flips
-    // data-open and mirrors it to aria-expanded, closing on outside-click / Escape.
-    function BoxMorph(){
-      const[open,setOpen]=useState(false);
+    // ── website demo: Menu dropdown (transitions.dev #05 — open/close phases) ──
+    // Namespaced .wd-dd-* so it can never collide with the panel's own .t-dropdown.
+    // JS owns .is-open / .is-closing with a setTimeout cleanup (per the skill), so
+    // the closing scale animates before the menu resets to its pre-open rest state.
+    function BoxDropdown(){
+      const [open,setOpen]=useState(false);
+      const [closing,setClosing]=useState(false);
       const ref=useRef(null);
+      const toRef=useRef(null);
+      const close=useCallback(()=>{
+        setOpen(false); setClosing(true);
+        if(toRef.current) clearTimeout(toRef.current);
+        toRef.current=setTimeout(()=>setClosing(false),180); // --close-dur
+      },[]);
+      const toggle=useCallback(()=>{ if(open){ close(); } else { setClosing(false); setOpen(true); } },[open,close]);
       useEffect(()=>{
-        const onDoc=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};
-        const onKey=e=>{if(e.key==="Escape")setOpen(false);};
+        const onDoc=e=>{ if(ref.current && !ref.current.contains(e.target)) close(); };
+        const onKey=e=>{ if(e.key==="Escape") close(); };
         document.addEventListener("click",onDoc);
         document.addEventListener("keydown",onKey);
-        return()=>{document.removeEventListener("click",onDoc);document.removeEventListener("keydown",onKey);};
-      },[]);
-      const item=(label,icon)=>h("button",{className:"morph-item",type:"button",onClick:()=>setOpen(false)},
+        return()=>{ document.removeEventListener("click",onDoc); document.removeEventListener("keydown",onKey); };
+      },[close]);
+      const item=(label,icon)=>h("button",{className:"wd-dd-item",type:"button",onClick:close},
         h(Ic,{name:icon,size:16}),label);
-      return h("div",{className:"card"},
-        h("h2",null,"Plus \u2192 Menu morph"),
-        h("p",null,"Click the + button. The circular trigger morphs into the menu it opens \u2014 width, height & corner radius animate while the plus cross-fades into the panel."),
-        h("div",{className:"morph-stage"},
-          h("div",{className:"t-morph","data-open":String(open),ref},
-            h("div",{className:"t-morph-menu","aria-hidden":!open},
-              h("div",{className:"morph-title"},"Create"),
-              item("New file","copy"),
-              item("Upload","restart"),
-              item("Settings","gear")),
-            h("button",{className:"t-morph-plus",type:"button","aria-expanded":String(open),"aria-label":"Open menu",
-              onClick:e=>{e.stopPropagation();setOpen(v=>!v);}},
-              h("svg",{width:20,height:20,viewBox:"0 0 20 20",fill:"none"},
-                h("path",{d:"M10 4.5v11M4.5 10h11",stroke:"currentColor","strokeWidth":1.8,"strokeLinecap":"round"}))))));
+      return h("div",{className:cx("wd-dd",open&&"is-open",closing&&"is-closing"),ref},
+        h("button",{className:"wd-dd-trigger",type:"button","aria-haspopup":"menu",
+          "aria-expanded":open?"true":"false",
+          onClick:e=>{ e.stopPropagation(); toggle(); }},
+          "Menu",
+          h("svg",{className:"wd-dd-caret",width:14,height:14,viewBox:"0 0 16 16",fill:"none","aria-hidden":"true"},
+            h("path",{d:"M4 6l4 4 4-4",stroke:"currentColor",strokeWidth:1.6,strokeLinecap:"round",strokeLinejoin:"round"}))),
+        h("div",{className:"wd-dd-menu",role:"menu","data-origin":"top-left","aria-hidden":open?"false":"true"},
+          h("div",{className:"wd-dd-menu-title"},"Actions"),
+          item("New file","copy"),
+          item("Refresh","restart"),
+          item("Settings","gear")));
     }
 
-    // ── live controls for the whole-panel reveal transition (demo harness) ──
-    // transitions.dev motion tokens (values lifted verbatim from the skill's _root.css)
-    // transitions.dev easing motion tokens. `token` is the actual skill CSS var
-    // applied to the panel (so the control writes e.g. var(--morph-ease), not a
-    // copied literal); `value` is the resolved curve, used only to match a live
-    // :root value back onto a preset on init.
-    const EASE_PRESETS = [
-      {key:"panel",       label:"panel reveal",   token:"var(--panel-ease)",       value:"cubic-bezier(0.22, 1, 0.36, 1)", usage:"--panel-ease — the standard ease-out shared across most transitions.dev transitions."},
-      {key:"morph",       label:"morph open",     token:"var(--morph-ease)",       value:"cubic-bezier(0.34, 1.25, 0.64, 1)", usage:"--morph-ease — plus → menu morph, a gentle settle past the target."},
-      {key:"check-bob",   label:"check bob",      token:"var(--check-ease-bob)",   value:"cubic-bezier(0.34, 1.35, 0.64, 1)", usage:"--check-ease-bob — success check Y-bob overshoot."},
-      {key:"badge-pop",   label:"badge pop",      token:"var(--badge-pop-ease)",   value:"cubic-bezier(0.34, 1.36, 0.64, 1)", usage:"--badge-pop-ease — notification badge dot pop-in."},
-      {key:"digit",       label:"digit pop",      token:"var(--digit-ease)",       value:"cubic-bezier(0.34, 1.45, 0.64, 1)", usage:"--digit-ease — number pop-in, a springier overshoot."},
-      {key:"avatar",      label:"avatar spring",  token:"var(--avatar-ease-out)",  value:"cubic-bezier(0.34, 3.85, 0.64, 1)", usage:"--avatar-ease-out — avatar group hover return, aggressive spring."},
-      {key:"badge-close", label:"badge close",    token:"var(--badge-close-ease)", value:"cubic-bezier(0.4, 0, 0.2, 1)", usage:"--badge-close-ease — accelerate-decelerate close."},
-      {key:"text-swap",   label:"text swap",      token:"var(--text-swap-ease)",   value:"ease-in-out", usage:"--text-swap-ease — in-place text states swap."},
-      {key:"tooltip",     label:"tooltip",        token:"var(--tt-in-ease)",       value:"ease-out", usage:"--tt-in-ease — tooltip open/close."},
-      {key:"shimmer",     label:"shimmer",        token:"var(--shimmer-ease)",     value:"linear", usage:"--shimmer-ease — shimmer text sweep."},
-      {key:"custom",      label:"custom cubic-bezier", token:null, value:null, usage:"Hand-tuned cubic-bezier control points."},
-    ];
-    const readRootVar=(name)=>getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    const numFrom=(s,fb)=>{const n=parseFloat(s);return Number.isFinite(n)?n:fb;};
-    const stripWs=(s)=>(s||"").replace(/\s+/g,"");
-    // map a live ease value back onto a preset key (or "custom") + its cubic-bezier
-    const easeKeyFor=(val)=>{const v=stripWs(val);const p=EASE_PRESETS.find(p=>(p.value&&stripWs(p.value)===v)||(p.token&&stripWs(p.token)===v));return p?p.key:"custom";};
-    const bzFor=(val)=>{const m=(val||"").match(/cubic-bezier\(([^)]+)\)/);if(m){const a=m[1].split(",").map(Number);if(a.length===4&&a.every(Number.isFinite))return a;}return[0.22,1,0.36,1];};
-
-    function PcSlider({label,unit,value,min,max,step,onChange}){
-      return h("label",{className:"pc-row"},
-        h("span",{className:"pc-label"},label),
-        h("input",{type:"range",min,max,step:step||1,value,onChange:e=>onChange(Number(e.target.value))}),
-        h("span",{className:"pc-val"},value+unit));
-    }
-
-    function PcEase({label,easeKey,bz,onKey,onBz}){
-      return h(React.Fragment,null,
-        h("div",{className:"pc-select-row"},
-          h("span",{className:"pc-label"},label),
-          h("select",{value:easeKey,onChange:e=>onKey(e.target.value)},
-            EASE_PRESETS.map(p=>h("option",{key:p.key,value:p.key,title:p.usage},p.label)))),
-        easeKey==="custom"&&h("div",{className:"pc-bz"},
-          bz.map((v,i)=>h("input",{key:i,type:"number",step:0.01,value:v,
-            onChange:e=>onBz(i,Number(e.target.value))}))));
-    }
-
-    function PanelControls(){
-      const[openDur,setOpenDur]     =useState(()=>numFrom(readRootVar("--panel-open-dur"),400));
-      const[closeDur,setCloseDur]   =useState(()=>numFrom(readRootVar("--panel-close-dur"),350));
-      const[openDist,setOpenDist]   =useState(()=>numFrom(readRootVar("--panel-open-distance"),100));
-      const[closeDist,setCloseDist] =useState(()=>numFrom(readRootVar("--panel-close-distance"),100));
-      const[openScale,setOpenScale] =useState(()=>numFrom(readRootVar("--panel-scale"),0.96));
-      const[closeScale,setCloseScale]=useState(()=>numFrom(readRootVar("--panel-scale-close"),0.96));
-      const[blur,setBlur]           =useState(()=>numFrom(readRootVar("--panel-blur"),2));
-      const[openEaseKey,setOpenEaseKey]   =useState(()=>easeKeyFor(readRootVar("--panel-open-ease")));
-      const[openBz,setOpenBz]             =useState(()=>bzFor(readRootVar("--panel-open-ease")));
-      const[closeEaseKey,setCloseEaseKey] =useState(()=>easeKeyFor(readRootVar("--panel-close-ease")));
-      const[closeBz,setCloseBz]           =useState(()=>bzFor(readRootVar("--panel-close-ease")));
-
-      useEffect(()=>{document.documentElement.style.setProperty("--panel-open-dur",openDur+"ms");},[openDur]);
-      useEffect(()=>{document.documentElement.style.setProperty("--panel-close-dur",closeDur+"ms");},[closeDur]);
-      useEffect(()=>{document.documentElement.style.setProperty("--panel-open-distance",openDist+"px");},[openDist]);
-      useEffect(()=>{document.documentElement.style.setProperty("--panel-close-distance",closeDist+"px");},[closeDist]);
-      useEffect(()=>{document.documentElement.style.setProperty("--panel-scale",String(openScale));},[openScale]);
-      useEffect(()=>{document.documentElement.style.setProperty("--panel-scale-close",String(closeScale));},[closeScale]);
-      useEffect(()=>{document.documentElement.style.setProperty("--panel-blur",blur+"px");},[blur]);
+    // Website App — models the demo App: a scanned demo-root + the TimelinePanel.
+    function WebsiteApp(){
+      const rootRef=useRef(null);
+      const registry=useMemo(()=>new TransitionRegistry(),[]);
+      const [activeId,setActiveId]=useState(null);
       useEffect(()=>{
-        const preset=EASE_PRESETS.find(p=>p.key===openEaseKey);
-        const val=openEaseKey==="custom"?`cubic-bezier(${openBz.join(", ")})`:(preset&&(preset.token||preset.value));
-        if(val)document.documentElement.style.setProperty("--panel-open-ease",val);
-      },[openEaseKey,openBz]);
-      useEffect(()=>{
-        const preset=EASE_PRESETS.find(p=>p.key===closeEaseKey);
-        const val=closeEaseKey==="custom"?`cubic-bezier(${closeBz.join(", ")})`:(preset&&(preset.token||preset.value));
-        if(val)document.documentElement.style.setProperty("--panel-close-ease",val);
-      },[closeEaseKey,closeBz]);
-
-      const setOpenBzAt=(i,v)=>setOpenBz(prev=>{const next=prev.slice();next[i]=v;return next;});
-      const setCloseBzAt=(i,v)=>setCloseBz(prev=>{const next=prev.slice();next[i]=v;return next;});
-      const fire=(action)=>window.dispatchEvent(new CustomEvent("tl-toggle-panel",{detail:{action}}));
-
-      return h("div",{className:"panel-controls"},
-        h("h3",null,h("span",{className:"pc-dot"}),"Panel transition"),
-        h("div",{className:"pc-group"},"Open"),
-        h(PcSlider,{label:"open dur",unit:"ms",value:openDur,min:0,max:1200,step:10,onChange:setOpenDur}),
-        h(PcSlider,{label:"distance",unit:"px",value:openDist,min:0,max:400,step:1,onChange:setOpenDist}),
-        h(PcSlider,{label:"scale",unit:"",value:openScale,min:0.80,max:1.00,step:0.01,onChange:setOpenScale}),
-        h(PcEase,{label:"ease",easeKey:openEaseKey,bz:openBz,onKey:setOpenEaseKey,onBz:setOpenBzAt}),
-        h("div",{className:"pc-group"},"Close"),
-        h(PcSlider,{label:"close dur",unit:"ms",value:closeDur,min:0,max:1200,step:10,onChange:setCloseDur}),
-        h(PcSlider,{label:"distance",unit:"px",value:closeDist,min:0,max:400,step:1,onChange:setCloseDist}),
-        h(PcSlider,{label:"scale",unit:"",value:closeScale,min:0.80,max:1.00,step:0.01,onChange:setCloseScale}),
-        h(PcEase,{label:"ease",easeKey:closeEaseKey,bz:closeBz,onKey:setCloseEaseKey,onBz:setCloseBzAt}),
-        h("div",{className:"pc-group"},"Shared"),
-        h(PcSlider,{label:"blur",unit:"px",value:blur,min:0,max:12,step:0.5,onChange:setBlur}),
-        h("div",{className:"pc-btns"},
-          h("button",{className:"pc-btn",onClick:()=>fire("toggle")},"Toggle panel"),
-          h("button",{className:"pc-btn primary",onClick:()=>fire("replay")},"Replay open")),
-      );
-    }
-
-    function App(){
-      const rootRef=useRef(null);const registry=useMemo(()=>new TransitionRegistry(),[]);const[activeId,setActiveId]=useState(null);
-      useEffect(()=>{const root=rootRef.current??document.body;const scanner=new DomScanner(root,registry);scanner.start();return()=>{scanner.stop();};},[registry]);
+        const root=rootRef.current||document.body;
+        const scanner=new DomScanner(root,registry);
+        scanner.start();
+        return()=>scanner.stop();
+      },[registry]);
       const ctx=useMemo(()=>({registry,activeId,setActiveId}),[registry,activeId]);
-      // Demo-only tweak controls: hidden by default. Append ?controls to the URL
-      // to show them for testing. (This whole block is below the inject CUT_MARKER,
-      // so it never ships in the injected build.)
-      const showControls=(()=>{try{return new URLSearchParams(location.search).has("controls");}catch(e){return false;}})();
-      // TESTING ONLY (not part of the tool): top-right toggle to hide the demo
-      // page content so the panel can be inspected against a blank page.
-      const[demoHidden,setDemoHidden]=useState(false);
       return h(TimelineCtx.Provider,{value:ctx},
-        showControls&&h(PanelControls),
-        h("button",{type:"button",onClick:()=>setDemoHidden(v=>!v),
-          title:"Testing only: hide/show demo page content",
-          style:{position:"fixed",top:"12px",right:"12px",zIndex:2147483000,
-            height:"28px",padding:"0 10px",borderRadius:"8px",cursor:"pointer",
-            border:"1px solid rgba(0,0,0,0.12)",background:"#fff",color:"#444",
-            font:"500 12px/1 ui-sans-serif,system-ui,sans-serif",
-            boxShadow:"0 1px 3px rgba(0,0,0,0.12)"}},
-          demoHidden?"Show demo":"Hide demo"),
-        h("div",{ref:rootRef,className:"demo-root",style:{display:demoHidden?"none":undefined}},h("div",{className:"demo-header"},h("h1",null,"Timeline Inspector \u2014 Demo"),h("p",null,"A single transitions.dev element: the plus \u2192 menu morph. Its transitions are auto-detected \u2014 select one below, drag the bars to edit timing, then interact with the component itself to preview the change.")),
-          h("div",{className:"demo-grid"},h(BoxMorph))),
+        h("div",{ref:rootRef,className:"demo-root"},
+          h("div",{className:"wd-dd-wrap"}, h(BoxDropdown))),
         h(TimelinePanel));
     }
 
-    createRoot(document.getElementById("root")).render(h(App));
+    createRoot(document.getElementById("root")).render(h(WebsiteApp));
   </script>
 </body>
 </html>
