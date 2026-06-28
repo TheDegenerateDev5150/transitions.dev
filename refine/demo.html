@@ -39,6 +39,9 @@
       --drop-btn: 0 1px 3px 0 rgba(4,41,117,0.08);
       /* secondary/raised white button (Reset, Settings, Copy, Accept) — exact spec */
       --shadow-btn: 0 1px 3px 0 rgba(0,0,0,0.04), inset 0 0 0 1px rgba(0,0,0,0.06), inset 0 -1px 0 0 rgba(0,0,0,0.10), inset 0 0 0 1px rgba(196,196,196,0.10);
+      /* inset-only portion of --shadow-btn — for overlay rings that must reproduce
+         the Reset button's visible border on top of a separate fill layer */
+      --shadow-btn-inset: inset 0 0 0 1px rgba(0,0,0,0.06), inset 0 -1px 0 0 rgba(0,0,0,0.10), inset 0 0 0 1px rgba(196,196,196,0.10);
       --drop-line: 0 1px 3px 0 rgba(0,0,0,0.08);
       --shadow-border: 0 0 0 1px rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.06), 0 2px 4px 0 rgba(0,0,0,0.04);
       --shadow-border-hover: 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px -1px rgba(0,0,0,0.08), 0 2px 4px 0 rgba(0,0,0,0.06);
@@ -327,7 +330,7 @@
       border: none; border-radius: 8px; background: transparent; color: var(--c-blue);
       box-shadow: var(--drop-btn);
       font: inherit; font-size: 13px; font-weight: 500; line-height: 14px;
-      cursor: pointer; white-space: nowrap; transition: color 0.12s ease; }
+      cursor: pointer; white-space: nowrap; transition: color 0.12s ease, scale 0.12s ease; }
     .tl-refine-btn::before { content: ""; position: absolute; inset: 0; border-radius: inherit;
       background: var(--c-blue-bg);
       background: color(display-p3 0 0.451 0.898 / 0.06);
@@ -339,7 +342,7 @@
     /* Figma: wand icon stroke is #0073E5, distinct from the #0071e2 label */
     .tl-refine-btn > svg { color: var(--c-blue-pressed); }
     .tl-refine-btn:hover:not(:disabled)::before { background: var(--c-blue-bg-h); background: color(display-p3 0 0.451 0.898 / 0.10); }
-    .tl-refine-btn:active:not(:disabled) { color: var(--c-blue-pressed); }
+    .tl-refine-btn:active:not(:disabled) { color: var(--c-blue-pressed); scale: 0.96; }
     .tl-refine-btn:active:not(:disabled)::before { background: var(--c-blue-bg-h); background: color(display-p3 0 0.451 0.898 / 0.10); }
     .tl-refine-btn:disabled { cursor: default; color: var(--c-blue); }
     .tl-refine-btn:disabled::before { background: var(--c-blue-bg); background: color(display-p3 0 0.451 0.898 / 0.06); }
@@ -709,6 +712,12 @@
     /* trailing chevron on link rows (Figma 581:2828 — #696969 right chevron) */
     .tl-menu-chevr { display: flex; flex: none; color: #696969; }
 
+    /* trailing slot on a menu row — current value + chevron (Figma: Theme row
+       shows "System" then a right chevron and opens the theme picker sub-page). */
+    .tl-menu-trail { display: flex; align-items: center; gap: 4px; }
+    .tl-menu-value { font-size: 11px; line-height: 14px; color: #8b8b8b;
+      font-variant-numeric: tabular-nums; }
+
     /* ── settings dropdown sub-page slider (transitions.dev · 08-page-side-by-side) ──
        One dropdown surface that pages internally: main settings ↔ keyboard
        shortcuts. Both pages stay mounted so they can cross-slide; the surface
@@ -728,7 +737,8 @@
       overflow: hidden;
     }
     .tl-set-slide .t-page[data-page-id="1"] { --t-page-from-x: calc(var(--page-slide-distance) * -1); }
-    .tl-set-slide .t-page[data-page-id="2"] { --t-page-from-x: var(--page-slide-distance); }
+    .tl-set-slide .t-page[data-page-id="2"],
+    .tl-set-slide .t-page[data-page-id="3"] { --t-page-from-x: var(--page-slide-distance); }
     .tl-set-slide .t-page {
       position: absolute; top: 0; left: 0; right: 0;
       opacity: 0; pointer-events: none;
@@ -741,7 +751,8 @@
       will-change: opacity, transform, filter;
     }
     .tl-set-slide[data-page="1"] .t-page[data-page-id="1"],
-    .tl-set-slide[data-page="2"] .t-page[data-page-id="2"] {
+    .tl-set-slide[data-page="2"] .t-page[data-page-id="2"],
+    .tl-set-slide[data-page="3"] .t-page[data-page-id="3"] {
       opacity: 1; pointer-events: auto; transform: translateX(0); filter: blur(0);
       transition-delay: var(--page-stagger);
     }
@@ -887,6 +898,12 @@
       transform: translate(0, 0) scale(var(--tt-scale)); }
     .t-tt-wrap:hover .t-tt.tl-tt-msg,
     .t-tt-trigger:focus-visible + .t-tt.tl-tt-msg { transform: translate(0, 0) scale(1); }
+    /* right-anchored variant for the panel's rightmost trigger (Minimize) so the
+       bubble grows leftward from the right edge and never clips off the panel. */
+    .t-tt.tl-tt-right { left: auto; right: 0; transform-origin: 100% 0;
+      transform: translate(0, 0) scale(var(--tt-scale)); }
+    .t-tt-wrap:hover .t-tt.tl-tt-right,
+    .t-tt-trigger:focus-visible + .t-tt.tl-tt-right { transform: translate(0, 0) scale(1); }
 
     /* ═════ transitions.dev — panel reveal (per-phase distance/ease/scale) ═════ */
     /* base = closed / close-end state: resolved travel + scale come from the
@@ -1018,7 +1035,7 @@
     /* header: title block (left) + Agent/Deterministic mode dropdown (right) */
     /* match the timeline top bar exactly: 7.5px/14px padding, centered, 52px tall (36px row + 15 + 1px border) */
     .tl-refine-head { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
-      gap: 8px; box-sizing: border-box; padding: 7.5px 14px;
+      gap: 8px; box-sizing: border-box; padding: 7.5px 7.5px 7.5px 14px;
       border-bottom: 1px solid #f0f0f0; }
     .tl-refine-titles { min-width: 0; }
     .tl-refine-titles h3 { font-size: 13px; font-weight: 500; line-height: 14px; color: #17181c; }
@@ -1047,6 +1064,49 @@
     .tl-refine-tab[aria-selected="true"] { background: rgba(170,170,170,0.10); color: #17181c; }
     .tl-refine-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
       padding: 0 16px; }
+    /* ── refine-type tab content slider (transitions.dev · 08-page-side-by-side) ──
+       Switching the type tabs (Small refinements ↔ Replace transition) slides the
+       body content side-by-side: the outgoing page exits with blur+fade while the
+       incoming page slides in from the opposite edge. Both pages stay mounted so
+       they cross-slide. Page 1 (Small, tab index 0) exits left; page 2 (Replace,
+       tab index 1) exits right — going to Replace brings new content in from the
+       right, going back brings it from the left. Mirrors the settings dropdown's
+       .tl-set-slide tokens exactly. Pages are absolutely stacked and fill the
+       fixed body region, scrolling internally, so no height tween is needed. */
+    .tl-refine-body.tl-refine-pages.t-page-slide {
+      position: relative; overflow: hidden; padding: 0;
+      --page-slide-dur: 250ms;            /* Fast — page slide */
+      --page-fade-dur: 250ms;
+      --page-slide-distance: 8px;         /* Base distance */
+      --page-blur: 3px;                   /* Medium blur */
+      --page-stagger: 0ms;
+      --page-exit-enabled: 1;
+      --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);  /* Smooth ease out */
+      --page-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .tl-refine-pages .t-page[data-page-id="1"] { --t-page-from-x: calc(var(--page-slide-distance) * -1); }
+    .tl-refine-pages .t-page[data-page-id="2"] { --t-page-from-x: var(--page-slide-distance); }
+    .tl-refine-pages .t-page {
+      position: absolute; inset: 0; overflow-y: auto;
+      display: flex; flex-direction: column; box-sizing: border-box; padding: 0 16px;
+      opacity: 0; pointer-events: none;
+      transform: translateX(calc(var(--t-page-from-x, 0px) * var(--page-exit-enabled)));
+      filter: blur(calc(var(--page-blur) * var(--page-exit-enabled)));
+      transition:
+        opacity   var(--page-fade-dur)  var(--page-fade-ease),
+        transform var(--page-slide-dur) var(--page-slide-ease),
+        filter    var(--page-slide-dur) var(--page-slide-ease);
+      will-change: opacity, transform, filter;
+    }
+    .tl-refine-pages[data-page="1"] .t-page[data-page-id="1"],
+    .tl-refine-pages[data-page="2"] .t-page[data-page-id="2"] {
+      opacity: 1; pointer-events: auto; transform: translateX(0); filter: blur(0);
+      transition-delay: var(--page-stagger);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tl-refine-pages.t-page-slide,
+      .tl-refine-pages .t-page { transition: none !important; }
+    }
     /* idle + unavailable share a vertically-centred column */
     .tl-refine-center { flex: 1; display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 12px; text-align: center; padding: 16px 0; }
@@ -1092,7 +1152,8 @@
         height var(--resize-dur) var(--resize-ease),
         border-radius var(--resize-dur) var(--resize-ease),
         color var(--resize-dur) var(--resize-ease),
-        box-shadow var(--resize-dur) var(--resize-ease); }
+        box-shadow var(--resize-dur) var(--resize-ease),
+        scale 0.12s ease; }
     .tl-scan-morph::before { content: ""; position: absolute; inset: 0; border-radius: inherit;
       background: var(--c-blue-bg);
       background: color(display-p3 0 0.451 0.898 / 0.06);
@@ -1104,7 +1165,7 @@
     .tl-refine-foot .tl-scan-morph { margin-bottom: 20px; }
     .tl-scan-morph:hover:not(:disabled):not(.is-scanning)::before {
       background: var(--c-blue-bg-h); background: color(display-p3 0 0.451 0.898 / 0.10); }
-    .tl-scan-morph:active:not(.is-scanning):not(:disabled) { color: var(--c-blue-pressed); }
+    .tl-scan-morph:active:not(.is-scanning):not(:disabled) { color: var(--c-blue-pressed); scale: 0.96; }
     .tl-scan-morph:active:not(.is-scanning):not(:disabled)::before {
       background: var(--c-blue-bg-h); background: color(display-p3 0 0.451 0.898 / 0.10); }
     .tl-scan-morph:disabled:not(.is-scanning) { cursor: default; color: var(--c-blue); }
@@ -1114,12 +1175,12 @@
       color: var(--c-blue-pressed); opacity: 0.5; }
     .tl-scan-morph.is-scanning { width: 100%; height: 49px; border-radius: 60px;
       padding: 8px 16px; cursor: default; color: #676767; background: transparent;
-      box-shadow: none; }
+      box-shadow: var(--shadow-btn); }
     .tl-scan-morph.is-scanning::before {
       background: #fff;
       transition: background var(--resize-dur) var(--resize-ease); }
     .tl-scan-morph.is-scanning::after {
-      box-shadow: inset 0 0 0 1px #f0f0f0;
+      box-shadow: var(--shadow-btn-inset);
       transition: box-shadow var(--resize-dur) var(--resize-ease); }
     /* Two faces share one grid cell and cross-blur (icon swap, 09) between the
        label and the icon+status; whichever is hidden fades out with blur+scale.
@@ -1289,10 +1350,15 @@
       transition: background 0.12s ease, scale 0.12s ease, opacity 0.12s ease; }
     .tl-pill-btn .tl-dim { color: #696969; }
     .tl-pill-btn:hover:not(:disabled) { background: #fafafa; }
-    .tl-pill-btn:active:not(:disabled) { scale: 0.98; }
-    .tl-pill-btn:disabled { opacity: 0.45; cursor: default; }
-    /* applied state — GRAY, never green (matches Accept icon --c-text #17181c) */
-    .tl-pill-btn.is-applied { color: var(--c-text); cursor: default; }
+    .tl-pill-btn:active:not(:disabled) { scale: 0.96; }
+    /* disabled — flat grey fill matching the active segmented tab, no raised
+       shadow, muted text (instead of a faded white button). */
+    .tl-pill-btn:disabled { cursor: not-allowed; opacity: 1; color: var(--c-disabled);
+      background: rgba(170,170,170,0.1); box-shadow: none; }
+    /* applied state — GRAY, never green (matches Accept icon --c-text #17181c).
+       Flat grey fill matching the active segmented tab, no raised shadow. */
+    .tl-pill-btn.is-applied { color: var(--c-text); cursor: not-allowed; opacity: 1;
+      background: rgba(170,170,170,0.1); box-shadow: none; }
     .tl-pill-btn.is-applied svg path { stroke: var(--c-text); }
     /* Apply ⟷ Applied: a LEADING check is revealed first and pushes the text to
        the right, then the differing SUFFIX cross-blurs. The shared stem "Appl"
@@ -1758,6 +1824,8 @@
     // accept checkmark (Figma node 580:9057) — slimmer 1.5px check centered in a
     // square 16-frame (the glyph spans ~50% width, like the source icon frame).
     ICONS.accept = {vb:"0 0 16 16", svg:`<path d="M4 8.4268L6.46155 11.19223L12 4.97001" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`};
+    // external-link (Figma "link-external-01") — box with an arrow leaving the top-right
+    ICONS.linkout = {vb:"0 0 16 16", svg:`<path d="M9.5 3.5H12.5V6.5M12.5 3.5L7.5 8.5M11.5 9.25V11.5C11.5 12.0523 11.0523 12.5 10.5 12.5H4.5C3.94772 12.5 3.5 12.0523 3.5 11.5V5.5C3.5 4.94772 3.94772 4.5 4.5 4.5H6.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`};
     function Ic({name, size=16}){
       const ic = ICONS[name];
       if(!ic) return null;
@@ -1860,24 +1928,26 @@
     // page so the one dropdown surface resizes smoothly between pages. Lives
     // inside the Dropdown portal, so its layout effect fires when the surface
     // mounts (the parent Header doesn't re-render on the portal's own mount).
-    function SettingsSlide({view,mainPage,shortcutsPage,onBack,onClose}){
-      const slideRef=useRef(null), p1=useRef(null), p2=useRef(null);
+    function SettingsSlide({view,mainPage,shortcutsPage,themePage,onBack,onClose}){
+      const slideRef=useRef(null), p1=useRef(null), p2=useRef(null), p3=useRef(null);
+      const pageNum=view==="shortcuts"?"2":view==="theme"?"3":"1";
       useLayoutEffect(()=>{
         const slide=slideRef.current; if(!slide) return;
-        const active=view==="shortcuts"?p2.current:p1.current;
+        const active=view==="shortcuts"?p2.current:view==="theme"?p3.current:p1.current;
         if(active) slide.style.height=active.offsetHeight+"px";
       });
-      // Escape steps back from the sub-page first, then closes the dropdown —
+      // Escape steps back from a sub-page first, then closes the dropdown —
       // mirrors the picker's nested-dismiss behaviour.
       useEffect(()=>{
         const onKey=e=>{ if(e.key!=="Escape")return;
-          if(view==="shortcuts"){onBack&&onBack();} else {onClose&&onClose();} };
+          if(view!=="main"){onBack&&onBack();} else {onClose&&onClose();} };
         document.addEventListener("keydown",onKey);
         return()=>document.removeEventListener("keydown",onKey);
       },[view,onBack,onClose]);
-      return h("div",{ref:slideRef,className:"tl-set-slide t-page-slide","data-page":view==="shortcuts"?"2":"1"},
-        h("div",{ref:p1,className:"tl-set-page t-page","data-page-id":"1","aria-hidden":view==="shortcuts"},mainPage),
-        h("div",{ref:p2,className:"tl-set-page t-page","data-page-id":"2","aria-hidden":view!=="shortcuts"},shortcutsPage));
+      return h("div",{ref:slideRef,className:"tl-set-slide t-page-slide","data-page":pageNum},
+        h("div",{ref:p1,className:"tl-set-page t-page","data-page-id":"1","aria-hidden":view!=="main"},mainPage),
+        h("div",{ref:p2,className:"tl-set-page t-page","data-page-id":"2","aria-hidden":view!=="shortcuts"},shortcutsPage),
+        h("div",{ref:p3,className:"tl-set-page t-page","data-page-id":"3","aria-hidden":view!=="theme"},themePage));
     }
 
     // ── refine relay client ──
@@ -2012,14 +2082,21 @@
             h("span",{className:"tl-apply-seg tl-apply-y"},"y"),
             h("span",{className:"tl-apply-seg tl-apply-ied"},"ied"))));
     }
-    function RefineResults({suggestions,appliedIds,onApply,lanes}){
+    function RefineResults({suggestions,appliedIds,onApply,lanes,revealedRef,active=true}){
       const ref=useRef(null);
       useEffect(()=>{
         const el=ref.current;if(!el)return;
+        // Both type tabs keep their results mounted so they can cross-slide
+        // (page-side-by-side). Only the visible page plays the staggered reveal,
+        // and only once per scan; the hidden page just shows its final state so
+        // switching tabs slides finished content in without re-staggering.
+        if(!active){ el.classList.add("is-shown"); return; }
+        if(revealedRef&&revealedRef.current){ el.classList.add("is-shown"); return; }
         el.classList.remove("is-shown");
         void el.offsetHeight; // reflow from the start state before playing
         el.classList.add("is-shown");
-      },[]);
+        if(revealedRef) revealedRef.current=true;
+      },[active]);
       const delay=(i)=>({transitionDelay:"calc(var(--stagger-stagger) * "+i+")"});
       // category chip label + color modifier, keyed by the suggestion kind
       const CAT={easing:["Easing","is-easing"],duration:["Duration","is-duration"],
@@ -2067,6 +2144,11 @@
       const[modeOpen,setModeOpen]=useState(false);
       const[statusIx,setStatusIx]=useState(0);
       const modeRef=useRef(null);
+      // The results reveal should play once per scan, not on every tab switch.
+      // This persists across RefineResults remounts; reset it when a new scan
+      // starts (or the panel returns to idle) so fresh results animate again.
+      const revealedRef=useRef(false);
+      useEffect(()=>{ if(phase==="scanning"||phase==="idle") revealedRef.current=false; },[phase]);
       useEffect(()=>{
         let raf, to;
         if(open){
@@ -2107,14 +2189,11 @@
       // null (unknown / still probing) is treated as ready so the panel doesn't
       // flash the "unavailable" copy before /health resolves.
       const agentReady = !agentMode || llmAvailable!==false;
-      const typeDesc = (REFINE_TYPES.find(t=>t.key===refineType)||REFINE_TYPES[0]).desc;
       const modeLabel = (REFINE_MODES.find(m=>m.key===mode)||REFINE_MODES[0]).label;
-      // Idle empty-state copy is mode-aware: Agent (llm) keeps the type's
-      // agent-oriented desc; Deterministic has no agent, so it describes the
-      // math-snap behavior (and that "replace" needs Agent mode).
-      const idleDesc = agentMode ? typeDesc : (refineType==="replace"
-        ? "Deterministic mode can't pick a recipe to replace the transition — switch to Agent mode for replacements."
-        : "Deterministic mode snaps your transition's timing to the nearest Transitions.dev motion tokens — mathematically, with no agent or credits.");
+      // Idle empty-state copy is mode-aware (computed per type in bodyFor):
+      // Agent (llm) keeps the type's agent-oriented desc; Deterministic has no
+      // agent, so it describes the math-snap behavior (and that "replace" needs
+      // Agent mode).
       // One persistent control for the whole foot: in idle/done/error it's the
       // pill button; while scanning it carries `.is-scanning` and the same DOM
       // node morphs (card resize) into the loading rectangle with the border-beam.
@@ -2135,25 +2214,58 @@
               h(ShimmerSwapText,{text:REFINE_STATUS[statusIx]}))));
       };
 
-      let body, foot, footBar=false;
+      // Body content for a given refine type. Both type tabs render their own
+      // body so they can cross-slide (page-side-by-side). Phase is global, so
+      // only the type-specific bits (filtered suggestions, empty/idle copy)
+      // change per page. `isActive` tells the results list whether to play its
+      // reveal (only the visible page does).
+      const bodyFor=(rt,isActive)=>{
+        const vis = suggestions.filter(s=> rt==="replace" ? s.kind==="replace" : s.kind!=="replace");
+        if(phase==="scanning"){
+          return h("div",{className:"tl-refine-center"});
+        }
+        if(phase==="error"){
+          return h("div",{className:"tl-refine-center"},
+            h("div",{className:"tl-refine-unavail-title"},"Something went wrong."),
+            h("div",{className:"tl-refine-unavail-text"},error||"The agent reported an error."));
+        }
+        if(phase==="done"){
+          if(vis.length===0){
+            const emptyMsg = rt==="replace"
+              ? "I didn't find any transition that would be a good fit as a replacement."
+              : "Already aligned to the transitions.dev motion tokens. Nothing to refine.";
+            return h("div",{className:"tl-refine-center"},
+              h("p",{className:"tl-refine-idle-text"},emptyMsg));
+          }
+          return h(RefineResults,{suggestions:vis,appliedIds,onApply,lanes:lanes||[],revealedRef,active:isActive});
+        }
+        // idle
+        if(!agentReady){
+          const cliMissing = cliInstalled===false;
+          return h("div",{className:"tl-refine-center"},
+            h("div",{className:"tl-refine-unavail-title"},"Agent unavailable."),
+            cliMissing
+              ? h("p",{className:"tl-refine-unavail-text"},"Install Cursor CLI by ",h("code",{className:"tl-code"},"/refine live")," command in your agent to enable live functionality.")
+              : h("p",{className:"tl-refine-unavail-text"},"Run the ",h("code",{className:"tl-code"},"/refine live")," command in your agent to enable live functionality."));
+        }
+        const idleDescR = agentMode ? (REFINE_TYPES.find(t=>t.key===rt)||REFINE_TYPES[0]).desc : (rt==="replace"
+          ? "Deterministic mode can't pick a recipe to replace the transition — switch to Agent mode for replacements."
+          : "Deterministic mode snaps your transition's timing to the nearest Transitions.dev motion tokens — mathematically, with no agent or credits.");
+        return h("div",{className:"tl-refine-center"},
+          h("p",{className:"tl-refine-idle-text"},idleDescR));
+      };
+
+      // Foot tracks the active type (it lives below the sliding body, so it
+      // just updates in place on a tab switch).
+      let foot, footBar=false;
       if(phase==="scanning"){
-        body = h("div",{className:"tl-refine-center"});
         foot = startBtn();
       } else if(phase==="error"){
-        body = h("div",{className:"tl-refine-center"},
-          h("div",{className:"tl-refine-unavail-title"},"Something went wrong."),
-          h("div",{className:"tl-refine-unavail-text"},error||"The agent reported an error."));
         foot = startBtn({label:"Try again"});
       } else if(phase==="done"){
         if(visible.length===0){
-          const emptyMsg = refineType==="replace"
-            ? "I didn't find any transition that would be a good fit as a replacement."
-            : "Already aligned to the transitions.dev motion tokens. Nothing to refine.";
-          body = h("div",{className:"tl-refine-center"},
-            h("p",{className:"tl-refine-idle-text"},emptyMsg));
           foot = startBtn({label:"Scan again"});
         } else {
-          body = h(RefineResults,{suggestions:visible,appliedIds,onApply,lanes:lanes||[]});
           footBar = true;
           foot = h(React.Fragment,null,
             h("button",{className:"tl-pill-btn",disabled:pending.length===0,
@@ -2162,19 +2274,7 @@
             h("button",{className:"tl-pill-btn",onClick:onStart},"Scan again"));
         }
       } else { // idle
-        if(!agentReady){
-          const cliMissing = cliInstalled===false;
-          body = h("div",{className:"tl-refine-center"},
-            h("div",{className:"tl-refine-unavail-title"},"Agent unavailable."),
-            cliMissing
-              ? h("p",{className:"tl-refine-unavail-text"},"Install Cursor CLI by ",h("code",{className:"tl-code"},"/refine live")," command in your agent to enable live functionality.")
-              : h("p",{className:"tl-refine-unavail-text"},"Run the ",h("code",{className:"tl-code"},"/refine live")," command in your agent to enable live functionality."));
-          foot = startBtn({disabled:true});
-        } else {
-          body = h("div",{className:"tl-refine-center"},
-            h("p",{className:"tl-refine-idle-text"},idleDesc));
-          foot = startBtn({});
-        }
+        foot = startBtn(agentReady?{}:{disabled:true});
       }
 
       return h("div",{className:"tl-refine-panel","data-open":panelOpen?"true":"false","data-phase":slidePhase,
@@ -2202,7 +2302,11 @@
             REFINE_TYPES.map(t=>h("button",{key:t.key,className:"tl-refine-tab",role:"tab",
               "aria-selected":refineType===t.key?"true":"false",
               onClick:()=>{if(t.key!==refineType)onType(t.key);}},t.label))),
-          h("div",{className:"tl-refine-body"},body),
+          h("div",{className:"tl-refine-body tl-refine-pages t-page-slide","data-page":refineType==="replace"?"2":"1"},
+            h("div",{className:"tl-refine-page t-page","data-page-id":"1","aria-hidden":refineType!=="small"},
+              bodyFor("small",refineType==="small")),
+            h("div",{className:"tl-refine-page t-page","data-page-id":"2","aria-hidden":refineType!=="replace"},
+              bodyFor("replace",refineType==="replace"))),
           h("div",{className:cx("tl-refine-foot",footBar&&"is-bar")},foot)));
     }
 
@@ -2230,6 +2334,9 @@
       const[setg,setSetg]=useState(false);
       // settings dropdown sub-page (main menu ↔ keyboard-shortcuts cheat sheet)
       const[settingsView,setSettingsView]=useState("main"); // "main" | "shortcuts"
+      // theme preference — UI only for now (dark theme not wired up yet)
+      const[themePref,setThemePref]=useState("system"); // "light" | "dark" | "system"
+      const THEME_OPTS=[{key:"light",label:"Light"},{key:"dark",label:"Dark"},{key:"system",label:"System"}];
       const isMac=typeof navigator!=="undefined"&&/mac/i.test((navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||navigator.userAgent||"");
       const modKey=isMac?"Cmd":"Ctrl";
       // small gray shortcut hint appended inside a tooltip (e.g. "⌘A")
@@ -2308,23 +2415,38 @@
           h(SettingsSlide,{view:settingsView,
             onBack:()=>setSettingsView("main"),
             onClose:()=>{setSetg(false);setSettingsView("main");},
-            // ── main settings page ──
+            // ── main settings page (Figma 580:4723) ──
             mainPage:h(React.Fragment,null,
-              h("div",{className:"tl-menu-head"},
-                h("span",null,"Transitions.dev ",h("span",{className:"tl-menu-head-name"},"Refine")),
-                h("span",{className:"tl-menu-head-ver"},REFINE_VERSION)),
-              h("div",{className:"tl-menu-divider"}),
               h(MenuItem,{disabled:!active,onClick:()=>{onCopy&&onCopy();setSetg(false);},
                 left:h("span",{className:"tl-menu-icon"},h(Ic,{name:"copy"})),
                 right:copied&&h("span",{className:"tl-menu-check"},h(Ic,{name:"accept"}))},copied?"Copied":"Copy values"),
               h(MenuItem,{disabled:scanning,onClick:()=>{setSetg(false);onRescan&&onRescan();},
                 left:h("span",{className:"tl-menu-icon"},h(Ic,{name:"restart"}))},
                 scanning?"Rescanning…":"Rescan transitions"),
+              h("div",{className:"tl-menu-divider"}),
+              // theme picker row — shows the current value + chevron; opens the sub-page
+              h(MenuItem,{onClick:()=>setSettingsView("theme"),
+                right:h("span",{className:"tl-menu-trail"},
+                  h("span",{className:"tl-menu-value"},(THEME_OPTS.find(o=>o.key===themePref)||{}).label),
+                  h("span",{className:"tl-menu-chevr"},h(Ic,{name:"chevronr",size:16})))},"Theme"),
               h(MenuItem,{onClick:()=>setSettingsView("shortcuts"),
                 right:h("span",{className:"tl-menu-chevr"},h(Ic,{name:"chevronr",size:16}))},"Keyboard shortcuts"),
-              h("div",{className:"tl-menu-divider"}),
               h(MenuItem,{onClick:()=>{setSetg(false);window.open("https://transitions.dev","_blank","noopener");},
-                right:h("span",{className:"tl-menu-chevr"},h(Ic,{name:"chevronr",size:16}))},"Learn more")),
+                right:h("span",{className:"tl-menu-chevr"},h(Ic,{name:"linkout",size:16}))},"Send feedback"),
+              h(MenuItem,{onClick:()=>{setSetg(false);window.open("https://transitions.dev","_blank","noopener");},
+                right:h("span",{className:"tl-menu-chevr"},h(Ic,{name:"linkout",size:16}))},"Learn more"),
+              h("div",{className:"tl-menu-divider"}),
+              h("div",{className:"tl-menu-head"},
+                h("span",null,"Transitions.dev ",h("span",{className:"tl-menu-head-name"},"Refine")),
+                h("span",{className:"tl-menu-head-ver"},REFINE_VERSION))),
+            // ── theme sub-page (Light / Dark / System — System default) ──
+            themePage:h(React.Fragment,null,
+              h("button",{type:"button",className:"tl-set-back",onClick:()=>setSettingsView("main")},
+                h("span",{className:"tl-set-back-ic"},h(Ic,{name:"chevronr",size:16})),
+                h("span",{className:"tl-set-back-title"},"Theme")),
+              h("div",{className:"tl-menu-divider"}),
+              ...THEME_OPTS.map(o=>h(MenuItem,{key:o.key,onClick:()=>{setThemePref(o.key);setSettingsView("main");},
+                right:themePref===o.key&&h("span",{className:"tl-menu-check"},h(Ic,{name:"accept"}))},o.label))),
             // ── keyboard-shortcuts sub-page ──
             shortcutsPage:h(React.Fragment,null,
               h("button",{type:"button",className:"tl-set-back",onClick:()=>setSettingsView("main")},
@@ -2371,7 +2493,7 @@
           h("span",{className:"t-tt tl-tt-below",role:"tooltip"},"Refine",ttHint("R"))),
         h("span",{className:"t-tt-wrap"},
           h("button",{className:"tl-icon-btn ghost t-tt-trigger","aria-label":"Minimize",onClick:onMinimize},h(Ic,{name:"minimize"})),
-          h("span",{className:"t-tt tl-tt-below",role:"tooltip"},"Minimize",ttHint("."))),
+          h("span",{className:"t-tt tl-tt-below tl-tt-right",role:"tooltip"},"Minimize",ttHint("."))),
       );
     }
 
