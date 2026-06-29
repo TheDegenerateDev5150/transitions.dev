@@ -1399,6 +1399,22 @@
     .tl-gate-text { margin: 4px 0 0; max-width: 250px; font-size: 13px; font-weight: 400; line-height: 21px;
       color: #676767; text-wrap: pretty; }
     .tl-gate-text .tl-code { color: #4b4b4b; }
+    /* The relay's reason for not wiring a CLI (so a silent poller fallback is never
+       a mystery), plus a Reconnect that forces an immediate agent re-check. */
+    .tl-gate-reason { margin: 10px 0 0; max-width: 260px; font-size: 12px; line-height: 18px;
+      color: #9a9a9a; text-wrap: pretty; }
+    .tl-gate-recheck { margin-top: 12px; padding: 5px 12px; font: inherit; font-size: 12px; font-weight: 500;
+      color: #4b4b4b; background: rgba(0, 0, 0, 0.04); border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px; cursor: pointer;
+      transition: background 150ms ease-out, border-color 150ms ease-out, opacity 150ms ease-out; }
+    .tl-gate-recheck:hover { background: rgba(0, 0, 0, 0.07); border-color: rgba(0, 0, 0, 0.12); }
+    .tl-gate-recheck:disabled { opacity: 0.55; cursor: default; }
+    html[data-theme="dark"] .tl-gate-reason { color: #7e7e7e; }
+    html[data-theme="dark"] .tl-gate-recheck { color: #d4d4d4; background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.12); }
+    html[data-theme="dark"] .tl-gate-recheck:hover { background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.16); }
+    @media (prefers-reduced-motion: reduce) { .tl-gate-recheck { transition: none; } }
     @media (prefers-reduced-motion: reduce) {
       .tl-gate { animation: none !important; } }
     /* dot-matrix loader — ported from @dotmatrix/dotm-square-14
@@ -2473,6 +2489,14 @@
       if(!r.ok) throw new Error("relay POST /poller/stop failed ("+r.status+")");
       return r.json();
     }
+    // Ask the relay to re-resolve its agent CLI right now (bypassing its TTL).
+    // Backs the "Reconnect" affordance after the user installs / logs into a CLI.
+    async function relayRecheck(){
+      if(TX_MOCK) return { ok:true, agentCmd:true };
+      const r = await fetch(RELAY_URL+"/agent/recheck",{method:"POST"});
+      if(!r.ok) throw new Error("relay POST /agent/recheck failed ("+r.status+")");
+      return r.json();
+    }
 
     const REFINE_MODES=[
       {key:"llm",label:"Agent",desc:"Suggested edits from the agent using the Transitions.dev skill."},
@@ -2662,18 +2686,31 @@
     // Shared "Connect with your agent" copy — used by the full-panel gate and by
     // the Refine area when no live agent is connected, so both read identically.
     // `cliMissing` swaps the body to an install-first hint.
-    function AgentConnectBody({cliMissing}){
-      return cliMissing
-        ? h("p",{className:"tl-gate-text"},"Install an agent CLI, then run ",
-            h("code",{className:"tl-code"},"npx transitions-refine live"),
-            " (recommended) or ",h("code",{className:"tl-code"},"/refine live")," in your editor.")
-        : h("p",{className:"tl-gate-text"},
-            "Run ",h("code",{className:"tl-code"},"npx transitions-refine live"),
-            " in your project to start the relay with a persistent agent — works for hours, no chat loop. Or run ",
-            h("code",{className:"tl-code"},"/refine live"),
-            " in your editor if the relay is already up without an agent wired.");
+    function AgentConnectBody({cliMissing,reason,onReconnect}){
+      const[rechecking,setRechecking]=useState(false);
+      const recheck=async()=>{
+        if(!onReconnect||rechecking) return;
+        setRechecking(true);
+        try{ await onReconnect(); } finally { setRechecking(false); }
+      };
+      return h(React.Fragment,null,
+        cliMissing
+          ? h("p",{className:"tl-gate-text"},"Install an agent CLI, then run ",
+              h("code",{className:"tl-code"},"npx transitions-refine live"),
+              " (recommended) or ",h("code",{className:"tl-code"},"/refine live")," in your editor.")
+          : h("p",{className:"tl-gate-text"},
+              "Run ",h("code",{className:"tl-code"},"npx transitions-refine live"),
+              " in your project to start the relay with a persistent agent — works for hours, no chat loop. Or run ",
+              h("code",{className:"tl-code"},"/refine live"),
+              " in your editor if the relay is already up without an agent wired."),
+        // Surface WHY the relay couldn't wire a CLI (from /health agentReason) so a
+        // silent fall-back to poller mode is never a mystery. The relay self-heals
+        // on a TTL; Reconnect just forces an immediate re-check.
+        reason&&h("p",{className:"tl-gate-reason"},reason),
+        onReconnect&&h("button",{className:"tl-gate-recheck",disabled:rechecking,onClick:recheck},
+          rechecking?"Reconnecting…":"Reconnect agent"));
     }
-    function RefinePanel({open,onClose,phase,label,refineType,onType,suggestions,summary,error,appliedIds,onApply,onApplyAll,mode,onMode,llmAvailable,cliInstalled,onStart,lanes}){
+    function RefinePanel({open,onClose,phase,label,refineType,onType,suggestions,summary,error,appliedIds,onApply,onApplyAll,mode,onMode,llmAvailable,cliInstalled,agentReason,onReconnect,onStart,lanes}){
       // mount-on-open; keep mounted through the panel-reveal slide-out, then unmount
       const[render,setRender]=useState(open);
       const[panelOpen,setPanelOpen]=useState(false);
@@ -2783,7 +2820,7 @@
           // /refine live makes the agent available and Start scanning works again.
           return h("div",{className:"tl-refine-center"},
             h("div",{className:"tl-refine-unavail-title"},"Connect with your agent"),
-            h(AgentConnectBody,{cliMissing:cliInstalled===false}));
+            h(AgentConnectBody,{cliMissing:cliInstalled===false,reason:agentReason,onReconnect}));
         }
         const idleDescR = agentMode ? (REFINE_TYPES.find(t=>t.key===rt)||REFINE_TYPES[0]).desc : (rt==="replace"
           ? "Deterministic mode can't pick a recipe to replace the transition — switch to Agent mode for replacements."
@@ -3774,6 +3811,7 @@
       const[refineType,setRefineType]=useState("small"); // small | replace
       const[llmAvailable,setLlmAvailable]=useState(null); // null=unknown, true/false from /health
       const[cliInstalled,setCliInstalled]=useState(null); // null=unknown, true/false from /health
+      const[agentReason,setAgentReason]=useState(null); // why no CLI is wired (/health agentReason)
       // chatLoop = LLM served by the in-chat `/refine live` poll loop (pollerActive
       // and no wired REFINE_AGENT_CMD). This is the mode that bills agent turns
       // while idle, so the header shows a credit warning + Stop for it.
@@ -3797,6 +3835,7 @@
       const refreshHealth=useCallback(async()=>{
         try{const j=await relayHealth();setLlmAvailable(!!j.llmAvailable);
           setCliInstalled(j.cliInstalled==null?null:!!j.cliInstalled);
+          setAgentReason(j.agentReason||null);
           const loop=!!j.pollerActive&&!j.agentCmd;
           if(!stopPendingRef.current){chatLoopRef.current=loop;setChatLoop(loop);setLiveStopped(false);return j;}
           if(!j.pollerActive)sawPollerGoneRef.current=true;
@@ -3813,6 +3852,12 @@
         chatLoopRef.current=false;setLiveStopped(true);setChatLoop(false);
         try{await relayStopLive();}catch{}
         refreshHealth();
+      },[refreshHealth]);
+      // Force the relay to re-resolve its agent CLI now, then refresh health so the
+      // panel reflects a just-installed / just-logged-in agent without waiting.
+      const reconnectAgent=useCallback(async()=>{
+        try{await relayRecheck();}catch{}
+        await refreshHealth();
       },[refreshHealth]);
       // Quiet auto-stop after the one-time grouping scan: in chat-loop mode the
       // loop has done its only needed job (the scan), so stop it to avoid idle
@@ -4529,13 +4574,13 @@
             h(RefinePanel,{open:refineOpen,onClose:()=>setRefineOpen(false),phase:refinePhase,label:refineLabel,
               refineType,onType:changeRefineType,suggestions:refineSuggestions,summary:refineSummary,error:refineError,
               appliedIds,onApply:applySuggestion,onApplyAll:applyAllSuggestions,
-                    mode:refineMode,onMode:changeRefineMode,llmAvailable,cliInstalled,onStart:startScan,
+                    mode:refineMode,onMode:changeRefineMode,llmAvailable,cliInstalled,agentReason,onReconnect:reconnectAgent,onStart:startScan,
                     lanes:active?.effectiveTimings||[]}))
               : h("div",{className:"tl-panel-main"},
                   gate==="blocked" && h("div",{className:"tl-gate"},
                     h("div",{className:"tl-gate-col"},
                       h("div",{className:"tl-gate-title"},"Connect with your agent"),
-                      h(AgentConnectBody,{cliMissing:cliInstalled===false})))),
+                      h(AgentConnectBody,{cliMissing:cliInstalled===false,reason:agentReason,onReconnect:reconnectAgent})))),
             toast&&createPortal(
               h("div",{className:"tl-toast-wrap","data-tl-ui":"","aria-live":"polite"},
                 h("div",{className:cx("tl-toast",toast.closing&&"is-closing")},

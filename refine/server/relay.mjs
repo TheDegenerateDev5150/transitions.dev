@@ -30,6 +30,7 @@ import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
 import { refineTimings, DURATION_TOKENS, SCALE_TOKENS, BLUR_TOKENS, SMOOTH_OUT } from "./motion-tokens.mjs";
 import { buildInjectModule } from "./inject.mjs";
+import { resolveAgentCmd } from "./agent-resolve.mjs";
 
 const PORT = Number(process.env.REFINE_RELAY_PORT) || 7331;
 const AUTO = process.env.REFINE_AUTO !== "0";
@@ -40,30 +41,33 @@ try {
   PKG_VERSION = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version || PKG_VERSION;
 } catch {}
 
-// A bare `cursor-agent` goes interactive: it prints "⚠ Workspace Trust Required"
-// and exits 1, so every headless refine/scan/apply job fails. Force the headless
-// trio whenever the command is cursor-agent: -p (print/headless, reads the prompt
-// from stdin), --trust (trust the workspace without prompting; only valid with
-// --print), and --force (auto-allow tool calls so apply/scan don't hang on
-// approval). Append only the missing flags; leave non-cursor-agent commands alone.
-function augmentAgentCmd(cmd) {
-  if (!cmd) return cmd;
-  // `codex exec` reads the prompt from stdin ONLY when given a trailing `-`
-  // (the stdin marker). The relay always pipes the prompt on stdin, so without
-  // it Codex gets no prompt and exits 1. Append `-` when it's missing (a lone
-  // `-` token, not the dashes inside flags like `--sandbox`).
-  if (/(^|\s|\/)codex(\s|$)/.test(cmd) && /(^|\s)exec(\s|$)/.test(cmd)) {
-    return /(^|\s)-(\s|$)/.test(cmd) ? cmd : `${cmd} -`;
+// Self-healing agent wiring. Instead of freezing the agent at boot — which left
+// the relay stuck in /refine-live poller mode for its whole life if the CLI
+// wasn't runnable at that one instant (not logged in yet, not on PATH, a startup
+// race) — we re-resolve via the shared resolver on a short TTL. The moment an
+// agent CLI becomes available, the relay wires it; if one disappears, it unwires.
+// An explicit REFINE_AGENT_CMD still wins and is effectively pinned (the resolver
+// short-circuits on it). REFINE_AGENT carries a forced --agent choice from the CLI.
+const FORCE_AGENT = process.env.REFINE_AGENT || null;
+const AGENT_RECHECK_MS = Number(process.env.REFINE_AGENT_RECHECK_MS) || 5000;
+let _agent = { at: 0, cmd: null, source: null, reason: null, label: null };
+function agentInfo(force = false) {
+  if (force || _agent.at === 0 || now() - _agent.at >= AGENT_RECHECK_MS) {
+    const r = resolveAgentCmd({ forceKey: FORCE_AGENT });
+    const prev = _agent.cmd;
+    _agent = {
+      at: now(),
+      cmd: r.cmd || null,
+      source: r.source || null,
+      reason: r.reason || null,
+      label: (r.agent && r.agent.label) || null,
+    };
+    if (r.cmd && r.cmd !== prev) console.log(`✓ agent wired${r.source ? ` (${r.source})` : ""}: ${r.cmd}`);
+    else if (!r.cmd && prev) console.log(`• agent unwired — ${r.reason || "no agent CLI"}`);
   }
-  if (!/(^|\s|\/)cursor-agent(\s|$)/.test(cmd)) return cmd;
-  const has = (...flags) => flags.some((f) => new RegExp(`(^|\\s)${f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`).test(cmd));
-  const extra = [];
-  if (!has("-p", "--print")) extra.push("-p");
-  if (!has("--trust")) extra.push("--trust");
-  if (!has("-f", "--force", "--yolo")) extra.push("--force");
-  return extra.length ? `${cmd} ${extra.join(" ")}` : cmd;
+  return _agent;
 }
-const AGENT_CMD = augmentAgentCmd(process.env.REFINE_AGENT_CMD || null);
+const agentCmd = () => agentInfo().cmd;
 // Pin a fast model for scan jobs. Grouping is a structured task that doesn't
 // need a heavy reasoning model, and the user's *default* model may be a slow one
 // (Opus / GPT-5.5) — forcing a fast model here keeps the initial scan snappy.
@@ -160,7 +164,7 @@ let pollerStopped = false;
 // went quiet so a genuinely new session (or re-run) can auto-resume.
 let lastStoppedPollAt = 0;
 const pollerActive = () => !pollerStopped && now() - lastPollAt < POLLER_TTL_MS;
-const llmAvailable = () => Boolean(AGENT_CMD) || pollerActive();
+const llmAvailable = () => Boolean(agentCmd()) || pollerActive();
 
 // Stop signal for the in-chat `/refine live` loop. Set by POST /poller/stop
 // (the panel's "Stop" button) or by the idle auto-stop; consumed by the next
@@ -181,7 +185,7 @@ const AGENT_BIN_CANDIDATES = [
   "/opt/homebrew/bin/cursor-agent",
 ];
 function cursorCliInstalled() {
-  if (AGENT_CMD) return true;
+  if (agentCmd()) return true;
   for (const p of AGENT_BIN_CANDIDATES) {
     try { if (existsSync(p)) return true; } catch {}
   }
@@ -547,6 +551,9 @@ function refineDeterministic(job) {
 async function answerJob(job) {
   job.status = "working";
   job.updatedAt = now();
+  // Snapshot the current wiring once for this job (the resolver is self-healing
+  // on a TTL; capturing avoids a mid-job change between the guard and the spawn).
+  const AGENT_CMD = agentCmd();
   const isApply = job.request?.kind === "apply";
   const isScan = job.request?.kind === "scan";
   const label = job.request?.label || job.request?.selector || "transition";
@@ -659,6 +666,7 @@ const server = createServer(async (req, res) => {
   if (method === "OPTIONS") return send(res, 204);
 
   if (method === "GET" && path === "/health") {
+    const ai = agentInfo();
     return send(res, 200, {
       ok: true,
       version: PKG_VERSION,
@@ -666,7 +674,12 @@ const server = createServer(async (req, res) => {
       llmAvailable: llmAvailable(),
       pollerActive: pollerActive(),
       pollerStopped,
-      agentCmd: Boolean(AGENT_CMD),
+      agentCmd: Boolean(ai.cmd),
+      // Why LLM mode isn't wired by a spawned CLI (panel surfaces this + offers a
+      // Reconnect that POSTs /agent/recheck). null when an agent IS wired.
+      agentSource: ai.source,
+      agentLabel: ai.label,
+      agentReason: ai.cmd ? null : ai.reason,
       cliInstalled: cursorCliInstalled(),
       jobs: jobs.size,
     });
@@ -704,7 +717,7 @@ const server = createServer(async (req, res) => {
       // External-poller-only mode: everything waits on GET /jobs/next.
     } else if (mode === "deterministic") {
       setImmediate(() => answerJob(job)); // in-process, off the response path
-    } else if (AGENT_CMD) {
+    } else if (agentCmd()) {
       setImmediate(() => answerJob(job)); // spawn the configured CLI once
     } else if (pollerActive()) {
       // A `/refine live` agent is polling — leave it pending for them to claim.
@@ -790,6 +803,23 @@ const server = createServer(async (req, res) => {
     return send(res, 200, { ok: true, stopping: wasActive });
   }
 
+  // POST /shutdown — let the CLI replace a stale relay cleanly. `live` calls this
+  // when it finds an older-version relay on the port (the npx-cache / lingering-
+  // daemon trap) so a re-run always converges to the current build.
+  if (method === "POST" && path === "/shutdown") {
+    send(res, 200, { ok: true, version: PKG_VERSION });
+    setTimeout(() => process.exit(0), 50);
+    return;
+  }
+
+  // POST /agent/recheck — force an immediate agent re-resolve, bypassing the TTL.
+  // Backs the panel's "Reconnect" affordance: after the user installs / logs into
+  // a CLI, this wires it right away instead of waiting out the recheck interval.
+  if (method === "POST" && path === "/agent/recheck") {
+    const ai = agentInfo(true);
+    return send(res, 200, { ok: true, agentCmd: Boolean(ai.cmd), agentLabel: ai.label, agentReason: ai.cmd ? null : ai.reason });
+  }
+
   // POST /poller/start — a fresh `/refine live` agent (or loop) announces itself
   // and clears the Stop latch so its polls count as live again. Without this an
   // explicit re-run would have to wait out the quiet window. Call it once at loop
@@ -861,11 +891,13 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`refine relay listening on http://localhost:${PORT}`);
   console.log(`  timeline injectable at  http://localhost:${PORT}/inject.js`);
+  const ai = agentInfo();
   if (!AUTO) {
     console.log("  auto-answer OFF (REFINE_AUTO=0) — all jobs wait for a poller on GET /jobs/next");
-  } else if (AGENT_CMD) {
-    console.log(`  LLM jobs answered by spawning: ${AGENT_CMD}`);
+  } else if (ai.cmd) {
+    console.log(`  LLM jobs answered by spawning: ${ai.cmd}`);
   } else {
+    console.log(`  no agent CLI wired yet (${ai.reason || "none found"}) — re-checking every ${Math.round(AGENT_RECHECK_MS / 1000)}s.`);
     console.log("  LLM jobs wait for a live agent — run `/refine live` in Cursor/Codex.");
     console.log(`  live agent stays 'available' for ${Math.round(POLLER_TTL_MS / 1000)}s after its last poll.`);
     console.log("  Deterministic jobs answered in-process (nearest motion token).");

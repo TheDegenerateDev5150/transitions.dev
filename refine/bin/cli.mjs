@@ -23,7 +23,8 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, cpSync, realpathSyn
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
-import { get as httpGet } from "node:http";
+import { get as httpGet, request as httpRequest } from "node:http";
+import { AGENTS, findBin, resolveAgentCmd } from "../server/agent-resolve.mjs";
 
 const PKG_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const CWD = process.cwd();
@@ -121,82 +122,9 @@ function dropSkill(name) {
 // prompt, stdout = JSON). To bill against the account the user ALREADY pays for,
 // we detect which agent is hosting this run and wire ITS CLI: a Claude Code user
 // gets `claude`, a Codex user gets `codex`, a Cursor user gets `cursor-agent`.
-// Detection is by each host's env markers; override with --agent <name> or by
-// exporting REFINE_AGENT_CMD yourself.
-const envHasPrefix = (p) => Object.keys(process.env).some((k) => k.startsWith(p));
-
-const AGENTS = [
-  {
-    key: "cursor",
-    label: "Cursor",
-    // Cursor's agent terminal exports CURSOR_AGENT.
-    host: () => Boolean(process.env.CURSOR_AGENT),
-    bins: [
-      "cursor-agent",
-      join(HOME, ".local/bin/cursor-agent"),
-      join(HOME, ".cursor/bin/cursor-agent"),
-    ],
-    // -p = headless/stdin, --force = auto-allow tool calls. The relay also
-    // auto-appends -p/--trust/--force for cursor-agent; we wire them up front so
-    // the printed command is the real one.
-    cmd: (bin) => `${bin} -p --force`,
-    canInstall: true,
-    auth: "run `cursor-agent` once to log in, or set CURSOR_API_KEY",
-  },
-  {
-    key: "claude",
-    label: "Claude Code",
-    // Claude Code exports CLAUDECODE=1 (+ CLAUDE_CODE_*) in its tools/terminals.
-    host: () => Boolean(process.env.CLAUDECODE || process.env.CLAUDE_CODE_ENTRYPOINT),
-    bins: [
-      "claude",
-      join(HOME, ".claude/local/claude"),
-      join(HOME, ".local/bin/claude"),
-    ],
-    // -p = headless print (prompt on stdin); skip-permissions so apply jobs can
-    // edit files without an interactive approval prompt.
-    cmd: (bin) => `${bin} -p --dangerously-skip-permissions`,
-    canInstall: false,
-    auth: "run `claude` once to sign in",
-  },
-  {
-    key: "codex",
-    label: "Codex",
-    // Codex exec exports CODEX_SANDBOX (+ CODEX_* friends) in its sandbox.
-    host: () => Boolean(process.env.CODEX_SANDBOX) || envHasPrefix("CODEX_"),
-    bins: ["codex", join(HOME, ".local/bin/codex")],
-    // `codex exec -` reads the prompt on stdin; workspace-write so apply jobs can
-    // edit files; skip-git-repo-check so a non-git project root doesn't error out.
-    cmd: (bin) => `${bin} exec --sandbox workspace-write --skip-git-repo-check -`,
-    canInstall: false,
-    auth: "run `codex` once to sign in, or set CODEX_API_KEY",
-  },
-];
-
-// Host-detection precedence. Claude/Codex export very specific markers; check
-// them BEFORE Cursor so a Claude Code or Codex session launched from inside a
-// Cursor terminal (which still carries CURSOR_*) is not mis-wired to cursor-agent.
-const HOST_PRECEDENCE = ["claude", "codex", "cursor"];
-
-function isRunnable(bin) {
-  try {
-    return spawnSync(bin, ["--version"], { stdio: "ignore" }).status === 0;
-  } catch {
-    return false;
-  }
-}
-
-function findBin(agent) {
-  return agent.bins.find(isRunnable) || null;
-}
-
-function detectHostAgent() {
-  for (const key of HOST_PRECEDENCE) {
-    const a = AGENTS.find((x) => x.key === key);
-    if (a && a.host()) return a;
-  }
-  return null;
-}
+// The agent table + (pure) detection live in server/agent-resolve.mjs, shared
+// with the relay so it can re-check and self-heal at runtime; the CLI only adds
+// the one thing the relay must not do — install the Cursor CLI.
 
 // Install the Cursor CLI (the only agent we can fetch non-interactively).
 function installCursorCli() {
@@ -215,50 +143,19 @@ function installCursorCli() {
   return findBin(AGENTS[0]);
 }
 
-// Decide which agent CLI the relay should spawn. Returns either
+// Decide which agent CLI the relay should spawn. Pure resolution is shared with
+// the relay (resolveAgentCmd); the CLI layers on the one side-effecting step the
+// relay must never do — installing the Cursor CLI when --llm is passed and
+// nothing else is available. Returns:
 //   { cmd, agent, source }          → wire this command (persistent LLM), or
 //   { cmd:null, agent?, reason }    → couldn't wire; caller prints guidance.
-// Precedence: explicit REFINE_AGENT_CMD → --agent <key> → host agent (same
-// subscription) → any installed agent → (with --llm) install cursor-agent.
 function resolveAgent({ wantLlm, forceKey }) {
-  if (process.env.REFINE_AGENT_CMD) {
-    return { cmd: process.env.REFINE_AGENT_CMD, source: "env" };
-  }
-
-  let target = null;
-  if (forceKey) {
-    target = AGENTS.find((a) => a.key === forceKey) || null;
-    if (!target) {
-      return { cmd: null, reason: `unknown --agent "${forceKey}" (use cursor | claude | codex)` };
-    }
-  }
-  if (!target) target = detectHostAgent();
-
-  if (target) {
-    let bin = findBin(target);
-    if (!bin && target.canInstall && wantLlm) bin = installCursorCli();
-    if (bin) return { cmd: target.cmd(bin), agent: target, source: forceKey ? "forced" : "host" };
-    return {
-      cmd: null,
-      agent: target,
-      reason:
-        `detected ${target.label} but its CLI isn't on PATH` +
-        (target.canInstall ? " — re-run with --llm to install it" : ` — install the ${target.label} CLI first`),
-    };
-  }
-
-  // No host detected (plain terminal): use any installed agent, in list order.
-  for (const a of AGENTS) {
-    const bin = findBin(a);
-    if (bin) return { cmd: a.cmd(bin), agent: a, source: "scan" };
-  }
-
-  // Nothing installed: only cursor-agent can be fetched non-interactively.
-  if (wantLlm) {
-    const bin = installCursorCli();
-    if (bin) return { cmd: AGENTS[0].cmd(bin), agent: AGENTS[0], source: "install" };
-  }
-  return { cmd: null, reason: "no agent CLI found" };
+  const r = resolveAgentCmd({ forceKey });
+  if (r.cmd || !wantLlm || !r.needsInstall) return r;
+  // wantLlm + the only fetchable CLI (cursor-agent) is missing → install it.
+  const bin = installCursorCli();
+  if (bin) return { cmd: AGENTS[0].cmd(bin), agent: AGENTS[0], source: "install" };
+  return r;
 }
 
 function log(msg) {
@@ -300,6 +197,47 @@ async function waitForHealth(port, totalMs = 6000) {
   while (Date.now() < deadline) {
     if (await httpOk(port)) return true;
     await new Promise((r) => setTimeout(r, 250));
+  }
+  return false;
+}
+
+// GET /health → parsed JSON, or null if unreachable / unparsable.
+function getHealth(port, timeoutMs = 800) {
+  return new Promise((resolveJson) => {
+    let done = false, body = "";
+    const finish = (v) => { if (!done) { done = true; resolveJson(v); } };
+    const req = httpGet({ host: "127.0.0.1", port: Number(port), path: "/health", timeout: timeoutMs }, (res) => {
+      if (res.statusCode < 200 || res.statusCode >= 500) { res.resume(); return finish(null); }
+      res.setEncoding("utf8");
+      res.on("data", (d) => (body += d));
+      res.on("end", () => { try { finish(JSON.parse(body)); } catch { finish(null); } });
+    });
+    req.on("timeout", () => { req.destroy(); finish(null); });
+    req.on("error", () => finish(null));
+  });
+}
+
+// Best-effort POST (no body). Resolves true on a 2xx.
+function postRelay(port, path, timeoutMs = 1500) {
+  return new Promise((resolveOk) => {
+    let done = false;
+    const finish = (v) => { if (!done) { done = true; resolveOk(v); } };
+    const req = httpRequest({ host: "127.0.0.1", port: Number(port), path, method: "POST", timeout: timeoutMs }, (res) => {
+      res.resume();
+      finish(res.statusCode >= 200 && res.statusCode < 300);
+    });
+    req.on("timeout", () => { req.destroy(); finish(false); });
+    req.on("error", () => finish(false));
+    req.end();
+  });
+}
+
+// Wait until nothing answers on the port (a replaced relay has fully exited).
+async function waitForPortFree(port, totalMs = 4000) {
+  const deadline = Date.now() + totalMs;
+  while (Date.now() < deadline) {
+    if (!(await httpOk(port))) return true;
+    await new Promise((r) => setTimeout(r, 150));
   }
   return false;
 }
@@ -370,6 +308,20 @@ async function cmdLive(args) {
   const port = String(args.port || process.env.REFINE_RELAY_PORT || 7331);
   const page = findPage(args.page);
 
+  // 0) reconcile any relay already on this port. A stale, OLDER-version relay is
+  //    the classic "I updated but nothing changed" trap — npx serves a cached
+  //    build, or an old daemon lingers. Replace it so `live` always converges to
+  //    THIS version (and picks up fixes like agent self-heal).
+  const existing = await getHealth(port);
+  if (existing && existing.version && existing.version !== PKG_VERSION) {
+    log(`• replacing a stale relay on :${port} (v${existing.version} → v${PKG_VERSION})`);
+    await postRelay(port, "/shutdown");
+    stopDaemon({ silent: true });
+    if (!(await waitForPortFree(port))) {
+      log(`! the old relay on :${port} didn't exit — you may need to kill it manually.`);
+    }
+  }
+
   // 1) inject the script tag
   if (page) {
     injectTag(page, port);
@@ -397,6 +349,8 @@ async function cmdLive(args) {
   const wantLlm = Boolean(args.llm);
   const forceKey = typeof args.agent === "string" ? args.agent : null;
   const env = { ...process.env, REFINE_RELAY_PORT: port };
+  // Pass a forced --agent through so the relay's runtime self-heal honors it too.
+  if (forceKey) env.REFINE_AGENT = forceKey;
   const resolved = resolveAgent({ wantLlm, forceKey });
   if (resolved.cmd) {
     env.REFINE_AGENT_CMD = resolved.cmd;
@@ -532,4 +486,5 @@ if (isCliEntry()) {
   });
 }
 
-export { AGENTS, HOST_PRECEDENCE, detectHostAgent, resolveAgent, findBin };
+export { resolveAgent };
+export { AGENTS, HOST_PRECEDENCE, detectHostAgent, findBin } from "../server/agent-resolve.mjs";
