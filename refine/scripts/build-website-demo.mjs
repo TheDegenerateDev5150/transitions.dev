@@ -358,8 +358,11 @@ const DROPDOWN_CSS = `
       /* Intentionally off-token motion so Refine has obvious things to fix:
          scale 0.8 (vs the 0.97 dropdown token — over-pops), 300ms (off-grid,
          snaps to the 250ms Medium token) and the generic ease curve (vs the
-         transitions.dev Smooth ease out). One fix per kind: scale, duration, easing. */
-      transform: scale(0.8) translateZ(0);
+         transitions.dev Smooth ease out). One fix per kind: scale, duration, easing.
+         The scale is var-backed (--wd-dd-scale) so Refine's Apply can write it
+         live — readElValueHint only drives the DOM through a CSS variable. */
+      --wd-dd-scale: 0.8;
+      transform: scale(var(--wd-dd-scale)) translateZ(0);
       opacity: 0;
       pointer-events: none;
       transition:
@@ -374,7 +377,7 @@ const DROPDOWN_CSS = `
       pointer-events: auto;
     }
     .wd-dd.is-closing .wd-dd-menu {
-      transform: scale(0.8) translateZ(0);
+      transform: scale(var(--wd-dd-scale)) translateZ(0);
       opacity: 0;
       pointer-events: none;
       transition:
