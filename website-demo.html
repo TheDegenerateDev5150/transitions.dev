@@ -2334,6 +2334,63 @@ import React from "https://esm.sh/react@19";
       return out;
     }
 
+    // Resolve a grouped phase MEMBER selector to live element(s), SCOPED to the
+    // component instance(s) named by the phase's `stateTarget`. Agent-produced
+    // member selectors are often broad (e.g. `.panel`, a utility class) and, when
+    // queried globally, match elements in OTHER components — so editing one
+    // group's timing leaked onto unrelated transitions, and claiming hid the
+    // wrong flat entries. Restricting the query to each stateTarget subtree keeps
+    // the match inside the intended component (all instances of it, which is
+    // correct) without touching look-alikes elsewhere. Falls back to a global
+    // query only when scoping yields nothing (no/again-unresolvable stateTarget),
+    // so this can only ever NARROW matches — never regress to "applies nothing".
+    function txMemberEls(memberSel, stateTargetSel){
+      if(!memberSel) return [];
+      const out=[];
+      if(stateTargetSel){
+        let roots=[];try{roots=Array.from(document.querySelectorAll(stateTargetSel));}catch{}
+        for(const root of roots){
+          try{ if(root.matches&&root.matches(memberSel)) out.push(root); }catch{}
+          try{ for(const el of root.querySelectorAll(memberSel)) out.push(el); }catch{}
+        }
+      }
+      const scoped=Array.from(new Set(out));
+      if(scoped.length) return scoped;
+      let all=[];try{all=Array.from(document.querySelectorAll(memberSel));}catch{}
+      return all;
+    }
+
+    // Normalize a phase state token (the class/attribute toggled on `stateTarget`)
+    // into a CSS selector fragment that can be concatenated onto a selector:
+    //   ".is-open"            → ".is-open"          (class, already a fragment)
+    //   "[data-open=\"true\"]"→ "[data-open=\"true\"]" (attribute, already a fragment)
+    //   "is-open"             → ".is-open"          (bare class name)
+    //   "data-open"           → "[data-open]"        (bare attribute name)
+    //   null / "" / "base"    → ""                   (the no-class base state)
+    function stateSuffix(tok){
+      if(tok==null) return "";
+      tok=String(tok).trim();
+      if(!tok||/^base$/i.test(tok)) return "";
+      // already a selector fragment: .class, [attr], :pseudo (e.g. :hover)
+      if(tok[0]==="."||tok[0]==="["||tok[0]===":") return tok;
+      if(/^[\w-]+$/.test(tok)) return "."+tok;
+      return "["+tok+"]";
+    }
+
+    // Tear down a state-gated phase live-preview store: stop observers/listeners
+    // and restore every element's original inline transition + custom props.
+    function txTeardownPhase(store){
+      if(!store) return;
+      if(store) store.pending=false;
+      for(const mo of store.observers||[]){try{mo.disconnect();}catch{}}
+      if(store.ptr){try{document.removeEventListener("pointerover",store.ptr,true);document.removeEventListener("pointerout",store.ptr,true);}catch{}}
+      for(const [el,rec] of store.applied||new Map()){
+        try{el.style.transition=rec.prevInline;}catch{}
+        for(const n of Object.keys(rec.prevVars||{})){try{const pv=rec.prevVars[n];if(pv)el.style.setProperty(n,pv);else el.style.removeProperty(n);}catch{}}
+      }
+      store.applied&&store.applied.clear();
+    }
+
     // ── registry (per-lane overrides) ──
     // A "lane" is one animated property of one element. For flat DOM transitions
     // a lane's id is just the property; for agent-grouped phases it is
@@ -2371,8 +2428,7 @@ import React from "https://esm.sh/react@19";
         const memberEls=new Set();
         for(const g of this.groups)for(const ph of (g.phases||[]))for(const m of (ph.members||[])){
           if(!m.selector)continue;
-          let els=[];try{els=Array.from(document.querySelectorAll(m.selector));}catch{}
-          for(const el of els)memberEls.add(el);
+          for(const el of txMemberEls(m.selector,ph.stateTarget))memberEls.add(el);
         }
         if(!memberEls.size)return;
         for(const[id,entry]of this.entries){
@@ -4490,8 +4546,14 @@ import React from "https://esm.sh/react@19";
       // ── live styling ──────────────────────────────────────────────────────
       // With playback gone, the real component IS the preview. So whenever a
       // transition has edits, mirror its effective timings onto the live
-      // element(s) as an inline `transition`, and revert when edits are cleared.
-      // Interacting with the component then animates with the edited values.
+      // element(s) and revert when edits are cleared. Interacting with the
+      // component then animates with the edited values.
+      //
+      // FLAT entries (single-state DOM transitions) are mirrored as an inline
+      // `transition` on their exact bound elements — precise and simple. GROUPED
+      // phases are NOT handled here: open and close share the same base element,
+      // so a single inline slot can't tell them apart (editing open would also
+      // change close). Phases use a state-scoped <style> instead (effect below).
       const liveAppliedRef=useRef(new Map()); // el → {prevInline, css}
       useEffect(()=>{
         if(typeof document==="undefined")return;
@@ -4504,20 +4566,13 @@ import React from "https://esm.sh/react@19";
           if(l.blur!=null)v[l.varName]=l.blur+"px";}return v;};
         const add=(els,css,vars)=>{ for(const el of els){ if(!el||(el.closest&&el.closest("[data-timeline-panel],[data-tl-ui]")))continue; desired.set(el,{css,vars:vars||{}}); } };
         for(const item of entries){
+          if(item.kind==="phase")continue; // phases handled by the state-scoped effect
           const ov=registry.getPropOverrides(item.id);
           if(!ov||!Object.keys(ov).length)continue; // only edited transitions go live
-          if(item.kind==="phase"){
-            for(const m of (item.members||[])){
-              if(!m.selector||!m.lanes||!m.lanes.length)continue;
-              let els=[];try{els=Array.from(document.querySelectorAll(m.selector));}catch{}
-              add(els,transitionLanesToCss(m.lanes),lanesToVars(m.lanes));
-            }
-          }else{
-            const lanes=item.effectiveTimings||[];
-            if(!lanes.length)continue;
-            const els=((item.bindings&&item.bindings.elements)||[]).map(w=>w.deref&&w.deref()).filter(Boolean);
-            add(els,transitionLanesToCss(lanes),lanesToVars(lanes));
-          }
+          const lanes=item.effectiveTimings||[];
+          if(!lanes.length)continue;
+          const els=((item.bindings&&item.bindings.elements)||[]).map(w=>w.deref&&w.deref()).filter(Boolean);
+          add(els,transitionLanesToCss(lanes),lanesToVars(lanes));
         }
         const varsKey=v=>Object.keys(v).sort().map(k=>k+":"+v[k]).join(";");
         // apply new / changed
@@ -4554,6 +4609,97 @@ import React from "https://esm.sh/react@19";
         for(const [el,rec] of applied){ try{el.style.transition=rec.prevInline;}catch{} for(const n of Object.keys(rec.vars||{})){try{const pv=(rec.prevVars||{})[n];if(pv)el.style.setProperty(n,pv);else el.style.removeProperty(n);}catch{}} _TX_LIVE_BASE.delete(el); }
         applied.clear();
       },[]);
+      // ── live styling: grouped phases (state-gated) ──────────────────────────
+      // Open and close of one component share the SAME element(s), so a single
+      // inline `transition` can't separate them (editing open would bend close
+      // too). And a member often lives OUTSIDE its stateTarget (a caret in the
+      // trigger, a backdrop portal'd to <body>), so a CSS descendant rule can't
+      // reach it. So we GATE on state instead: watch each phase's `stateTarget`
+      // for its destination state and apply the member's edited timing inline
+      // ONLY while that state is active, reverting otherwise:
+      //   • OPEN  (base→toState): apply while stateTarget IS in toState.
+      //   • CLOSE (fromState→base): apply while stateTarget is NOT in fromState.
+      // This works regardless of where the member sits in the DOM and keeps the
+      // two directions independent. A MutationObserver on each stateTarget (class
+      // + state data-attrs, never `style`, so no feedback) re-runs the gate;
+      // hover phases also watch pointer events. Everything reverts on teardown.
+      const livePhaseRef=useRef(null);
+      useEffect(()=>{
+        if(typeof document==="undefined")return;
+        if(livePhaseRef.current) txTeardownPhase(livePhaseRef.current);
+        const store={observers:[],ptr:null,applied:new Map(),pending:false};
+        livePhaseRef.current=store;
+        const lanesToVars=(lanes)=>{const v={};for(const l of (lanes||[])){if(!l.varName)continue;
+          if(l.scale!=null)v[l.varName]=String(l.scale);
+          if(l.blur!=null)v[l.varName]=l.blur+"px";}return v;};
+        const inUI=el=>el&&el.closest&&el.closest("[data-timeline-panel],[data-tl-ui]");
+        const safeMatches=(el,sel)=>{ if(!sel)return false; try{return el.matches(sel);}catch{return false;} };
+        const fresh=sel=>{ if(!sel)return []; try{return Array.from(document.querySelectorAll(sel)).filter(e=>!inUI(e));}catch{return [];} };
+        // Specs hold SELECTORS, not resolved elements: the stateTarget panel and
+        // members frequently unmount/remount on toggle, so we re-resolve them on
+        // every recompute to stay correct across that churn.
+        const specs=[]; const attrNames=new Set(["class"]); let anyHover=false;
+        for(const item of entries){
+          if(item.kind!=="phase")continue;
+          const ov=registry.getPropOverrides(item.id);
+          if(!ov||!Object.keys(ov).length)continue; // only edited phases go live
+          const toSuf=stateSuffix(item.toState), fromSuf=stateSuffix(item.fromState);
+          // collect attribute names referenced by the state tokens so the observer
+          // fires on e.g. data-open / aria-expanded toggles, not just class.
+          for(const suf of [toSuf,fromSuf]){const am=suf&&suf.match(/^\[([\w-]+)/);if(am)attrNames.add(am[1]);}
+          if(/:hover/.test(toSuf)||/:hover/.test(fromSuf))anyHover=true;
+          const members=[];
+          for(const m of (item.members||[])){
+            if(!m.selector||!m.lanes||!m.lanes.length)continue;
+            members.push({selector:m.selector,css:transitionLanesToCss(m.lanes),vars:lanesToVars(m.lanes)});
+          }
+          if(!members.length)continue;
+          specs.push({stateTarget:item.stateTarget||null,toSuf,fromSuf,members});
+        }
+        if(!specs.length) return ()=>txTeardownPhase(store);
+        const varsKey=v=>Object.keys(v).sort().map(k=>k+":"+v[k]).join(";");
+        const recompute=()=>{
+          const desired=new Map(); // el → {css,vars}
+          for(const sp of specs){
+            const stEls=fresh(sp.stateTarget);
+            // is THIS phase's destination state active on the stateTarget RIGHT NOW?
+            let active;
+            if(sp.toSuf) active=stEls.length?stEls.some(e=>safeMatches(e,sp.toSuf)):true;        // open
+            else if(sp.fromSuf) active=stEls.length?stEls.some(e=>!safeMatches(e,sp.fromSuf)):true; // close = not in fromState
+            else active=true; // no state info → always reflect (degrades to old behavior)
+            if(!active)continue;
+            for(const mm of sp.members) for(const el of txMemberEls(mm.selector,sp.stateTarget)){ if(inUI(el))continue; desired.set(el,{css:mm.css,vars:mm.vars}); }
+          }
+          for(const [el,d] of desired){
+            const vars=d.vars||{},vk=varsKey(vars),cur=store.applied.get(el);
+            if(cur&&cur.css===d.css&&cur.vk===vk)continue;
+            if(!cur) store.applied.set(el,{prevInline:el.style.transition||"",prevVars:Object.fromEntries(Object.keys(vars).map(n=>[n,el.style.getPropertyValue(n)])),css:d.css,vk});
+            else store.applied.set(el,{prevInline:cur.prevInline,prevVars:cur.prevVars,css:d.css,vk});
+            try{el.style.transition=d.css;}catch{}
+            for(const n of Object.keys(vars)){try{el.style.setProperty(n,vars[n]);}catch{}}
+          }
+          for(const [el,rec] of Array.from(store.applied)){
+            if(desired.has(el))continue;
+            try{el.style.transition=rec.prevInline;}catch{}
+            for(const n of Object.keys(rec.prevVars||{})){try{const pv=rec.prevVars[n];if(pv)el.style.setProperty(n,pv);else el.style.removeProperty(n);}catch{}}
+            store.applied.delete(el);
+          }
+        };
+        // Coalesce via microtask (NOT rAF): the gate must update the moment the
+        // state class/attr flips — before the browser styles the next frame — so
+        // the very first interaction animates with the edited timing, and reverts
+        // are instant even when the tab is backgrounded (rAF pauses there).
+        const queueMt=typeof queueMicrotask==="function"?queueMicrotask:(f)=>Promise.resolve().then(f);
+        const schedule=()=>{ if(store.pending)return; store.pending=true; queueMt(()=>{store.pending=false;recompute();}); };
+        // ONE observer on the document subtree: state lives on elements that may
+        // mount/unmount (panels) or just toggle a class/attr, so we watch class +
+        // the state attrs across the tree, plus childList for remounts. Never
+        // `style` → our own inline writes can't feed back. rAF-coalesced.
+        try{ const mo=new MutationObserver(schedule); mo.observe(document.body,{attributes:true,attributeFilter:Array.from(attrNames),subtree:true,childList:true}); store.observers.push(mo); }catch{}
+        if(anyHover){ const onPtr=()=>schedule(); document.addEventListener("pointerover",onPtr,true); document.addEventListener("pointerout",onPtr,true); store.ptr=onPtr; }
+        recompute(); // initial pass
+        return ()=>txTeardownPhase(store);
+      },[entries,registry]);
       const startResize=useCallback(e=>{
         e.preventDefault();
         const startY=e.clientY; const startH=panelHeight;
