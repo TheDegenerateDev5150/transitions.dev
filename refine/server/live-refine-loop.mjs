@@ -446,6 +446,10 @@ async function pollOnce() {
 
 async function loop() {
   log(`live refine loop → ${RELAY} (workspace: ${WORKSPACE})`);
+  // Announce ourselves so the relay clears any prior Stop latch — otherwise a
+  // relay that's still "stopped" from a previous panel Stop would answer our
+  // first poll with {stop:true} and we'd exit immediately.
+  try { await post("/poller/start", {}); } catch {}
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {

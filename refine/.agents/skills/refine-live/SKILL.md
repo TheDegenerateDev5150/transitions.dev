@@ -54,6 +54,19 @@ The relay reports the agent as "available" for ~120s after your last poll, so
 short pauses keep you live. A successful job always resets idle, so an active
 session never backs off.
 
+0. **Announce yourself once, before the first poll.** The relay keeps a *sticky*
+   Stop latch: after a panel **Stop** (or the idle auto-stop) it answers every
+   `GET /jobs/next` with `{"stop": true}` until a new agent explicitly resumes —
+   so a stopped session can't silently come back. Clear the latch a single time
+   at startup, then begin polling:
+
+   ```bash
+   curl -s -X POST http://localhost:7331/poller/start
+   ```
+
+   Do **not** call this again mid-loop (it would defeat a user's Stop). Only on a
+   fresh `/refine live`.
+
 1. **Claim the next job (long-poll).** This call blocks up to ~25s, then returns.
 
    ```bash
