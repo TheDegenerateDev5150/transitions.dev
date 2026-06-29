@@ -31,6 +31,7 @@ import { delimiter, join } from "node:path";
 import { refineTimings, DURATION_TOKENS, SCALE_TOKENS, BLUR_TOKENS, SMOOTH_OUT } from "./motion-tokens.mjs";
 import { buildInjectModule } from "./inject.mjs";
 import { resolveAgentCmd } from "./agent-resolve.mjs";
+import { groupDeterministic } from "./group-deterministic.mjs";
 
 const PORT = Number(process.env.REFINE_RELAY_PORT) || 7331;
 const AUTO = process.env.REFINE_AUTO !== "0";
@@ -702,6 +703,26 @@ const server = createServer(async (req, res) => {
       ? "llm"
       : (job.request.mode || (llmAvailable() ? "llm" : "deterministic"));
     job.request.mode = mode;
+
+    // Provisional grouping: for a scan, try to group the components IN-PROCESS
+    // from the CSSOM harvest the browser already sent (entry.cssRules). This is
+    // the slow part — a cold agent turn — so showing a result in <1ms here makes
+    // the panel feel instant in BOTH wired and /refine-live modes. The real agent
+    // scan still runs below and OVERWRITES this when it lands (see answerJob /
+    // POST /jobs/:id/result), so final naming/grouping stays agent-quality. When
+    // the grouper isn't confident it returns null → unchanged, agent-only flow.
+    if (job.request.kind === "scan") {
+      try {
+        const prov = groupDeterministic(job.request.raw);
+        if (prov && prov.groups && prov.groups.length) {
+          job.result = { groups: prov.groups, summary: prov.summary, provisional: true };
+          job.updatedAt = now();
+          job.statusLog.push({ message: `Grouped ${prov.groups.length} component(s) — refining names…`, at: now() });
+        }
+      } catch (e) {
+        console.warn(`  provisional grouping failed (${String((e && e.message) || e).slice(0, 120)}) — deferring to agent`);
+      }
+    }
 
     if (!AUTO) {
       // External-poller-only mode: everything waits on GET /jobs/next.

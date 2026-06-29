@@ -2686,7 +2686,7 @@
     // Shared "Connect with your agent" copy — used by the full-panel gate and by
     // the Refine area when no live agent is connected, so both read identically.
     // `cliMissing` swaps the body to an install-first hint.
-    function AgentConnectBody({cliMissing,reason,onReconnect}){
+    function AgentConnectBody({cliMissing,relayDown,reason,onReconnect}){
       const[rechecking,setRechecking]=useState(false);
       const recheck=async()=>{
         if(!onReconnect||rechecking) return;
@@ -2694,7 +2694,15 @@
         try{ await onReconnect(); } finally { setRechecking(false); }
       };
       return h(React.Fragment,null,
-        cliMissing
+        relayDown
+          // The relay isn't reachable at all — Reconnect can't help (it talks to a
+          // running relay). The only fix is starting the relay again.
+          ? h("p",{className:"tl-gate-text"},
+              "The relay isn’t running. Start it with ",
+              h("code",{className:"tl-code"},"npx transitions-refine live"),
+              " in your project (or ",h("code",{className:"tl-code"},"/refine live"),
+              " in your editor), then retry.")
+          : cliMissing
           ? h("p",{className:"tl-gate-text"},"Install an agent CLI, then run ",
               h("code",{className:"tl-code"},"npx transitions-refine live"),
               " (recommended) or ",h("code",{className:"tl-code"},"/refine live")," in your editor.")
@@ -2704,13 +2712,14 @@
               h("code",{className:"tl-code"},"/refine live"),
               " in your editor if the relay is already up without an agent wired."),
         // Surface WHY the relay couldn't wire a CLI (from /health agentReason) so a
-        // silent fall-back to poller mode is never a mystery. The relay self-heals
-        // on a TTL; Reconnect just forces an immediate re-check.
-        reason&&h("p",{className:"tl-gate-reason"},reason),
+        // silent fall-back to poller mode is never a mystery. Hidden when the relay
+        // is down (the reason is stale). The relay self-heals on a TTL; Reconnect
+        // forces an immediate re-check (or just re-probes /health if it's down).
+        !relayDown&&reason&&h("p",{className:"tl-gate-reason"},reason),
         onReconnect&&h("button",{className:"tl-gate-recheck",disabled:rechecking,onClick:recheck},
-          rechecking?"Reconnecting…":"Reconnect agent"));
+          rechecking?(relayDown?"Retrying…":"Reconnecting…"):(relayDown?"Retry connection":"Reconnect agent")));
     }
-    function RefinePanel({open,onClose,phase,label,refineType,onType,suggestions,summary,error,appliedIds,onApply,onApplyAll,mode,onMode,llmAvailable,cliInstalled,agentReason,onReconnect,onStart,lanes}){
+    function RefinePanel({open,onClose,phase,label,refineType,onType,suggestions,summary,error,appliedIds,onApply,onApplyAll,mode,onMode,llmAvailable,cliInstalled,relayDown,agentReason,onReconnect,onStart,lanes}){
       // mount-on-open; keep mounted through the panel-reveal slide-out, then unmount
       const[render,setRender]=useState(open);
       const[panelOpen,setPanelOpen]=useState(false);
@@ -2820,7 +2829,7 @@
           // /refine live makes the agent available and Start scanning works again.
           return h("div",{className:"tl-refine-center"},
             h("div",{className:"tl-refine-unavail-title"},"Connect with your agent"),
-            h(AgentConnectBody,{cliMissing:cliInstalled===false,reason:agentReason,onReconnect}));
+            h(AgentConnectBody,{cliMissing:cliInstalled===false,relayDown,reason:agentReason,onReconnect}));
         }
         const idleDescR = agentMode ? (REFINE_TYPES.find(t=>t.key===rt)||REFINE_TYPES[0]).desc : (rt==="replace"
           ? "Deterministic mode can't pick a recipe to replace the transition — switch to Agent mode for replacements."
@@ -3812,6 +3821,7 @@
       const[llmAvailable,setLlmAvailable]=useState(null); // null=unknown, true/false from /health
       const[cliInstalled,setCliInstalled]=useState(null); // null=unknown, true/false from /health
       const[agentReason,setAgentReason]=useState(null); // why no CLI is wired (/health agentReason)
+      const[relayDown,setRelayDown]=useState(false); // /health unreachable → relay not running
       // chatLoop = LLM served by the in-chat `/refine live` poll loop (pollerActive
       // and no wired REFINE_AGENT_CMD). This is the mode that bills agent turns
       // while idle, so the header shows a credit warning + Stop for it.
@@ -3833,7 +3843,7 @@
       const chatLoopRef=useRef(false);
       // probe the relay so the idle panel can show the right availability copy
       const refreshHealth=useCallback(async()=>{
-        try{const j=await relayHealth();setLlmAvailable(!!j.llmAvailable);
+        try{const j=await relayHealth();setRelayDown(false);setLlmAvailable(!!j.llmAvailable);
           setCliInstalled(j.cliInstalled==null?null:!!j.cliInstalled);
           setAgentReason(j.agentReason||null);
           const loop=!!j.pollerActive&&!j.agentCmd;
@@ -3844,7 +3854,12 @@
             chatLoopRef.current=true;setChatLoop(true);setLiveStopped(false);
           }else{chatLoopRef.current=false;setChatLoop(false);setLiveStopped(!quietStopRef.current);} // draining
           return j;}
-        catch{chatLoopRef.current=false;setLlmAvailable(false);setCliInstalled(false);setChatLoop(false);return null;}
+        // /health unreachable = the relay isn't running (the daemon a prior
+        // `npx transitions-refine live` started was reaped when the agent shell
+        // ended, etc.). DON'T claim the CLI is missing — that shows the wrong
+        // "install a CLI" copy AND a Reconnect button that POSTs to a dead relay.
+        // Flag relayDown so the gate tells the user to restart the relay instead.
+        catch{chatLoopRef.current=false;setRelayDown(true);setLlmAvailable(false);setChatLoop(false);return null;}
       },[]);
       const stopLive=useCallback(async()=>{
         quietStopRef.current=false;
@@ -4367,6 +4382,7 @@
           // resolved — lets the agent recover the opposite phase + toggled state
           // without reading source. Empty → agent falls back to source reads.
           cssRules:harvestCssHints(e)}));
+        let provisionalShown=false; // applied the relay's instant in-process grouping
         try{
           const{id}=await relayCreateJob({kind:"scan",url:location.href,raw});
           for(let i=0;i<520;i++){
@@ -4376,13 +4392,28 @@
             await new Promise(r=>setTimeout(r,i<20?120:300));
             if(scanTokenRef.current!==token)return;
             const job=await relayGetJob(id);
+            // Provisional groups: the relay grouped the CSSOM harvest in-process and
+            // attached it BEFORE the agent answered. Show it instantly so the panel
+            // never sits on "Grouping…" through a cold agent turn; the agent's final
+            // result (with polished names) overwrites it on `done` below.
+            if(job.result&&job.result.provisional&&!provisionalShown){
+              const pg=job.result.groups||[];
+              if(pg.length){registry.setGroups(pg);setScanned(true);provisionalShown=true;}
+            }
             if(job.status==="done"){
               const groups=(job.result&&job.result.groups)||[];
               if(groups.length){registry.setGroups(groups);setScanned(true);
                 try{localStorage.setItem(GROUP_STORE_KEY,JSON.stringify({groups,sig,ts:Date.now()}));}catch{}}
               groupScanRetryRef.current=0;setGroupScanState("done");if(!opts.skipSeed)autoStopAfterScan();return;}
-            if(job.status==="error"){throw new Error(job.error||"scan job errored");}
+            if(job.status==="error"){
+              // No agent answered — but if we already showed provisional groups,
+              // keep them (better than reverting to flat) and treat the scan as done.
+              if(provisionalShown){groupScanRetryRef.current=0;setGroupScanState("done");if(!opts.skipSeed)autoStopAfterScan();return;}
+              throw new Error(job.error||"scan job errored");
+            }
           }
+          // Timed out waiting for the agent: keep any provisional groups we showed.
+          if(provisionalShown){groupScanRetryRef.current=0;setGroupScanState("done");if(!opts.skipSeed)autoStopAfterScan();return;}
           throw new Error("scan timed out");
         }catch(e){
           // Transient failure (a cold-start agent spawn racing on its CLI config,
@@ -4574,13 +4605,13 @@
             h(RefinePanel,{open:refineOpen,onClose:()=>setRefineOpen(false),phase:refinePhase,label:refineLabel,
               refineType,onType:changeRefineType,suggestions:refineSuggestions,summary:refineSummary,error:refineError,
               appliedIds,onApply:applySuggestion,onApplyAll:applyAllSuggestions,
-                    mode:refineMode,onMode:changeRefineMode,llmAvailable,cliInstalled,agentReason,onReconnect:reconnectAgent,onStart:startScan,
+                    mode:refineMode,onMode:changeRefineMode,llmAvailable,cliInstalled,relayDown,agentReason,onReconnect:reconnectAgent,onStart:startScan,
                     lanes:active?.effectiveTimings||[]}))
               : h("div",{className:"tl-panel-main"},
                   gate==="blocked" && h("div",{className:"tl-gate"},
                     h("div",{className:"tl-gate-col"},
                       h("div",{className:"tl-gate-title"},"Connect with your agent"),
-                      h(AgentConnectBody,{cliMissing:cliInstalled===false,reason:agentReason,onReconnect:reconnectAgent})))),
+                      h(AgentConnectBody,{cliMissing:cliInstalled===false,relayDown,reason:agentReason,onReconnect:reconnectAgent})))),
             toast&&createPortal(
               h("div",{className:"tl-toast-wrap","data-tl-ui":"","aria-live":"polite"},
                 h("div",{className:cx("tl-toast",toast.closing&&"is-closing")},
