@@ -3036,7 +3036,7 @@
       gap: 10px;
       font-size: 14px;
       line-height: 22px;
-      color: #17181c;
+      color: var(--text-muted);
     }
     .skill-steps li { padding-left: 2px; }
     .skill-steps li::marker {
@@ -3348,10 +3348,11 @@
       position: relative;
       width: 100%;
       max-width: 620px;
-      aspect-ratio: 620 / 327;
+      aspect-ratio: 1421 / 1080;
       border-radius: 16px;
       background: var(--stage-bg);
       box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.08),
         0 10px 40px 0 rgba(0, 0, 0, 0.05),
         0 2px 2px 0 rgba(0, 0, 0, 0.02),
         0 2px 6px 0 rgba(0, 0, 0, 0.05);
@@ -3365,7 +3366,10 @@
     .hero-visual img,
     .hero-visual video {
       width: 100%;
-      height: 100%;
+      /* +1px overscan: aspect-ratio can compute a fractional container height the
+         media rounds down, leaving a hairline of background at the bottom. The
+         extra pixel is absorbed by object-fit: cover (no visible crop). */
+      height: calc(100% + 1px);
       object-fit: cover;
       display: block;
     }
@@ -3681,8 +3685,7 @@
           preload="metadata"
           aria-hidden="true"
         >
-          <source src="assets/refine-demo-light.webm" type="video/webm" />
-          <source src="assets/refine-demo-light.mp4" type="video/mp4" />
+          <source src="assets/refine-web.mp4" type="video/mp4" />
         </video>
         <video
           class="hero-video hero-video--dark"
@@ -3693,8 +3696,7 @@
           preload="metadata"
           aria-hidden="true"
         >
-          <source src="assets/refine-demo-dark.webm" type="video/webm" />
-          <source src="assets/refine-demo-dark.mp4" type="video/mp4" />
+          <source src="assets/refine-web.mp4" type="video/mp4" />
         </video>
       </div>
       <p class="hero-caption">Works with Cursor, Claude Code and Codex</p>
@@ -3708,7 +3710,7 @@
           <div class="gs-step">
             <div class="gs-step-block">
               <div class="gs-step-head">
-                <span class="gs-step-label">Terminal - with an agent CLI</span>
+                <span class="gs-step-label">Run with CLI agent</span>
               </div>
               <div class="skill-code-row">
                 <code id="cmd-cli">npx transitions-refine live</code>
@@ -3736,7 +3738,7 @@
           <div class="gs-step">
             <div class="gs-step-block">
               <div class="gs-step-head">
-                <span class="gs-step-label">In your project</span>
+                <span class="gs-step-label">Run with agent (no CLI)</span>
               </div>
               <div class="skill-code-row">
                 <code id="cmd-install">npx transitions-refine live</code>
@@ -3828,7 +3830,7 @@
             </button>
             <div class="t-acc-panel">
               <div class="t-acc-panel-inner">
-                <p>Run <code>npx transitions-refine live</code> from your project, then open your app. The panel is injected onto the running page - no install, no edits to your code. Run <code>npx transitions-refine stop</code> to remove it.</p>
+                <p>There are two ways. <strong>With a CLI agent:</strong> run <code>npx transitions-refine live</code> in your terminal - it wires your agent (Cursor CLI, Claude Code or Codex) and answers Refine jobs persistently, with no chat loop or idle credit burn. <strong>With an agent (no CLI):</strong> run <code>npx transitions-refine live</code> in your project, then <code>/refine live</code> in the editor so your agent becomes the poller. Either way the panel is injected onto the running page - no edits to your code. Run <code>npx transitions-refine stop</code> to remove it.</p>
               </div>
             </div>
           </div>

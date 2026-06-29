@@ -98,6 +98,8 @@ Like Replace, Accept needs the agent — run `/refine live` (or `--llm` / `REFIN
 | `REFINE_RELAY_PORT` | `7331` | relay port |
 | `REFINE_AGENT_CMD` | — | one-shot LLM CLI the relay spawns per job |
 | `REFINE_AGENT_TIMEOUT_MS` | `120000` | per-run timeout |
+| `REFINE_SCAN_MODEL` | `composer-2.5-fast` | cursor-agent model for the initial group scan (`""` = agent default) |
+| `REFINE_SCAN_EFFORT` | `low` | Codex reasoning effort for the scan — `minimal\|low\|medium\|high` (`""` = configured effort) |
 | `REFINE_AUTO=0` | — | disable auto-answer and wait for an external poller |
 | `window.REFINE_RELAY_URL` | injected origin | browser override for the relay URL |
 

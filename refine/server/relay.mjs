@@ -47,7 +47,15 @@ try {
 // --print), and --force (auto-allow tool calls so apply/scan don't hang on
 // approval). Append only the missing flags; leave non-cursor-agent commands alone.
 function augmentAgentCmd(cmd) {
-  if (!cmd || !/(^|\s|\/)cursor-agent(\s|$)/.test(cmd)) return cmd;
+  if (!cmd) return cmd;
+  // `codex exec` reads the prompt from stdin ONLY when given a trailing `-`
+  // (the stdin marker). The relay always pipes the prompt on stdin, so without
+  // it Codex gets no prompt and exits 1. Append `-` when it's missing (a lone
+  // `-` token, not the dashes inside flags like `--sandbox`).
+  if (/(^|\s|\/)codex(\s|$)/.test(cmd) && /(^|\s)exec(\s|$)/.test(cmd)) {
+    return /(^|\s)-(\s|$)/.test(cmd) ? cmd : `${cmd} -`;
+  }
+  if (!/(^|\s|\/)cursor-agent(\s|$)/.test(cmd)) return cmd;
   const has = (...flags) => flags.some((f) => new RegExp(`(^|\\s)${f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`).test(cmd));
   const extra = [];
   if (!has("-p", "--print")) extra.push("-p");
@@ -61,6 +69,13 @@ const AGENT_CMD = augmentAgentCmd(process.env.REFINE_AGENT_CMD || null);
 // (Opus / GPT-5.5) — forcing a fast model here keeps the initial scan snappy.
 // Override with REFINE_SCAN_MODEL=""  to fall back to the agent's default.
 const SCAN_MODEL = process.env.REFINE_SCAN_MODEL ?? "composer-2.5-fast";
+// Reasoning effort for scan jobs on Codex (cursor-agent uses SCAN_MODEL instead).
+// Grouping is a structured, near-mechanical task — the cssRules payload already
+// hands the agent the timings + state selectors — so it does NOT need deep
+// reasoning. A default-effort Codex run can take tens of seconds; "low" cuts that
+// dramatically with no grouping/naming loss. Override with REFINE_SCAN_EFFORT
+// (minimal|low|medium|high) or "" to use the agent's configured effort.
+const SCAN_EFFORT = process.env.REFINE_SCAN_EFFORT ?? "low";
 // Pin a fast model for refine (suggestion) jobs too. The motion-token vocabulary
 // is inlined into the prompt (see MOTION_TOKENS_BLOCK) so a fast model has every
 // fact it needs for the common token-tweak path — keeping suggestions snappy
@@ -82,6 +97,28 @@ function withModel(cmd, model) {
   if (!/cursor-agent/.test(cmd)) return cmd; // not cursor-agent → don't touch
   if (/(^|\s)--model(\s|=)/.test(cmd)) return cmd; // respect an explicit choice
   return cmd.replace(/^(\s*\S+)/, `$1 --model ${model}`);
+}
+
+// Speed up the SCAN job per agent — grouping is structured and doesn't need a
+// heavy model / deep reasoning:
+//   • cursor-agent → pin SCAN_MODEL (a fast model) via --model.
+//   • codex exec   → drop reasoning to SCAN_EFFORT ("low") and silence reasoning
+//     summaries (less work AND cleaner stdout for JSON parsing) via `-c` config
+//     overrides, inserted right after `exec` (before the trailing `-` stdin marker).
+// No-ops if the user already pinned a model / reasoning effort, or disabled it
+// (REFINE_SCAN_MODEL="" / REFINE_SCAN_EFFORT=""). Other CLIs are left untouched.
+function withScanSpeed(cmd) {
+  if (!cmd) return cmd;
+  let out = withModel(cmd, SCAN_MODEL); // cursor-agent fast model
+  const isCodexExec =
+    /(^|\s|\/)codex(\s|$)/.test(out) && /(^|\s)exec(\s|$)/.test(out);
+  if (isCodexExec && SCAN_EFFORT && !/model_reasoning_effort/.test(out)) {
+    out = out.replace(
+      /(^|\s)exec(\s|$)/,
+      `$1exec -c model_reasoning_effort="${SCAN_EFFORT}" -c model_reasoning_summary="none"$2`
+    );
+  }
+  return out;
 }
 const LONGPOLL_MS = Number(process.env.REFINE_LONGPOLL_MS) || 25000;
 // Grace window after a `/refine live` agent's last poll during which LLM mode is
@@ -369,6 +406,18 @@ const AGENT_RETRIES = Number.isFinite(Number(process.env.REFINE_AGENT_RETRIES))
   ? Number(process.env.REFINE_AGENT_RETRIES)
   : 2;
 
+// CLIs (Codex especially) print verbose startup WARNINGs to stderr even on
+// success — e.g. "could not create PATH aliases" and "failed to open state db"
+// (Codex literally logs "proceeding" right after). Those lines used to eat the
+// 300-char error budget, truncating away the REAL failure. Strip the known
+// noise so the genuine error surfaces; keep a generous cap.
+function cleanAgentErr(err) {
+  const noise = /could not create PATH aliases|failed to open state db|state DB at|codex_state::runtime|^\s*WARNING:|(^|\s)WARN(\s|:)/i;
+  const lines = (err || "").split(/\r?\n/).filter((l) => l.trim() && !noise.test(l));
+  const msg = lines.join("\n").trim() || (err || "").trim() || "(no stderr)";
+  return msg.slice(0, 1500);
+}
+
 function runAgentOnce(cmd, prompt, parse) {
   return new Promise((resolve, reject) => {
     const child = spawn("sh", ["-c", cmd], { stdio: ["pipe", "pipe", "pipe"] });
@@ -386,7 +435,7 @@ function runAgentOnce(cmd, prompt, parse) {
     });
     child.on("close", (code) => {
       clearTimeout(timer);
-      if (code !== 0) return reject(new Error(`agent exited ${code}: ${err.slice(0, 300)}`));
+      if (code !== 0) return reject(new Error(`agent exited ${code}: ${cleanAgentErr(err)}`));
       try {
         resolve(parse(out));
       } catch (e) {
@@ -535,7 +584,7 @@ async function answerJob(job) {
         );
       }
       job.statusLog.push({ message: "Reading components from source…", at: now() });
-      result = await runAgentCmd(withModel(AGENT_CMD, SCAN_MODEL), buildScanPrompt(job), parseScanOutput);
+      result = await runAgentCmd(withScanSpeed(AGENT_CMD), buildScanPrompt(job), parseScanOutput);
       job.result = { groups: result.groups, summary: result.summary };
       job.status = "done";
       job.updatedAt = now();
