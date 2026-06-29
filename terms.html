@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+
+  <title>Terms & License - Transitions.dev Refine</title>
+  <meta
+    name="description"
+    content="Terms and license for Transitions.dev Refine: Beta software, your agent token/credit usage, agent-written code changes, no warranty, and the MIT license."
+  />
+  <meta name="author" content="Transitions.dev" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#fdfdfd" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#070707" media="(prefers-color-scheme: dark)" />
+
+  <link rel="canonical" href="https://transitions.dev/terms.html" />
+
+  <link rel="icon" href="assets/favicon-light-mode.png?v=4" type="image/png" sizes="any" />
+  <link rel="icon" href="assets/favicon-light-mode.png?v=4" media="(prefers-color-scheme: light)" type="image/png" />
+  <link rel="icon" href="assets/favicon-darkmode.png?v=4" media="(prefers-color-scheme: dark)" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/favicon-light-mode.png?v=4" />
+  <link rel="manifest" href="site.webmanifest" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Transitions.dev" />
+  <meta property="og:url" content="https://transitions.dev/terms.html" />
+  <meta property="og:title" content="Terms & License - Transitions.dev Refine" />
+  <meta property="og:description" content="Beta software, your agent token/credit usage, agent-written code changes, no warranty, and the MIT license." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+
+  <script>
+    // Apply theme from system preference before first paint to avoid FOUC.
+    (function () {
+      try {
+        if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fdfdfd;
+      --text: #0d0d0d;
+      --text-muted: #6c6c6c;
+      --text-subtle: #767676;
+      --text-faint: #8f8f8f;
+      --text-footer-name: #4a4a4a;
+      --rule: rgba(0, 0, 0, 0.08);
+      --code-bg: rgba(0, 0, 0, 0.04);
+      --code-text: #3a3a3a;
+      --link: #0d0d0d;
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+        Consolas, monospace;
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #121212;
+      --text: #ffffff;
+      --text-muted: rgba(202, 202, 202, 0.7);
+      --text-subtle: #767676;
+      --text-faint: #8f8f8f;
+      --text-footer-name: #e9e9e9;
+      --rule: rgba(255, 255, 255, 0.1);
+      --code-bg: rgba(255, 255, 255, 0.08);
+      --code-text: #d6d6d6;
+      --link: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 16px;
+      z-index: 200;
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: var(--text);
+      color: var(--bg);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .skip-link:focus { top: 16px; }
+
+    .wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 0 24px;
+    }
+
+    /* ─── Header ──────────────────────────────────────────────── */
+    .doc-head {
+      padding: 80px 0 0;
+    }
+    .eyebrow {
+      margin: 0 0 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      color: var(--text-muted);
+    }
+    .eyebrow a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .eyebrow a:hover { color: var(--text); }
+    .beta-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 16px;
+      white-space: nowrap;
+      color: rgba(94, 94, 94, 0.8);
+      background: rgba(0, 0, 0, 0.03);
+    }
+    html[data-theme="dark"] .beta-badge {
+      color: rgba(237, 237, 237, 0.7);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+    .updated {
+      margin: 12px 0 0;
+      font-size: 13px;
+      color: var(--text-faint);
+    }
+    .lede {
+      margin: 28px 0 0;
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--text-muted);
+    }
+
+    /* ─── Sections ────────────────────────────────────────────── */
+    section {
+      padding: 36px 0 0;
+    }
+    section + section {
+      margin-top: 36px;
+      border-top: 1px solid var(--rule);
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 19px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    p {
+      margin: 0 0 14px;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text-muted);
+    }
+    p:last-child { margin-bottom: 0; }
+    strong { color: var(--text); font-weight: 600; }
+    a { color: var(--link); }
+
+    ul {
+      margin: 0 0 14px;
+      padding-left: 20px;
+    }
+    li {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.86em;
+      padding: 2px 6px;
+      border-radius: 6px;
+      background: var(--code-bg);
+      color: var(--code-text);
+    }
+
+    .license-block {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text-muted);
+    }
+    .license-block p { font-size: 14px; }
+
+    /* ─── Footer ──────────────────────────────────────────────── */
+    .footer {
+      width: 100%;
+      text-align: center;
+      margin-top: 96px;
+      padding: 0 0 32px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-faint);
+    }
+    .footer-muted { color: var(--text-faint); }
+    .footer a {
+      color: var(--text-footer-name);
+      text-decoration: none;
+    }
+    .footer a:hover { color: var(--link); }
+    .footer .sep { margin: 0 8px; opacity: 0.5; }
+
+    @media (max-width: 600px) {
+      .doc-head { padding-top: 56px; }
+      h1 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <main id="main">
+    <div class="wrap">
+      <header class="doc-head">
+        <p class="eyebrow">
+          <a href="refine.html">Transitions.dev Refine</a>
+          <span class="beta-badge">Beta</span>
+        </p>
+        <h1>Terms &amp; License</h1>
+        <p class="updated">Last updated June 2026</p>
+        <p class="lede">
+          Refine is a free, open-source tool that connects your own AI coding
+          agent to a live timeline panel. Please read these terms - especially
+          the parts about Beta status, your agent credits, and code changes -
+          before you use it.
+        </p>
+      </header>
+
+      <section>
+        <h2>Beta software</h2>
+        <p>
+          Refine is an early <strong>Beta</strong>. It is provided for
+          evaluation and everyday use, but features, commands, the panel, and
+          its behavior may change, regress, or be removed at any time without
+          notice. We make no guarantee that it will be available, stable, error-
+          free, or fit for any particular purpose.
+        </p>
+      </section>
+
+      <section>
+        <h2>Your agent token &amp; credit usage</h2>
+        <p>
+          Refine does not run its own AI model. It triggers
+          <strong>your own</strong> AI coding agent (for example Cursor, Claude
+          Code, or Codex) running in your environment. Every Refine click, and
+          any persistent session started with
+          <code>npx transitions-refine live</code> or <code>/refine live</code>,
+          consumes <strong>your</strong> provider's tokens, credits, or quota -
+          including while a live session sits idle and keeps polling.
+        </p>
+        <p>
+          You are solely responsible for that consumption and any associated
+          costs. Transitions.dev is not responsible for, and will not reimburse,
+          any tokens, credits, fees, overages, or charges incurred through your
+          use of the tool. Stop a live session when you are done (say
+          <code>stop refine</code> or run <code>npx transitions-refine stop</code>)
+          to avoid idle credit usage.
+        </p>
+      </section>
+
+      <section>
+        <h2>The agent changes your code</h2>
+        <p>
+          When you accept or apply a suggestion, the agent writes changes
+          directly into the source files of your project. Suggestions are
+          generated by an AI agent and may be incorrect, incomplete, or
+          unsuitable for your codebase.
+        </p>
+        <ul>
+          <li>Use version control and review every change (for example via <code>git diff</code>) before committing.</li>
+          <li>Keep backups of any work that matters to you.</li>
+          <li>You are responsible for everything that is committed to and shipped from your repository.</li>
+        </ul>
+        <p>You use this code-writing capability at your own risk.</p>
+      </section>
+
+      <section>
+        <h2>No warranty &amp; limitation of liability</h2>
+        <p>
+          THE SOFTWARE IS PROVIDED <strong>"AS IS"</strong>, WITHOUT WARRANTY OF
+          ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+          WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+          NONINFRINGEMENT.
+        </p>
+        <p>
+          To the maximum extent permitted by law, the authors and copyright
+          holders shall not be liable for any claim, damages, or other
+          liability - whether direct, indirect, incidental, or consequential,
+          and including lost work, lost data, or lost tokens/credits - arising
+          from or in connection with the software or its use.
+        </p>
+      </section>
+
+      <section>
+        <h2>License</h2>
+        <p>Refine is released under the MIT License.</p>
+        <div class="license-block">
+          <p>Copyright &copy; 2026 Jakub Antalik / Transitions.dev</p>
+          <p>
+            Permission is hereby granted, free of charge, to any person
+            obtaining a copy of this software and associated documentation files
+            (the "Software"), to deal in the Software without restriction,
+            including without limitation the rights to use, copy, modify, merge,
+            publish, distribute, sublicense, and/or sell copies of the Software,
+            and to permit persons to whom the Software is furnished to do so,
+            subject to the following conditions:
+          </p>
+          <p>
+            The above copyright notice and this permission notice shall be
+            included in all copies or substantial portions of the Software.
+          </p>
+          <p>
+            THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+            EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+            MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+            NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+            BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+            ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+            CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+            SOFTWARE.
+          </p>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span class="footer-muted">Made by</span>
+        <a href="https://x.com/jakubantalik" target="_blank" rel="noopener noreferrer">Jakub Antalik</a>
+        <span class="sep">&middot;</span>
+        <a href="refine.html">Refine</a>
+      </footer>
+    </div>
+  </main>
+</body>
+</html>

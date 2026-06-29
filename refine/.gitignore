@@ -4,3 +4,6 @@
 # npm pack output
 *.tgz
 node_modules/
+
+# local relay/agent run logs
+*.log

@@ -20,6 +20,23 @@ export const DURATION_TOKENS = [
 // The transitions.dev default ease-out — "Smooth ease out" in the skill.
 export const SMOOTH_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
 
+// Scales — from the skill's "## Motion tokens" Scales table. These are the
+// non-resting ("pre") scale a surface animates FROM (it always settles to 1).
+export const SCALE_TOKENS = [
+  { v: 0.96, name: "Large", usage: "modal open / close" },
+  { v: 0.97, name: "Medium", usage: "dropdown open" },
+  { v: 0.98, name: "Small", usage: "tooltip open" },
+  { v: 0.99, name: "Tiny", usage: "dropdown close" },
+];
+
+// Blur (px) — from the skill's "## Motion tokens" Blur table. The non-resting
+// blur a surface animates FROM (it always settles to 0).
+export const BLUR_TOKENS = [
+  { px: 2, name: "Small", usage: "panel reveal, icon swap, text swap, skeleton reveal, number pop-in" },
+  { px: 3, name: "Medium", usage: "page slide, text reveal" },
+  { px: 8, name: "Large", usage: "success check open" },
+];
+
 // Easing values that ARE motion tokens — leave these alone.
 const TOKEN_EASINGS = new Set(
   [
@@ -49,6 +66,54 @@ function nearestDuration(ms) {
   return { token: best, delta: bestDelta };
 }
 
+function nearestScale(v) {
+  let best = SCALE_TOKENS[0];
+  let bestDelta = Infinity;
+  for (const t of SCALE_TOKENS) {
+    const d = Math.abs(t.v - v);
+    if (d < bestDelta) { bestDelta = d; best = t; }
+  }
+  return { token: best, delta: bestDelta };
+}
+
+function nearestBlur(px) {
+  let best = BLUR_TOKENS[0];
+  let bestDelta = Infinity;
+  for (const t of BLUR_TOKENS) {
+    const d = Math.abs(t.px - px);
+    if (d < bestDelta) { bestDelta = d; best = t; }
+  }
+  return { token: best, delta: bestDelta };
+}
+
+const norm = (s) => String(s || "").toLowerCase();
+
+// Usage-aware token pick — the skill says "match on USAGE, not the nearest
+// number". Even deterministic should honour this when the label/selector/phase
+// reveal the component, so a dropdown's 0.8 pre-scale snaps to 0.97 (dropdown
+// open), not to 0.96 (the nearest number). Returns null when usage is unclear,
+// and the caller falls back to nearest-by-magnitude.
+function pickScaleByUsage(hint) {
+  const h = norm(hint);
+  if (!h) return null;
+  const isClose = /clos/.test(h);
+  if (/\bmodal\b|\bdialog\b|\blightbox\b/.test(h)) return SCALE_TOKENS.find((t) => t.v === 0.96);
+  if (/\btooltip\b|\btip\b|\bpopover\b/.test(h)) return SCALE_TOKENS.find((t) => t.v === 0.98);
+  if (/\bdropdown\b|drop-down|\bmenu\b|\bselect\b|\bcombobox\b|\bcaret\b/.test(h))
+    return SCALE_TOKENS.find((t) => t.v === (isClose ? 0.99 : 0.97));
+  return null;
+}
+
+function pickBlurByUsage(hint) {
+  const h = norm(hint);
+  if (!h) return null;
+  if (/success|check/.test(h)) return BLUR_TOKENS.find((t) => t.px === 8);
+  if (/\bpage\b|\bslide\b/.test(h)) return BLUR_TOKENS.find((t) => t.px === 3);
+  if (/text/.test(h) && /reveal/.test(h)) return BLUR_TOKENS.find((t) => t.px === 3);
+  if (/panel|icon|swap|skeleton|number|digit|reveal/.test(h)) return BLUR_TOKENS.find((t) => t.px === 2);
+  return null;
+}
+
 // A generic/non-token easing the skill would nudge toward the default ease-out.
 function shouldRefineEasing(easing) {
   const n = normEase(easing);
@@ -60,15 +125,21 @@ function shouldRefineEasing(easing) {
 
 /**
  * Produce token-alignment suggestions for a list of property timings.
- * @param {{property:string,durationMs:number,delayMs:number,easing:string}[]} timings
+ * @param {{property:string,durationMs:number,delayMs:number,easing:string,scale?:number,blur?:number,varName?:string,hint?:string}[]} timings
+ * @param {{label?:string,selector?:string,phase?:string}} [ctx] usage hints for scale/blur token selection
  * @returns {object[]} suggestions
  */
-export function refineTimings(timings) {
+export function refineTimings(timings, ctx) {
   const suggestions = [];
   if (!Array.isArray(timings)) return suggestions;
+  const c = ctx || {};
 
   for (const t of timings) {
     const prop = t.property || "all";
+    // Usage hint for scale/blur: combine the transition's label/selector/phase
+    // with this lane's own property/member so component words (dropdown, modal,
+    // page slide…) are visible to the usage matcher.
+    const hint = [c.label, c.selector, c.phase, t.hint, t.property, t.member].filter(Boolean).join(" ");
 
     // Duration → nearest token (skip if already on-grid or within 10ms).
     if (Number.isFinite(t.durationMs)) {
@@ -101,6 +172,49 @@ export function refineTimings(timings) {
         patch: { property: prop, easing: SMOOTH_OUT, ...(t.member ? { member: t.member } : {}) },
         reason: `"${t.easing}" is a generic curve. The transitions.dev standard ease-out reads more intentional on opens, closes, slides, and resizes.`,
       });
+    }
+
+    // Scale → a transitions.dev scale token (usage-first, nearest fallback). The
+    // captured value is the non-resting "pre" scale (settles to 1); skip 1/none.
+    if (Number.isFinite(t.scale) && Math.abs(t.scale - 1) > 1e-4) {
+      const usage = pickScaleByUsage(hint);
+      const { token: near, delta } = nearestScale(t.scale);
+      const token = usage || near;
+      // Suggest when usage names a token, or the current value is off-grid.
+      if (token && (usage || delta > 5e-3) && Math.abs(token.v - t.scale) > 1e-4) {
+        suggestions.push({
+          id: `${prop}-scale`,
+          kind: "scale",
+          property: prop,
+          member: t.member || null,
+          title: `Scale → ${token.name}`,
+          from: String(t.scale),
+          to: String(token.v),
+          patch: { property: prop, scale: token.v, ...(t.varName ? { varName: t.varName } : {}), ...(t.member ? { member: t.member } : {}) },
+          reason: `${token.name} (${token.v}) is the transitions.dev scale token for ${token.usage}. ${t.scale} is ${usage ? "off the usage token" : "off-grid"}.`,
+        });
+      }
+    }
+
+    // Blur → a transitions.dev blur token (usage-first, nearest fallback). The
+    // captured value is the non-resting "pre" blur (settles to 0); skip 0/none.
+    if (Number.isFinite(t.blur) && t.blur > 1e-4) {
+      const usage = pickBlurByUsage(hint);
+      const { token: near, delta } = nearestBlur(t.blur);
+      const token = usage || near;
+      if (token && (usage || delta > 0.5) && Math.abs(token.px - t.blur) > 1e-4) {
+        suggestions.push({
+          id: `${prop}-blur`,
+          kind: "blur",
+          property: prop,
+          member: t.member || null,
+          title: `Blur → ${token.name}`,
+          from: `${t.blur}px`,
+          to: `${token.px}px`,
+          patch: { property: prop, blur: token.px, ...(t.varName ? { varName: t.varName } : {}), ...(t.member ? { member: t.member } : {}) },
+          reason: `${token.name} (${token.px}px) is the transitions.dev blur token for ${token.usage}. ${t.blur}px is ${usage ? "off the usage token" : "off-grid"}.`,
+        });
+      }
     }
   }
 

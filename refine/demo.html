@@ -51,7 +51,7 @@
 
       /* transitions.dev — menu dropdown */
       --dropdown-open-dur: 250ms; --dropdown-close-dur: 150ms;
-      --dropdown-pre-scale: 0.97; --dropdown-closing-scale: 0.99;
+      --dropdown-pre-scale: 0.8; --dropdown-closing-scale: 0.99;
       --dropdown-ease: cubic-bezier(0.22, 1, 0.36, 1);
       /* transitions.dev — icon swap */
       --icon-swap-dur: 200ms; --icon-swap-blur: 2px; --icon-swap-start-scale: 0.25; --icon-swap-ease: ease-in-out;
@@ -91,15 +91,15 @@
     /* @inject-skip-start (demo-only page + sample-box styles — excluded from the injected build) */
     body {
       font-family: "Inter", system-ui, -apple-system, sans-serif;
-      background: #fafafa;
+      background: #EEEEEE;
       color: var(--c-text);
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
 
-    .demo-root { max-width: 900px; margin: 0 auto; padding: 48px 24px 120px; }
-    .demo-header { margin-bottom: 40px; }
+    .demo-root { max-width: 900px; margin: 0 auto; padding: 24px 24px 120px; }
+    .demo-header { margin-bottom: 18px; }
     .demo-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; color: #171717; }
     .demo-header p  { color: var(--c-ruler); font-size: 14px; margin-top: 6px; }
     .demo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
@@ -194,6 +194,130 @@
     @media (prefers-reduced-motion: reduce) {
       .t-morph, .t-morph-plus, .t-morph-menu { transition: none !important; }
     }
+
+    /* transitions.dev motion tokens for the extra prototypes (verbatim from
+       05-menu-dropdown.md / 06-modal.md). Demo-only — excluded from the build. */
+    :root {
+      --dropdown-open-dur: 250ms; --dropdown-close-dur: 150ms;
+      --dropdown-pre-scale: 0.8; --dropdown-closing-scale: 0.99;
+      --dropdown-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --modal-open-dur: 250ms; --modal-close-dur: 150ms;
+      --modal-scale: 0.96; --modal-scale-close: 0.96;
+      --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --modal-overlay-bg: rgba(15, 17, 21, 0.45);
+    }
+
+    /* ── prototype switcher tabs (sliding pill — 16-tabs-sliding.md) ── */
+    .proto-tabs {
+      position: relative; display: inline-flex; align-items: center; gap: 3px;
+      margin-top: 18px; padding: 3px; border-radius: 48px; background: #f1f1f1;
+    }
+    .proto-tab {
+      position: relative; appearance: none; border: 0; background: transparent;
+      height: 30px; padding: 4px 14px; border-radius: 48px; cursor: pointer;
+      font: 500 13px/1 "Inter", system-ui, sans-serif; color: rgba(15,15,15,0.6);
+      z-index: 1; transition: color var(--dropdown-open-dur) var(--dropdown-ease);
+    }
+    .proto-tab:not(.is-active):hover { color: rgba(15,15,15,0.85); }
+    .proto-tab.is-active { color: #0f0f0f; }
+    .proto-tabs-pill {
+      position: absolute; top: 3px; left: 0; height: 30px; width: 0;
+      background: #fff; border-radius: 48px; transform: translateX(0);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+      transition:
+        transform var(--dropdown-open-dur) var(--dropdown-ease),
+        width     var(--dropdown-open-dur) var(--dropdown-ease);
+      will-change: transform, width; z-index: 0; pointer-events: none;
+    }
+
+    /* ── prototype: Menu dropdown (05-menu-dropdown.md) ── */
+    .dd-stage { position: relative; min-height: 224px; display: flex; justify-content: center; padding-top: 4px; }
+    .dd { position: relative; display: inline-block; }
+    .dd-trigger {
+      display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px;
+      font: 500 14px/1 "Inter", system-ui, sans-serif; color: #1b1b1b;
+      background: #fff; border: 0; border-radius: 10px; cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), inset 0 0 0 1px rgba(0,0,0,0.06), inset 0 -1px 0 rgba(0,0,0,0.10);
+    }
+    .dd-trigger:hover { background: #f9f9f9; }
+    .dd-caret { transition: transform var(--dropdown-open-dur) var(--dropdown-ease); }
+    .dd.is-open .dd-caret { transform: rotate(180deg); }
+    /* recipe surface */
+    .t-dropdown {
+      transform-origin: top left; transform: scale(var(--dropdown-pre-scale));
+      opacity: 0; pointer-events: none;
+      transition:
+        transform var(--dropdown-open-dur) var(--dropdown-ease),
+        opacity   var(--dropdown-open-dur) var(--dropdown-ease);
+      will-change: transform, opacity;
+    }
+    .t-dropdown.is-open { transform: scale(1); opacity: 1; pointer-events: auto; }
+    .t-dropdown.is-closing {
+      transform: scale(var(--dropdown-closing-scale)); opacity: 0; pointer-events: none;
+      transition:
+        transform var(--dropdown-close-dur) var(--dropdown-ease),
+        opacity   var(--dropdown-close-dur) var(--dropdown-ease);
+    }
+    .dd-menu {
+      position: absolute; top: calc(100% + 8px); left: 0; min-width: 216px; padding: 6px;
+      background: #fff; border-radius: 12px;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.05), 0 4px 42px rgba(0,0,0,0.06);
+      z-index: 5;
+    }
+    .dd-title { padding: 6px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #9b9b9b; }
+    .dd-item {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px;
+      font: 500 13px/1 "Inter", system-ui, sans-serif; color: #2f2f2f;
+      background: transparent; border: 0; border-radius: 8px; cursor: pointer; text-align: left;
+    }
+    .dd-item:hover { background: #f4f4f5; }
+
+    /* ── prototype: Modal (06-modal.md) ── */
+    .modal-stage {
+      position: relative; height: 240px; border-radius: 12px; overflow: hidden;
+      background: #f6f7f9; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+      display: grid; place-items: center;
+    }
+    .modal-open-btn {
+      position: relative; z-index: 0; padding: 9px 16px;
+      font: 500 14px/1 "Inter", system-ui, sans-serif; color: #fff;
+      background: #171717; border: 0; border-radius: 10px; cursor: pointer;
+    }
+    .modal-backdrop {
+      position: absolute; inset: 0; z-index: 1; background: var(--modal-overlay-bg);
+      opacity: 0; pointer-events: none; cursor: pointer;
+      transition: opacity var(--modal-open-dur) var(--modal-ease);
+    }
+    .modal-backdrop.is-open { opacity: 1; pointer-events: auto; }
+    .modal-backdrop.is-closing { opacity: 0; transition: opacity var(--modal-close-dur) var(--modal-ease); }
+    .t-modal {
+      position: relative; z-index: 2; width: 264px; padding: 20px; background: #fff;
+      border-radius: 14px; box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+      transform-origin: center; transform: scale(var(--modal-scale)); opacity: 0; pointer-events: none;
+      transition:
+        transform var(--modal-open-dur) var(--modal-ease),
+        opacity   var(--modal-open-dur) var(--modal-ease);
+      will-change: transform, opacity;
+    }
+    .t-modal.is-open { transform: scale(1); opacity: 1; pointer-events: auto; }
+    .t-modal.is-closing {
+      transform: scale(var(--modal-scale-close)); opacity: 0; pointer-events: none;
+      transition:
+        transform var(--modal-close-dur) var(--modal-ease),
+        opacity   var(--modal-close-dur) var(--modal-ease);
+    }
+    .modal-card-title { font-size: 15px; font-weight: 600; color: #171717; }
+    .modal-card-body { margin-top: 6px; font-size: 13px; color: var(--c-ruler); line-height: 1.5; }
+    .modal-actions { margin-top: 18px; display: flex; justify-content: flex-end; gap: 8px; }
+    .modal-btn { padding: 8px 13px; font: 500 13px/1 "Inter", system-ui, sans-serif; border: 0; border-radius: 8px; cursor: pointer; }
+    .modal-btn.secondary { background: #f1f1f2; color: #2f2f2f; }
+    .modal-btn.secondary:hover { background: #e9e9eb; }
+    .modal-btn.primary { background: #e5484d; color: #fff; }
+    .modal-btn.primary:hover { background: #d93b40; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .proto-tabs-pill, .proto-tab, .dd-caret, .t-dropdown, .modal-backdrop, .t-modal { transition: none !important; }
+    }
     /* @inject-skip-end */
 
     /* ───────────────────── timeline panel ───────────────────── */
@@ -262,10 +386,32 @@
     .tl-pill-count.is-single { width: 20px; padding: 0; }
 
     /* ── header row ── */
+    /* container-type lets the children below respond to the header's own width
+       (the panel is full-viewport-width, so this tracks the viewport too). */
     .tl-header { flex: none; position: relative; z-index: 40; display: flex; align-items: center; gap: 8px; padding: 7.5px 14px;
-      border-bottom: 1px solid var(--c-line); }
-    .tl-header-label { font-size: 13px; font-weight: 500; line-height: 18px; color: var(--c-text-mut2); white-space: nowrap; }
-    .tl-header-count { margin-left: auto; display: inline-flex; align-items: center; font-size: 13px; line-height: 18px; color: var(--c-count); white-space: nowrap; }
+      border-bottom: 1px solid var(--c-line); container-type: inline-size; }
+    .tl-header-label { font-size: 13px; font-weight: 500; line-height: 18px; color: var(--c-text-mut2); white-space: nowrap; flex: none; }
+    /* count is the FIRST thing to give up space (high shrink) and clips to … */
+    .tl-header-count { margin-left: auto; display: inline-flex; align-items: center; font-size: 13px; line-height: 18px; color: var(--c-count); white-space: nowrap;
+      min-width: 0; flex: 0 99 auto; overflow: hidden; }
+    .tl-count-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* the transition picker truncates its name SECOND (lower shrink than count) */
+    .tl-header .tl-ghost-btn { min-width: 0; flex: 0 1 auto; }
+    .tl-ghost-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tl-header .tl-ghost-btn .tl-dim, .tl-header .tl-ghost-chev { flex: none; }
+    /* the right-hand cluster never shrinks or gets pushed off — minimize stays put */
+    .tl-header .tl-icon-btn, .tl-header .tl-sec-btn,
+    .tl-header .tl-accept-btn, .tl-header .tl-refine-btn,
+    .tl-header > .t-tt-wrap { flex: none; }
+    /* still too tight → drop the "Selected" label, then collapse Accept + Refine
+       to circular icon-only buttons (radius is already 60px → perfect circle). */
+    @container (max-width: 540px) {
+      .tl-header-label { display: none; }
+    }
+    @container (max-width: 470px) {
+      .tl-accept-btn .tl-btn-label, .tl-refine-btn .tl-btn-label { display: none; }
+      .tl-accept-btn, .tl-refine-btn { width: 36px; padding: 0; justify-content: center; gap: 0; }
+    }
 
     /* ── buttons ── */
     /* topbar buttons share a fully rounded 60px corner radius */
@@ -1289,6 +1435,41 @@
     .tl-scan-note { cursor: help; color: var(--c-count);
       display: inline-flex; align-items: center; gap: 6px; }
     .tl-scan-note .tl-dotm { width: 14px; height: 14px; }
+    .tl-scan-error { color: var(--c-warn, #c2410c); }
+    .tl-scan-error svg { flex: none; }
+    /* /refine live chip — warns the chat-loop mode bills credits while idle */
+    .tl-live-wrap { display: inline-flex; }
+    .tl-live-chip { display: inline-flex; align-items: center; gap: 6px;
+      height: 22px; padding: 0 4px 0 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; line-height: 1; cursor: help;
+      color: #b45309; background: rgba(217,119,6,0.12);
+      border: 1px solid rgba(217,119,6,0.28);
+      /* mount: token dropdown-open feel — 250ms Fast, scale 0.97, smooth ease out */
+      animation: tl-live-in 250ms cubic-bezier(0.22,1,0.36,1) both; }
+    html[data-theme="dark"] .tl-live-chip { color: #fbbf24;
+      background: rgba(251,191,36,0.13); border-color: rgba(251,191,36,0.3); }
+    .tl-live-chip.is-stopped { color: var(--c-count); background: rgba(127,127,127,0.1);
+      border-color: rgba(127,127,127,0.26); padding: 0 8px; }
+    .tl-live-chip.is-stopped svg { flex: none; }
+    .tl-live-dot { width: 7px; height: 7px; border-radius: 50%;
+      background: currentColor; flex: none;
+      animation: tl-live-pulse 1600ms linear infinite; }
+    .tl-live-stop { all: unset; cursor: pointer; font: inherit; font-size: 10px;
+      font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase;
+      color: inherit; padding: 3px 7px; border-radius: 999px;
+      background: rgba(217,119,6,0.16);
+      transition: background 150ms cubic-bezier(0.22,1,0.36,1); }
+    html[data-theme="dark"] .tl-live-stop { background: rgba(251,191,36,0.18); }
+    .tl-live-stop:hover { background: rgba(217,119,6,0.32); }
+    html[data-theme="dark"] .tl-live-stop:hover { background: rgba(251,191,36,0.34); }
+    .tl-live-stop:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+    @keyframes tl-live-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+    @keyframes tl-live-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    @media (prefers-reduced-motion: reduce) {
+      .tl-live-chip { animation: none; }
+      .tl-live-dot { animation: none; }
+      .tl-live-stop { transition: none; }
+    }
     .tl-scan-shimmer { --shimmer-dur: 2000ms; --shimmer-base: var(--c-count); --shimmer-highlight: #17181c;
       --shimmer-band: 400%; --shimmer-ease: linear; }
     /* loading status text — transitions.dev shimmer text (15) + text states swap (04) */
@@ -1345,6 +1526,7 @@
     .tl-sug-cat.is-easing   { color: #a830fd; background: rgba(173,68,247,0.06); box-shadow: inset 0 0 0 1px rgba(173,68,247,0.18); }
     .tl-sug-cat.is-duration { color: #3097fd; background: rgba(111,183,255,0.08); box-shadow: inset 0 0 0 1px rgba(48,151,253,0.18); }
     .tl-sug-cat.is-scale    { color: #26953b; background: rgba(38,149,59,0.06);  box-shadow: inset 0 0 0 1px rgba(38,149,59,0.18); }
+    .tl-sug-cat.is-blur     { color: #0e9aa7; background: rgba(14,154,167,0.07); box-shadow: inset 0 0 0 1px rgba(14,154,167,0.20); }
     .tl-sug-cat.is-distance, .tl-sug-cat.is-delay { color: #c35c00; background: rgba(247,152,68,0.06); box-shadow: inset 0 0 0 1px rgba(205,115,36,0.18); }
     .tl-sug-cat.is-replace  { color: #3097fd; background: rgba(111,183,255,0.08); box-shadow: inset 0 0 0 1px rgba(48,151,253,0.18); }
     /* content stack */
@@ -1358,6 +1540,12 @@
     .tl-sug-from { color: #7b7b7b; text-decoration: line-through; }
     .tl-sug-to { color: #1b1b1b; }
     .tl-sug-reason { font-size: 12px; font-weight: 400; line-height: 18px; color: #6d6d6d; }
+    /* "Updates Open + Close" — a recipe swap writes every related phase together */
+    .tl-sug-phases { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px;
+      font-size: 11px; font-weight: 500; line-height: 16px; color: #6d6d6d; }
+    .tl-sug-phase { display: inline-flex; align-items: baseline; gap: 4px;
+      padding: 1px 7px; border-radius: 20px; background: rgba(15,15,15,0.05); color: #4a4a4a; }
+    .tl-sug-phase-dur { font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace; color: #1b1b1b; }
     /* shared white pill button (Figma 580:757) — card Apply + bottom-bar actions */
     .tl-pill-btn { align-self: flex-start; box-sizing: border-box; display: inline-flex; align-items: center;
       justify-content: center; gap: 8px; height: 32px; padding: 6px 12px; border: none; cursor: pointer;
@@ -1654,7 +1842,10 @@
         return out;
       }
       _applyOverrides(baseLanes,po){
-        return baseLanes.map(t=>{const o=po[t.laneId];return {...t,durationMs:o?.durationMs??t.durationMs,delayMs:o?.delayMs??t.delayMs,easing:o?.easing??t.easing,spring:o?.spring??t.spring};});
+        return baseLanes.map(t=>{const o=po[t.laneId]||{};return {...t,durationMs:o.durationMs??t.durationMs,delayMs:o.delayMs??t.delayMs,easing:o.easing??t.easing,spring:o.spring??t.spring,
+          // value overrides (scale/blur) come only from applied refine suggestions;
+          // they carry their own from-value + backing var so Accept + live preview work.
+          scale:o.scale??t.scale,blur:o.blur??t.blur,varName:o.varName??t.varName,scaleFrom:o.scaleFrom??t.scaleFrom,blurFrom:o.blurFrom??t.blurFrom};});
       }
       _notify(){
         this.effectiveCache.clear();
@@ -1785,6 +1976,56 @@
         }
         return out;
       }catch{return [];}
+    }
+
+    // Read the non-resting ("pre") VALUE a lane animates from the live stylesheets:
+    // transform-scale (≠1) and filter-blur (≠0), plus the CSS custom property
+    // backing it (var-backed values are the ones we can live-preview). Returns
+    // {scale?|blur?, varName?}. Only meaningful for transform/filter lanes.
+    function readElValueHint(el, property){
+      const out={};
+      try{
+        if(!el||(property!=="transform"&&property!=="filter"))return out;
+        const own=(typeof el.className==="string"?el.className.trim().split(/\s+/):Array.from(el.classList||[])).filter(Boolean);
+        const cs=getComputedStyle(el);
+        const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+        const tokRes=own.map(c=>new RegExp("\\."+esc(c)+"(?![\\w-])"));
+        const matchTok=sel=>!own.length||tokRes.some(re=>re.test(sel));
+        let bestScale=null,bestBlur=null;
+        const consider=txt=>{
+          if(property==="transform"){
+            const tm=txt.match(/transform\s*:\s*([^;}]+)/i);
+            if(tm){const sc=tm[1].match(/scale\(\s*([^),]+)/i);
+              if(sc){const inner=sc[1].trim();const vm=inner.match(/var\(\s*(--[\w-]+)/);
+                const num=vm?parseFloat(cs.getPropertyValue(vm[1])):parseFloat(inner);
+                // pick the value furthest from the resting 1 (the real pre-scale).
+                if(Number.isFinite(num)&&Math.abs(num-1)>1e-4&&(!bestScale||Math.abs(num-1)>Math.abs(bestScale.scale-1)))
+                  bestScale={scale:num,...(vm?{varName:vm[1]}:{})};}}
+          }else{
+            const fm=txt.match(/filter\s*:\s*([^;}]+)/i);
+            if(fm){const bl=fm[1].match(/blur\(\s*([^)]+)\)/i);
+              if(bl){const inner=bl[1].trim();const vm=inner.match(/var\(\s*(--[\w-]+)/);
+                const num=vm?parseFloat(cs.getPropertyValue(vm[1])):parseFloat(inner);
+                if(Number.isFinite(num)&&num>1e-4&&(!bestBlur||num>bestBlur.blur))
+                  bestBlur={blur:num,...(vm?{varName:vm[1]}:{})};}}
+          }
+        };
+        const collect=list=>{for(const rule of Array.from(list||[])){
+          if(rule.cssRules&&rule.selectorText===undefined){collect(rule.cssRules);continue;}
+          const sel=rule.selectorText;if(!sel||!matchTok(sel))continue;
+          if(rule.cssText)consider(rule.cssText);}};
+        for(const sheet of Array.from(document.styleSheets||[])){let r;try{r=sheet.cssRules;}catch{continue;}collect(r);}
+        if(bestScale)Object.assign(out,bestScale);
+        if(bestBlur)Object.assign(out,bestBlur);
+      }catch{}
+      return out;
+    }
+    // Same, resolving the element from a CSS selector (used when only a lane's
+    // selector is known, e.g. a grouped phase member).
+    function laneValueHint(selector, property){
+      if(!selector||(property!=="transform"&&property!=="filter"))return {};
+      let el=null;try{el=document.querySelector(selector);}catch{return {};}
+      return el?readElValueHint(el,property):{};
     }
 
     // ── hooks ──
@@ -2019,38 +2260,96 @@
       ];
       return [{ id:"menu-dropdown", label:"Menu dropdown", component:null, phases }];
     }
-    // refine → deterministic, transitions.dev-token-aligned suggestions. patches
-    // derive property/member from request.timings so Apply changes a real lane.
-    // Shape mirrors relay.mjs's suggestion contract (id/kind/property/title/from/
-    // to/patch/reason, + reference on the replace card).
+    // ── deterministic motion-token engine (mirrors server/motion-tokens.mjs) ──
+    // The website demo answers Refine locally, so it must reach the SAME verdict
+    // the shipped agent would: flag ONLY values that are genuinely off the
+    // transitions.dev tokens (by usage where the skill says so). For the demo
+    // dropdown that means the lone real issue — the 0.8 pre-scale — is the
+    // suggestion, instead of a pile of tweaks for values that are already on-grid.
+    const _TX_DUR_TOKENS   = [{v:150,name:"Fast",usage:"quick state changes"},{v:250,name:"Medium",usage:"standard UI motion"},{v:400,name:"Slow",usage:"larger surfaces"}];
+    const _TX_SCALE_TOKENS = [{v:0.96,name:"Large",usage:"modal open / close"},{v:0.97,name:"Medium",usage:"dropdown open"},{v:0.98,name:"Small",usage:"tooltip open"},{v:0.99,name:"Tiny",usage:"dropdown close"}];
+    const _TX_BLUR_TOKENS  = [{v:2,name:"Small",usage:"panel reveal, icon swap, text swap"},{v:3,name:"Medium",usage:"page slide, text reveal"},{v:8,name:"Large",usage:"success check open"}];
+    const _TX_TOKEN_EASE   = new Set(["cubic-bezier(0.22,1,0.36,1)","ease-in-out","ease-out","linear","cubic-bezier(0.34,1.36,0.64,1)","cubic-bezier(0.34,3.85,0.64,1)"]);
+    const _txLc       = s=>String(s||"").toLowerCase();
+    const _txNormEase = s=>String(s||"").replace(/\s+/g,"").toLowerCase();
+    const _txNearest  = (arr,val)=>{let best=arr[0],bd=Infinity;for(const t of arr){const d=Math.abs(t.v-val);if(d<bd){bd=d;best=t;}}return{token:best,delta:bd};};
+    const _txScaleUsage = (hint)=>{const h=_txLc(hint);if(!h)return null;const close=/clos/.test(h);
+      if(/\bmodal\b|\bdialog\b|\blightbox\b/.test(h))return _TX_SCALE_TOKENS.find(t=>t.v===0.96);
+      if(/\btooltip\b|\btip\b|\bpopover\b/.test(h))return _TX_SCALE_TOKENS.find(t=>t.v===0.98);
+      if(/\bdropdown\b|drop-down|\bmenu\b|\bselect\b|\bcombobox\b|\bcaret\b/.test(h))return _TX_SCALE_TOKENS.find(t=>t.v===(close?0.99:0.97));
+      return null;};
+    const _txBlurUsage = (hint)=>{const h=_txLc(hint);if(!h)return null;
+      if(/success|check/.test(h))return _TX_BLUR_TOKENS.find(t=>t.v===8);
+      if(/\bpage\b|\bslide\b/.test(h))return _TX_BLUR_TOKENS.find(t=>t.v===3);
+      if(/text/.test(h)&&/reveal/.test(h))return _TX_BLUR_TOKENS.find(t=>t.v===3);
+      if(/panel|icon|swap|skeleton|number|digit|reveal/.test(h))return _TX_BLUR_TOKENS.find(t=>t.v===2);
+      return null;};
+    const _txRefineEasing = (e)=>{const n=_txNormEase(e);if(!n)return false;if(_TX_TOKEN_EASE.has(n))return false;return n==="ease"||n==="ease-in"||n.startsWith("cubic-bezier")||n.startsWith("linear(");};
+    // Token-faithful tweaks for one lane list (mirrors refineTimings()).
+    function _txTokenTweaks(timings, ctx){
+      const out=[]; const c=ctx||{};
+      for(const t of (timings||[])){
+        const prop=t.property||"all";
+        const member=t.member||null;
+        const hint=[c.label,c.selector,c.phase,t.property,t.member].filter(Boolean).join(" ");
+        const mp=(rest)=> member ? {member, ...rest} : rest;
+        if(Number.isFinite(t.durationMs)){const {token,delta}=_txNearest(_TX_DUR_TOKENS,t.durationMs);
+          if(delta>10)out.push({id:"mock-"+prop+"-duration",kind:"duration",property:prop,member,
+            title:"Duration → "+token.name,from:t.durationMs+"ms",to:token.v+"ms",
+            patch:mp({property:prop,durationMs:token.v}),
+            reason:token.name+" ("+token.v+"ms) is the closest motion token — used for "+token.usage+". "+t.durationMs+"ms is off-grid."});}
+        if(_txRefineEasing(t.easing))out.push({id:"mock-"+prop+"-easing",kind:"easing",property:prop,member,
+          title:"Easing → Smooth ease out",from:t.easing,to:_TX_EASE,
+          patch:mp({property:prop,easing:_TX_EASE}),
+          reason:'"'+t.easing+'" is a generic curve. The transitions.dev standard ease-out reads more intentional on opens, closes, slides, and resizes.'});
+        if(Number.isFinite(t.scale)&&Math.abs(t.scale-1)>1e-4){const usage=_txScaleUsage(hint);const {token:near,delta}=_txNearest(_TX_SCALE_TOKENS,t.scale);const token=usage||near;
+          if(token&&(usage||delta>5e-3)&&Math.abs(token.v-t.scale)>1e-4)out.push({id:"mock-"+prop+"-scale",kind:"scale",property:prop,member,
+            title:"Scale → "+token.name,from:String(t.scale),to:String(token.v),
+            patch:mp({property:prop,scale:token.v,...(t.varName?{varName:t.varName}:{})}),
+            reason:token.name+" ("+token.v+") is the transitions.dev scale token for "+token.usage+". "+t.scale+" is "+(usage?"off the usage token":"off-grid")+"."});}
+        if(Number.isFinite(t.blur)&&t.blur>1e-4){const usage=_txBlurUsage(hint);const {token:near,delta}=_txNearest(_TX_BLUR_TOKENS,t.blur);const token=usage||near;
+          if(token&&(usage||delta>0.5)&&Math.abs(token.v-t.blur)>1e-4)out.push({id:"mock-"+prop+"-blur",kind:"blur",property:prop,member,
+            title:"Blur → "+token.name,from:t.blur+"px",to:token.v+"px",
+            patch:mp({property:prop,blur:token.v,...(t.varName?{varName:t.varName}:{})}),
+            reason:token.name+" ("+token.v+"px) is the transitions.dev blur token for "+token.usage+". "+t.blur+"px is "+(usage?"off the usage token":"off-grid")+"."});}
+      }
+      return out;
+    }
+    // refine → token-faithful suggestions (same verdict the shipped agent reaches)
+    // plus the best-fit recipe for the Replace tab. patches derive property/member
+    // from request.timings so Apply changes a real lane. Shape mirrors relay.mjs's
+    // suggestion contract (id/kind/property/title/from/to/patch/reason + reference).
     function _txMockSuggestions(request){
       const t = (request && request.timings) || [];
+      const ctx = { label:(request&&request.label)||null, selector:(request&&request.selector)||null, phase:(request&&request.phase)||null };
       const p0 = (t[0]&&t[0].property) || "opacity";
       const m0 = (t[0]&&t[0].member) || null;
-      const p1 = (t[1]&&t[1].property) || p0;
-      const m1 = (t[1]&&t[1].member) || m0;
-      const from0 = _txMs(t[0]&&t[0].durationMs) || "—";
-      const fromE = (t[0]&&t[0].easing) || "ease";
       const mp = (member, rest)=> member ? {member, ...rest} : rest;
-      const suggestions=[
-        { id:"mock-dur-fast", kind:"duration", property:p0, member:m0,
-          title:"Duration → Fast", from:from0, to:"250ms",
-          patch:mp(m0,{property:p0, durationMs:250}),
-          reason:"Open motion snaps to the 250ms “medium” token — standard UI motion on transitions.dev." },
-        { id:"mock-dur-quick", kind:"duration", property:p1, member:m1,
-          title:"Duration → Quick", from:_txMs(t[1]&&t[1].durationMs)||from0, to:"150ms",
-          patch:mp(m1,{property:p1, durationMs:150}),
-          reason:"Closing feels crisper at the 150ms “fast” token — quick state changes." },
-        { id:"mock-ease-smooth", kind:"easing", property:p0, member:m0,
-          title:"Easing → Smooth ease out", from:fromE, to:_TX_EASE,
-          patch:mp(m0,{property:p0, easing:_TX_EASE}),
-          reason:"transitions.dev standard ease-out — a gentle decelerate to rest." },
-        { id:"mock-replace-menu", kind:"replace", property:p0, member:m0,
-          title:"Menu dropdown", reference:"05-menu-dropdown.md",
-          patch:mp(m0,{property:"all", durationMs:250, easing:_TX_EASE}),
-          reason:"Best-fit transitions.dev recipe (#05 Menu dropdown): scale 0.97→1 + fade, 250ms open / 150ms close on cubic-bezier(0.22, 1, 0.36, 1)." },
-      ];
-      return { suggestions, summary:"3 motion-token tweaks and 1 transitions.dev recipe match for the Menu dropdown." };
+      // motion-token tweaks: ONLY off-token values, exactly like the real engine.
+      const tweaks = _txTokenTweaks(t, ctx);
+      // related phases (open + close) → a recipe swap updates them together: one
+      // `patches` entry per phase, open slower than close (250ms / 150ms tokens).
+      const reqPhases = (request && Array.isArray(request.phases)) ? request.phases.filter(p=>p&&p.phase) : [];
+      const replacePatches = reqPhases.length>1
+        ? reqPhases.map(p=>({phase:p.phase, property:"all", durationMs:/close/i.test(p.phase)?150:250, easing:_TX_EASE, scale:/close/i.test(p.phase)?0.99:0.97}))
+        : null;
+      const replace = { id:"mock-replace-menu", kind:"replace", property:p0, member:m0,
+        title:"Menu dropdown", reference:"05-menu-dropdown.md",
+        patch:mp(m0,{property:"all", durationMs:250, easing:_TX_EASE, scale:0.97}),
+        ...(replacePatches?{patches:replacePatches}:{}),
+        reason:"Best-fit transitions.dev recipe (#05 Menu dropdown): scale 0.97→1 + fade, 250ms open / 150ms close on cubic-bezier(0.22, 1, 0.36, 1)." };
+      const suggestions=[...tweaks, replace];
+      // Scope to the requested refineType so per-tab caches merge cleanly.
+      const rt=(request&&request.refineType)||"both";
+      const scoped=rt==="replace"?suggestions.filter(s=>s.kind==="replace")
+        :rt==="small"?suggestions.filter(s=>s.kind!=="replace")
+        :suggestions;
+      const nTweak=tweaks.length;
+      const tweakWord=nTweak+" motion-token tweak"+(nTweak===1?"":"s");
+      const summary=rt==="replace"?"1 transitions.dev recipe match for the Menu dropdown."
+        :rt==="small"?(nTweak?tweakWord+" for the Menu dropdown.":"The Menu dropdown is already on-grid — no motion-token tweaks needed.")
+        :tweakWord+" and 1 transitions.dev recipe match for the Menu dropdown.";
+      return { suggestions:scoped, summary };
     }
     // statusLog so the panel's shimmer status copy has something to show.
     function _txMockLog(request, createdAt){
@@ -2064,7 +2363,9 @@
     async function relayCreateJob(request){
       if(TX_MOCK){
         const id=_txMockId();
-        _txMockJobs.set(id,{request,createdAt:Date.now()});
+        // Website demo: random 4–6s “agent work” so the scanning loader feels real.
+        const delayMs=4000+Math.floor(Math.random()*2001);
+        _txMockJobs.set(id,{request,createdAt:Date.now(),delayMs});
         return { id, status:"pending" };
       }
       const r = await fetch(RELAY_URL+"/jobs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({request})});
@@ -2077,8 +2378,8 @@
         if(!rec) return { id, status:"error", statusLog:[], result:null, error:"mock: unknown job" };
         const elapsed=Date.now()-rec.createdAt;
         const log=_txMockLog(rec.request, rec.createdAt);
-        // ~800ms simulated work: the first poll(s) see "running", then "done".
-        if(elapsed<800) return { id, status:"running", statusLog:[log[0]], result:null, error:null };
+        const wait=rec.delayMs!=null?rec.delayMs:800;
+        if(elapsed<wait) return { id, status:"running", statusLog:[log[0]], result:null, error:null };
         return { id, status:"done", statusLog:log, result:_txMockResult(rec.request), error:null };
       }
       const r = await fetch(RELAY_URL+"/jobs/"+id);
@@ -2086,10 +2387,18 @@
       return r.json();
     }
     async function relayHealth(){
-      if(TX_MOCK) return { ok:true, auto:true, llmAvailable:true, cliInstalled:true, jobs:0 };
+      if(TX_MOCK) return { ok:true, auto:true, llmAvailable:true, cliInstalled:true, agentCmd:true, pollerActive:false, jobs:0 };
       const r = await fetch(RELAY_URL+"/health");
       if(!r.ok) throw new Error("relay /health failed ("+r.status+")");
-      return r.json(); // { ok, auto, llmAvailable, jobs }
+      return r.json(); // { ok, auto, llmAvailable, pollerActive, agentCmd, cliInstalled, jobs }
+    }
+    // Ask the relay to stop the in-chat `/refine live` loop (the credit-burning
+    // poller). No-op for a wired REFINE_AGENT_CMD (it never polls /jobs/next).
+    async function relayStopLive(){
+      if(TX_MOCK) return { ok:true };
+      const r = await fetch(RELAY_URL+"/poller/stop",{method:"POST"});
+      if(!r.ok) throw new Error("relay POST /poller/stop failed ("+r.status+")");
+      return r.json();
     }
 
     const REFINE_MODES=[
@@ -2136,7 +2445,20 @@
       const matches=lanes.filter(t=>t.property===s.property&&t.member);
       if(!matches.length) return null;
       const names=[...new Set(matches.map(t=>t.member))];
-      return names.length===1?names[0]:matches[0].member;
+      if(names.length===1) return names[0];
+      // Ambiguous: several lanes share this property (e.g. a caret that rotates
+      // AND a panel that scales both animate `transform`). For a value-bearing
+      // kind, attribute to the lane that actually carries that value rather than
+      // blindly taking the first — read the live non-resting value per lane.
+      if(s.kind==="scale"||s.kind==="blur"){
+        const key=s.kind;
+        const owner=matches.find(t=>{
+          const v=laneValueHint(t.selector,t.property);
+          return key==="scale"?(v.scale!=null&&Math.abs(v.scale-1)>1e-4):(v.blur!=null&&v.blur>1e-4);
+        });
+        if(owner) return owner.member;
+      }
+      return matches[0].member;
     }
     // Apply button — "Apply" ⟷ "✓ Applied". On apply, a LEADING gray check is
     // revealed first and pushes the text to the right: .tl-apply-check tweens its
@@ -2222,7 +2544,7 @@
       const delay=(i)=>({transitionDelay:"calc(var(--stagger-stagger) * "+i+")"});
       // category chip label + color modifier, keyed by the suggestion kind
       const CAT={easing:["Easing","is-easing"],duration:["Duration","is-duration"],
-        delay:["Delay","is-delay"],scale:["Scale","is-scale"],distance:["Distance","is-distance"],
+        delay:["Delay","is-delay"],scale:["Scale","is-scale"],blur:["Blur","is-blur"],distance:["Distance","is-distance"],
         replace:["Transition replacement","is-replace"]};
       const cap=(p)=>p&&p!=="all"?p.charAt(0).toUpperCase()+p.slice(1):"";
       let i=0;
@@ -2247,8 +2569,14 @@
             h("div",{className:"tl-sug-body"},
               h("div",{className:"tl-sug-text"},
                 isReplace
-                  ? h("div",{className:"tl-sug-title"},
-                      "Current transition",h("br"),"\u2192 "+(s.title||"transition")+" from transitions.dev")
+                  ? h(React.Fragment,null,
+                      h("div",{className:"tl-sug-title"},
+                        "Current transition",h("br"),"\u2192 "+(s.title||"transition")+" from transitions.dev"),
+                      Array.isArray(s.patches)&&s.patches.length>1&&h("div",{className:"tl-sug-phases"},
+                        "Updates ",
+                        s.patches.map((pp,pi)=>h("span",{className:"tl-sug-phase",key:pi},
+                          (cap(pp.phase)||pp.phase||"Phase"),
+                          pp.durationMs!=null&&h("span",{className:"tl-sug-phase-dur"},pp.durationMs+"ms")))))
                   : h(React.Fragment,null,
                       s.title&&h("div",{className:"tl-sug-title"},s.title),
                       (s.from||s.to)&&h("div",{className:"tl-sug-delta"},
@@ -2257,6 +2585,20 @@
                 s.reason&&h("div",{className:"tl-sug-reason"},s.reason)),
               applyBtn));
         }));
+    }
+    // Shared "Connect with your agent" copy — used by the full-panel gate and by
+    // the Refine area when no live agent is connected, so both read identically.
+    // `cliMissing` swaps the body to an install-first hint.
+    function AgentConnectBody({cliMissing}){
+      return cliMissing
+        ? h("p",{className:"tl-gate-text"},"Install an agent CLI, then run ",
+            h("code",{className:"tl-code"},"npx transitions-refine live"),
+            " (recommended) or ",h("code",{className:"tl-code"},"/refine live")," in your editor.")
+        : h("p",{className:"tl-gate-text"},
+            "Run ",h("code",{className:"tl-code"},"npx transitions-refine live"),
+            " in your project to start the relay with a persistent agent — works for hours, no chat loop. Or run ",
+            h("code",{className:"tl-code"},"/refine live"),
+            " in your editor if the relay is already up without an agent wired.");
     }
     function RefinePanel({open,onClose,phase,label,refineType,onType,suggestions,summary,error,appliedIds,onApply,onApplyAll,mode,onMode,llmAvailable,cliInstalled,onStart,lanes}){
       // mount-on-open; keep mounted through the panel-reveal slide-out, then unmount
@@ -2363,12 +2705,12 @@
         }
         // idle
         if(!agentReady){
-          const cliMissing = cliInstalled===false;
+          // Same "Connect with your agent" copy as the full-panel gate, so opening
+          // Refine after a post-scan auto-stop reads identically. Re-running
+          // /refine live makes the agent available and Start scanning works again.
           return h("div",{className:"tl-refine-center"},
-            h("div",{className:"tl-refine-unavail-title"},"Agent unavailable."),
-            cliMissing
-              ? h("p",{className:"tl-refine-unavail-text"},"Install Cursor CLI by ",h("code",{className:"tl-code"},"/refine live")," command in your agent to enable live functionality.")
-              : h("p",{className:"tl-refine-unavail-text"},"Run the ",h("code",{className:"tl-code"},"/refine live")," command in your agent to enable live functionality."));
+            h("div",{className:"tl-refine-unavail-title"},"Connect with your agent"),
+            h(AgentConnectBody,{cliMissing:cliInstalled===false}));
         }
         const idleDescR = agentMode ? (REFINE_TYPES.find(t=>t.key===rt)||REFINE_TYPES[0]).desc : (rt==="replace"
           ? "Deterministic mode can't pick a recipe to replace the transition — switch to Agent mode for replacements."
@@ -2436,23 +2778,44 @@
     // originally-scanned values — the set of changes Accept writes to source.
     // Each change carries member/selector/phase context so the agent can target
     // the right state rule (e.g. .is-open vs .is-closing) for a grouped phase.
-    function computeChanges(active){
+    function computeChanges(active,allEntries){
       if(!active)return[];
-      const base=active.baseLanes||[];
-      const bmap=new Map(base.map(t=>[t.laneId,t]));
+      // Write the active phase plus — for a grouped phase — its sibling phases
+      // (open/close) so a recipe swap applied across both is saved to both. Only
+      // phases that actually have edits contribute changes, so a single-phase tweak
+      // still writes just that phase. Each change carries its own `phase`.
+      let targets=[active];
+      if(active.kind==="phase"&&active.groupId&&Array.isArray(allEntries)){
+        const sibs=allEntries.filter(e=>e.kind==="phase"&&e.groupId===active.groupId&&e.id!==active.id);
+        targets=targets.concat(sibs);
+      }
       const out=[];
-      for(const t of (active.effectiveTimings||[])){
-        const b=bmap.get(t.laneId);if(!b)continue;
-        if(t.durationMs!==b.durationMs||t.delayMs!==b.delayMs||(t.easing||"")!==(b.easing||"")){
-          out.push({property:t.property,member:t.member||null,selector:t.selector||null,
-            from:{durationMs:b.durationMs,delayMs:b.delayMs,easing:b.easing},
-            to:{durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing}});
+      for(const tgt of targets){
+        const base=tgt.baseLanes||[];
+        const bmap=new Map(base.map(t=>[t.laneId,t]));
+        for(const t of (tgt.effectiveTimings||[])){
+          const b=bmap.get(t.laneId);if(!b)continue;
+          if(t.durationMs!==b.durationMs||t.delayMs!==b.delayMs||(t.easing||"")!==(b.easing||"")){
+            out.push({property:t.property,member:t.member||null,selector:t.selector||null,phase:tgt.phase||null,
+              from:{durationMs:b.durationMs,delayMs:b.delayMs,easing:b.easing},
+              to:{durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing}});
+          }
+          // value edits (scale/blur) live as overrides on the effective lane and
+          // carry their own from-value + backing var; emit one change each.
+          if(t.scale!=null){
+            out.push({property:t.property,member:t.member||null,selector:t.selector||null,phase:tgt.phase||null,varName:t.varName||null,
+              from:{scale:t.scaleFrom},to:{scale:t.scale}});
+          }
+          if(t.blur!=null){
+            out.push({property:t.property,member:t.member||null,selector:t.selector||null,phase:tgt.phase||null,varName:t.varName||null,
+              from:{blur:t.blurFrom},to:{blur:t.blur}});
+          }
         }
       }
       return out;
     }
 
-    function Header({entries,active,onSelect,onReset,onCopy,copied,snap,setSnap,onMinimize,onRefine,refineActive,onAccept,acceptState,acceptDisabled,acceptError,scanning,onRescan,pick,setPick}){
+    function Header({entries,active,onSelect,onReset,onCopy,copied,snap,setSnap,onMinimize,onRefine,refineActive,onAccept,acceptState,acceptDisabled,acceptError,scanning,scanError,onRescan,pick,setPick,chatLoop,liveStopped,onStopLive}){
       const[setg,setSetg]=useState(false);
       // settings dropdown sub-page (main menu ↔ keyboard-shortcuts cheat sheet)
       const[settingsView,setSettingsView]=useState("main"); // "main" | "shortcuts"
@@ -2505,7 +2868,7 @@
       return h("div",{className:"tl-header"},
         h("span",{className:"tl-header-label"},"Selected"),
         h("button",{ref:pickRef,className:cx("tl-ghost-btn",pick&&"is-active"),disabled:!active,onClick:()=>setPick(v=>!v)},
-          active?h(React.Fragment,null,h("span",null,active.label),h("span",{className:"tl-dim"}," "+active.durationMs+"ms"))
+          active?h(React.Fragment,null,h("span",{className:"tl-ghost-label"},active.label),h("span",{className:"tl-dim"}," "+active.durationMs+"ms"))
                 :h("span",{className:"tl-dim"},"None"),
           h("span",{className:"tl-ghost-chev"},h(Ic,{name:"chevron"}))),
         h(Dropdown,{open:pick,onClose:()=>setPick(false),triggerRef:pickRef,width:Math.max(240,(pickRef.current&&pickRef.current.offsetWidth)||240),align:"left"},
@@ -2521,7 +2884,6 @@
                   ...fGroups.map(g=>h(React.Fragment,{key:g.id},
                     h("div",{className:"tl-menu-section"},g.label),
                     ...g.phases.map(phaseItem))),
-                  fFlat.length>0&&fGroups.length>0&&h("div",{className:"tl-menu-section"},"Ungrouped"),
                   ...fFlat.map(flatItem))),
         h("span",{className:"tl-header-count"},
           scanning
@@ -2531,7 +2893,33 @@
                   h("span",{className:"t-shimmer tl-scan-shimmer","data-text":"Agent scanning transitions…"},"Agent scanning transitions…")),
                 h("span",{className:"t-tt tl-tt-below tl-tt-msg",role:"tooltip"},
                   "Agent is working on understanding your transitions and creating grouping and naming. This usually takes a few seconds to a minute."))
-            : entries.length+" transition"+(entries.length===1?"":"s")+" found"),
+            : scanError
+              ? h("span",{className:"t-tt-wrap"},
+                  h("span",{className:"tl-scan-note tl-scan-error",tabIndex:0},
+                    h(Ic,{name:"help",size:13}),
+                    h("span",null,"Couldn’t group — agent offline")),
+                  h("span",{className:"t-tt tl-tt-below tl-tt-msg",role:"tooltip"},
+                    /refine live|REFINE_AGENT_CMD/i.test(scanError)
+                      ? scanError
+                      : scanError+" — grouping needs the agent. Run `npx transitions-refine live` (or `/refine live` in your editor)."))
+              : h("span",{className:"tl-count-text"},entries.length+" transition"+(entries.length===1?"":"s")+" found")),
+        chatLoop
+          ? h("span",{className:"t-tt-wrap tl-live-wrap"},
+              h("span",{className:"tl-live-chip",tabIndex:0},
+                h("span",{className:"tl-live-dot"}),
+                h("span",null,"Live"),
+                h("button",{className:"tl-live-stop",title:"Stop /refine live",
+                  onClick:(e)=>{e.stopPropagation();onStopLive&&onStopLive();}},"Stop")),
+              h("span",{className:"t-tt tl-tt-below tl-tt-msg",role:"tooltip"},
+                "`/refine live` is polling in your editor chat — it uses agent credits while idle. Stop it when you’re done, or it auto-stops after 10 min idle."))
+          : liveStopped
+            ? h("span",{className:"t-tt-wrap tl-live-wrap"},
+                h("span",{className:"tl-live-chip is-stopped",tabIndex:0},
+                  h(Ic,{name:"check",size:12}),
+                  h("span",null,"Live stopped")),
+                h("span",{className:"t-tt tl-tt-below tl-tt-msg",role:"tooltip"},
+                  "The `/refine live` loop was asked to stop and will exit on its next poll. Run `/refine live` again to resume."))
+            : null,
         h("button",{ref:gearRef,className:cx("tl-icon-btn",setg&&"is-active"),title:"Settings",onClick:()=>setSetg(v=>!v)},h(Ic,{name:"dotsv"})),
         h(Dropdown,{open:setg,onClose:()=>{setSetg(false);setSettingsView("main");},triggerRef:gearRef,width:240,align:"right"},
           h(SettingsSlide,{view:settingsView,
@@ -2591,14 +2979,14 @@
             acceptState==="saving"
               ? h("span",{className:"tl-accept-spin","aria-hidden":"true"})
               : h(Ic,{name:"accept"}),
-            h("span",null,acceptState==="done"?"Done":"Accept")),
+            h("span",{className:"tl-btn-label"},acceptState==="done"?"Done":"Accept")),
           h("span",{className:cx("t-tt","tl-tt-below",acceptState==="error"&&acceptError&&"tl-tt-msg"),role:"tooltip"},
             acceptState==="error"&&acceptError?acceptError
               :acceptState==="done"?"Saved to your code"
               :acceptDisabled?"No changes to save"
               :h(React.Fragment,null,"Save changes to your codebase",ttHint("A")))),
         h("span",{className:"t-tt-wrap"},
-          h("button",{className:cx("tl-refine-btn t-tt-trigger",refineActive&&"is-active"),disabled:!active,onClick:onRefine},
+          h("button",{className:cx("tl-refine-btn t-tt-trigger",refineActive&&"is-active"),disabled:!active,onClick:onRefine,"aria-label":"Refine"},
             h(Ic,{name:"wand"}),
             h("span",{className:"tl-refine-sparks","aria-hidden":"true"},
               h("i",{style:{"--ox":"-1px","--oy":"-3px","--sx":"0px","--sy":"-11px","--sd":"900ms","--sdelay":"0ms"}}),
@@ -2611,7 +2999,7 @@
               h("i",{style:{"--ox":"2px","--oy":"5px","--sx":"9px","--sy":"9px","--sd":"1000ms","--sdelay":"760ms"}}),
               h("i",{style:{"--ox":"-5px","--oy":"-2px","--sx":"-9px","--sy":"-9px","--sd":"930ms","--sdelay":"180ms"}}),
               h("i",{style:{"--ox":"3px","--oy":"1px","--sx":"12px","--sy":"1px","--sd":"980ms","--sdelay":"300ms"}})),
-            h("span",null,"Refine")),
+            h("span",{className:"tl-btn-label"},"Refine")),
           h("span",{className:"t-tt tl-tt-below",role:"tooltip"},"Refine",ttHint("R"))),
         h("span",{className:"t-tt-wrap"},
           h("button",{className:"tl-icon-btn ghost t-tt-trigger","aria-label":"Minimize",onClick:onMinimize},h(Ic,{name:"minimize"})),
@@ -3282,18 +3670,85 @@
       const[acceptError,setAcceptError]=useState(null);
       // ── grouped scan (agent reads source → Open/Close phases) ──
       const[groupScanState,setGroupScanState]=useState("idle"); // idle | scanning | done | error
+      // Whether the one-time grouping scan has produced groups. Once true the main
+      // panel stays usable even after a chat-loop agent disconnects (so the panel
+      // doesn't snap back to the gate). Seeded synchronously from a cached grouping
+      // or a host-baked seed so a returning user never flashes the gate. (Key is
+      // inlined to match GROUP_STORE_KEY, which is defined further down.)
+      const[scanned,setScanned]=useState(()=>{
+        try{
+          if(typeof window!=="undefined"&&Array.isArray(window.__TX_SEED_GROUPS)&&window.__TX_SEED_GROUPS.length)return true;
+          const c=JSON.parse(localStorage.getItem("tlGroups:"+location.pathname)||"null");
+          return !!(c&&Array.isArray(c.groups)&&c.groups.length);
+        }catch{return false;}
+      });
+      // last scan failure message (relay surfaces "needs the agent. Run /refine
+      // live …") so a failed Rescan can explain WHY nothing re-grouped instead of
+      // silently showing the same flat count.
+      const[groupScanErr,setGroupScanErr]=useState(null);
       const didGroupScanRef=useRef(false);
+      // One failed agent spawn (e.g. cursor-agent's cli-config race on cold start)
+      // shouldn't leave the panel stuck flat until a manual rescan. Allow a couple
+      // of automatic re-tries with backoff before giving up; reset on success and
+      // on manual rescan so each fresh scan gets its own retry budget.
+      const groupScanRetryRef=useRef(0);
+      const GROUP_SCAN_MAX_RETRIES=2;
       const[refineLabel,setRefineLabel]=useState(null);
       const[appliedIds,setAppliedIds]=useState({});
       const[refineMode,setRefineMode]=useState("llm"); // llm (Agent) | deterministic
       const[refineType,setRefineType]=useState("small"); // small | replace
       const[llmAvailable,setLlmAvailable]=useState(null); // null=unknown, true/false from /health
       const[cliInstalled,setCliInstalled]=useState(null); // null=unknown, true/false from /health
+      // chatLoop = LLM served by the in-chat `/refine live` poll loop (pollerActive
+      // and no wired REFINE_AGENT_CMD). This is the mode that bills agent turns
+      // while idle, so the header shows a credit warning + Stop for it.
+      const[chatLoop,setChatLoop]=useState(false);
+      const[liveStopped,setLiveStopped]=useState(false); // user hit Stop → show paused chip
+      // After a Stop, the loop stays pollerActive for its ~120s TTL while it
+      // winds down, so we can't just re-read pollerActive. stopPendingRef tracks
+      // "a stop was requested"; sawPollerGoneRef flips once the poller actually
+      // disappears, so only a poller that returns *after that* counts as a fresh
+      // `/refine live` and flips the chip back to Live. (Refs because
+      // refreshHealth is a []-deps callback and would otherwise read stale state.)
+      const stopPendingRef=useRef(false);
+      const sawPollerGoneRef=useRef(false);
+      // A quiet stop (the after-scan auto-stop) drains the loop without showing the
+      // "Live stopped" chip — it's a normal connect-for-scan, not a user Stop.
+      const quietStopRef=useRef(false);
+      // Latest chatLoop value for callbacks (runGroupScan, autoStopAfterScan) that
+      // are []-deps and would otherwise read a stale value.
+      const chatLoopRef=useRef(false);
       // probe the relay so the idle panel can show the right availability copy
       const refreshHealth=useCallback(async()=>{
         try{const j=await relayHealth();setLlmAvailable(!!j.llmAvailable);
-          setCliInstalled(j.cliInstalled==null?null:!!j.cliInstalled);return j;}
-        catch{setLlmAvailable(false);setCliInstalled(false);return null;}
+          setCliInstalled(j.cliInstalled==null?null:!!j.cliInstalled);
+          const loop=!!j.pollerActive&&!j.agentCmd;
+          if(!stopPendingRef.current){chatLoopRef.current=loop;setChatLoop(loop);setLiveStopped(false);return j;}
+          if(!j.pollerActive)sawPollerGoneRef.current=true;
+          if(loop&&sawPollerGoneRef.current){ // a fresh loop started after the stop
+            stopPendingRef.current=false;quietStopRef.current=false;
+            chatLoopRef.current=true;setChatLoop(true);setLiveStopped(false);
+          }else{chatLoopRef.current=false;setChatLoop(false);setLiveStopped(!quietStopRef.current);} // draining
+          return j;}
+        catch{chatLoopRef.current=false;setLlmAvailable(false);setCliInstalled(false);setChatLoop(false);return null;}
+      },[]);
+      const stopLive=useCallback(async()=>{
+        quietStopRef.current=false;
+        stopPendingRef.current=true;sawPollerGoneRef.current=false;
+        chatLoopRef.current=false;setLiveStopped(true);setChatLoop(false);
+        try{await relayStopLive();}catch{}
+        refreshHealth();
+      },[refreshHealth]);
+      // Quiet auto-stop after the one-time grouping scan: in chat-loop mode the
+      // loop has done its only needed job (the scan), so stop it to avoid idle
+      // credit burn. Drains like a normal stop but shows no chip; the Refine area
+      // then shows "Connect with your agent" until the user re-runs /refine live.
+      const autoStopAfterScan=useCallback(async()=>{
+        if(!chatLoopRef.current)return; // only the in-chat loop burns idle credits
+        quietStopRef.current=true;
+        stopPendingRef.current=true;sawPollerGoneRef.current=false;
+        chatLoopRef.current=false;setChatLoop(false);setLiveStopped(false);
+        try{await relayStopLive();}catch{}
       },[]);
       // a live agent = the relay reports an agent it can drive (REFINE_AGENT_CMD
       // wired OR a `/refine live` loop polling). Until then the panel is gated.
@@ -3363,30 +3818,45 @@
         refineCacheRef.current.delete(active.id+"::"+type);
         try{
           const et=active.effectiveTimings||[];
-          const timings=et.map(t=>({property:t.property,member:t.member||null,durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing}));
+          // attach the lane's non-resting scale/blur value (+ backing var) so the
+          // agent + deterministic engine can refine transform/filter VALUES too.
+          const withVal=(t)=>{const v=laneValueHint(t.selector,t.property);return {property:t.property,member:t.member||null,durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing,
+            ...(v.scale!=null?{scale:v.scale}:{}),...(v.blur!=null?{blur:v.blur}:{}),...(v.varName?{varName:v.varName}:{})};};
+          const timings=et.map(withVal);
           const selector=(active.bindings&&active.bindings.selector)||(et[0]&&et[0].selector)||null;
+          // A recipe swap (replace/both) on a grouped phase should update its related
+          // phases (open + close) together — they're one motion. Send the whole
+          // group's phases so the agent can return a per-phase `patches` array.
+          let phases;
+          if((type==="replace"||type==="both")&&active.kind==="phase"&&active.groupId){
+            const gp=entries.filter(e=>e.kind==="phase"&&e.groupId===active.groupId);
+            if(gp.length>1)phases=gp.map(e=>({phase:e.phase||e.phaseLabel||"phase",label:e.phaseLabel||e.phase||"Phase",
+              timings:(e.effectiveTimings||[]).map(withVal)}));
+          }
           const{id}=await relayCreateJob({transitionId:active.id,label:active.label,selector,
-            phase:active.phase||null,group:active.groupLabel||null,timings,mode,refineType:type});
+            phase:active.phase||null,group:active.groupLabel||null,timings,mode,refineType:type,phases});
           setRefineJobId(id);
         }catch(e){
           setRefinePhase("error");
           setRefineError(h(React.Fragment,null,"Couldn't reach the refine relay. Start it with ",h("code",{className:"tl-code"},"npx transitions-refine live"),"."));
         }
-      },[active,refineMode,refineType,llmAvailable]);
+      },[active,refineMode,refineType,llmAvailable,entries]);
       const changeRefineMode=useCallback((mode)=>{setRefineMode(mode);setRefinePhase("idle");refineCacheRef.current.clear();refreshHealth();},[refreshHealth]);
-      // Switching tabs reuses a cached scan when present; otherwise (llm only) it
-      // scans the newly-selected type on demand — the trade-off for not scanning
-      // the recipe upfront. Deterministic feeds both tabs from one "both" pass, so
-      // its tab switch is a pure filter. Before any scan (idle/error), tabs just
-      // preview copy and never auto-scan.
+      // Switching tabs reuses a cached scan when present; otherwise (llm only) the
+      // tab drops back to its idle state and waits for an explicit Start-scanning
+      // click — switching never auto-runs a scan. Deterministic feeds both tabs
+      // from one "both" pass, so its tab switch is a pure filter. Before any scan
+      // (idle/error), tabs just preview copy and never auto-scan.
       const changeRefineType=useCallback((t)=>{
         setRefineType(t);
         if(!active)return;
         if(scanModeRef.current==="deterministic")return;
         if(refinePhase!=="done"&&refinePhase!=="scanning")return;
         if(refineCacheRef.current.has(active.id+"::"+t)){applyMerged(active.id);setRefinePhase("done");return;}
-        startScan(t,{keepApplied:true});
-      },[active,refinePhase,applyMerged,startScan]);
+        // No cached result for this tab → show its idle scan button and wait for
+        // the user. (A scan in progress is left running so it can finish.)
+        if(refinePhase==="done")setRefinePhase("idle");
+      },[active,refinePhase,applyMerged]);
       // poll the relay while a job is running
       useEffect(()=>{
         if(!refineJobId||refinePhase!=="scanning")return;
@@ -3420,20 +3890,43 @@
         return()=>{live=false;if(to)clearTimeout(to);};
       },[refineJobId,refinePhase]);
       const applySuggestion=useCallback((s)=>{
-        const p=s.patch||{};if(!p.property)return;
-        const o={};
-        if(p.durationMs!=null)o.durationMs=p.durationMs;
-        if(p.delayMs!=null)o.delayMs=p.delayMs;
-        if(p.easing!=null)o.easing=p.easing;
-        // map a property patch onto the matching lane(s) — for a grouped phase the
-        // same property can appear on several members, so apply to each.
-        const et=(active&&active.effectiveTimings)||[];
-        let lanes=p.property==="all"?et:et.filter(t=>t.property===p.property);
-        if(p.member)lanes=lanes.filter(t=>(t.member===p.member||t.memberId===p.member));
-        const ids=lanes.length?lanes.map(t=>t.laneId):[p.property];
-        for(const id of ids)setPropOverride(id,o);
+        // A replace suggestion may carry `patches` (one per related phase, e.g.
+        // open + close) — a recipe swap is one motion, so applying it writes BOTH.
+        // Otherwise fall back to the single `patch` on the active phase.
+        const patches=Array.isArray(s.patches)&&s.patches.length
+          ? s.patches
+          : (s.patch&&s.patch.property?[{...s.patch,phase:(active&&active.phase)||null}]:[]);
+        if(!patches.length)return;
+        const groupId=active&&active.groupId;
+        for(const p of patches){
+          if(!p.property)continue;
+          const o={};
+          if(p.durationMs!=null)o.durationMs=p.durationMs;
+          if(p.delayMs!=null)o.delayMs=p.delayMs;
+          if(p.easing!=null)o.easing=p.easing;
+          // value edits: keep the new value, the backing var, and the from-value
+          // (parsed off the suggestion) so computeChanges can write source on Accept.
+          if(p.scale!=null){o.scale=p.scale;o.scaleFrom=(s.from!=null?parseFloat(s.from):undefined);}
+          if(p.blur!=null){o.blur=p.blur;o.blurFrom=(s.from!=null?parseFloat(s.from):undefined);}
+          if(p.varName!=null)o.varName=p.varName;
+          // resolve the phase entry this patch targets (its sibling open/close
+          // lives in the same group); default to the active entry.
+          let target=active;
+          if(p.phase&&groupId){
+            const found=entries.find(e=>e.kind==="phase"&&e.groupId===groupId&&e.phase===p.phase);
+            if(found)target=found;
+          }
+          if(!target)continue;
+          // map the property patch onto the matching lane(s) — a property can span
+          // several members in a grouped phase, so apply to each.
+          const et=target.effectiveTimings||[];
+          let lanes=p.property==="all"?et:et.filter(t=>t.property===p.property);
+          if(p.member)lanes=lanes.filter(t=>(t.member===p.member||t.memberId===p.member));
+          const ids=lanes.length?lanes.map(t=>t.laneId):[p.property];
+          for(const id of ids)registry.setPropOverride(target.id,id,o);
+        }
         setAppliedIds(prev=>({...prev,[s.id]:true}));
-      },[setPropOverride,active]);
+      },[registry,active,entries]);
       const applyAllSuggestions=useCallback(()=>{
         for(const s of refineSuggestions){if(!appliedIds[s.id])applySuggestion(s);}
       },[refineSuggestions,appliedIds,applySuggestion]);
@@ -3449,8 +3942,13 @@
       useEffect(()=>{
         if(typeof document==="undefined")return;
         const applied=liveAppliedRef.current;
-        const desired=new Map(); // el → css
-        const add=(els,css)=>{ for(const el of els){ if(!el||(el.closest&&el.closest("[data-timeline-panel],[data-tl-ui]")))continue; desired.set(el,css); } };
+        const desired=new Map(); // el → {css, vars:{name:value}}
+        // collect the var-backed scale/blur overrides on a set of lanes into a
+        // {varName: cssValue} map (scale → unitless, blur → px) for live preview.
+        const lanesToVars=(lanes)=>{const v={};for(const l of (lanes||[])){if(!l.varName)continue;
+          if(l.scale!=null)v[l.varName]=String(l.scale);
+          if(l.blur!=null)v[l.varName]=l.blur+"px";}return v;};
+        const add=(els,css,vars)=>{ for(const el of els){ if(!el||(el.closest&&el.closest("[data-timeline-panel],[data-tl-ui]")))continue; desired.set(el,{css,vars:vars||{}}); } };
         for(const item of entries){
           const ov=registry.getPropOverrides(item.id);
           if(!ov||!Object.keys(ov).length)continue; // only edited transitions go live
@@ -3458,31 +3956,40 @@
             for(const m of (item.members||[])){
               if(!m.selector||!m.lanes||!m.lanes.length)continue;
               let els=[];try{els=Array.from(document.querySelectorAll(m.selector));}catch{}
-              add(els,transitionLanesToCss(m.lanes));
+              add(els,transitionLanesToCss(m.lanes),lanesToVars(m.lanes));
             }
           }else{
             const lanes=item.effectiveTimings||[];
             if(!lanes.length)continue;
             const els=((item.bindings&&item.bindings.elements)||[]).map(w=>w.deref&&w.deref()).filter(Boolean);
-            add(els,transitionLanesToCss(lanes));
+            add(els,transitionLanesToCss(lanes),lanesToVars(lanes));
           }
         }
+        const varsKey=v=>Object.keys(v).sort().map(k=>k+":"+v[k]).join(";");
         // apply new / changed
-        for(const [el,css] of desired){
+        for(const [el,d] of desired){
+          const css=d.css,vars=d.vars||{},vk=varsKey(vars);
           const cur=applied.get(el);
-          if(cur&&cur.css===css)continue;
+          if(cur&&cur.css===css&&cur.vk===vk)continue;
           if(!cur){
             const s=getComputedStyle(el);
             const z=zipTransitionLists((s.transitionProperty||"").split(","),(s.transitionDuration||"0s").split(","),(s.transitionDelay||"0s").split(","),splitCssValues(s.transitionTimingFunction||"ease"));
             _TX_LIVE_BASE.set(el,{z});
-            applied.set(el,{prevInline:el.style.transition||"",css});
-          }else applied.set(el,{prevInline:cur.prevInline,css});
+            applied.set(el,{prevInline:el.style.transition||"",css,vars,vk,prevVars:Object.fromEntries(Object.keys(vars).map(n=>[n,el.style.getPropertyValue(n)]))});
+          }else{
+            // revert vars the new desired set no longer drives before re-applying
+            for(const n of Object.keys(cur.vars||{})){if(!(n in vars)){try{const pv=(cur.prevVars||{})[n];if(pv)el.style.setProperty(n,pv);else el.style.removeProperty(n);}catch{}}}
+            const prevVars={...(cur.prevVars||{})};for(const n of Object.keys(vars)){if(!(n in prevVars))prevVars[n]=el.style.getPropertyValue(n);}
+            applied.set(el,{prevInline:cur.prevInline,css,vars,vk,prevVars});
+          }
           try{el.style.transition=css;}catch{}
+          for(const n of Object.keys(vars)){try{el.style.setProperty(n,vars[n]);}catch{}}
         }
         // revert elements that no longer have edits
         for(const [el,rec] of Array.from(applied)){
           if(desired.has(el))continue;
           try{el.style.transition=rec.prevInline;}catch{}
+          for(const n of Object.keys(rec.vars||{})){try{const pv=(rec.prevVars||{})[n];if(pv)el.style.setProperty(n,pv);else el.style.removeProperty(n);}catch{}}
           _TX_LIVE_BASE.delete(el);
           applied.delete(el);
         }
@@ -3490,7 +3997,7 @@
       // restore everything on unmount
       useEffect(()=>()=>{
         const applied=liveAppliedRef.current;
-        for(const [el,rec] of applied){ try{el.style.transition=rec.prevInline;}catch{} _TX_LIVE_BASE.delete(el); }
+        for(const [el,rec] of applied){ try{el.style.transition=rec.prevInline;}catch{} for(const n of Object.keys(rec.vars||{})){try{const pv=(rec.prevVars||{})[n];if(pv)el.style.setProperty(n,pv);else el.style.removeProperty(n);}catch{}} _TX_LIVE_BASE.delete(el); }
         applied.clear();
       },[]);
       const startResize=useCallback(e=>{
@@ -3542,11 +4049,20 @@
           }else legacyCopy();
         }catch(e){legacyCopy();}
       },[active,showToast]);
-      const resetOverrides=useCallback(()=>{if(active)registry.clearOverride(active.id);},[registry,active]);
+      // Reset the selected transition. For a grouped phase, clear ALL of its
+      // related phases (open/close) too — a recipe swap edits them as one motion,
+      // so Reset should revert them as one.
+      const resetOverrides=useCallback(()=>{
+        if(!active)return;
+        registry.clearOverride(active.id);
+        if(active.kind==="phase"&&active.groupId){
+          for(const e of entries)if(e.kind==="phase"&&e.groupId===active.groupId&&e.id!==active.id)registry.clearOverride(e.id);
+        }
+      },[registry,active,entries]);
       // Accept → send an "apply" job so the agent writes the edited timings into
       // the user's source, then reflect saving / done / error on the button.
       const onAccept=useCallback(async()=>{
-        const changes=computeChanges(active);
+        const changes=computeChanges(active,entries);
         if(!active||!changes.length)return;
         setAcceptState("saving");setAcceptError(null);
         try{
@@ -3571,7 +4087,7 @@
           setAcceptState("error");
           setAcceptError("Couldn't reach the relay. Run: npx transitions-refine live");
         }
-      },[active]);
+      },[active,entries]);
       // reset Accept feedback when switching transitions
       useEffect(()=>{setAcceptState("idle");setAcceptError(null);},[active&&active.id]);
       // while the agent is applying changes, surface the sticky loader toast
@@ -3601,8 +4117,15 @@
       },[GROUP_STORE_KEY]);
       // monotonic token so an unmount or a newer rescan supersedes an in-flight poll
       const scanTokenRef=useRef(0);
-      const runGroupScan=useCallback(async()=>{
+      const runGroupScan=useCallback(async(opts)=>{
+        opts=opts||{};
         const token=++scanTokenRef.current;
+        // Hardcoded grouping (window.__TX_SEED_GROUPS): apply INSTANTLY on first load
+        // — no relay, no agent, no settle loop. Manual "Rescan transitions" passes
+        // skipSeed so the user gets a real agent scan instead of re-applying the bake-in.
+        const seedNow=!opts.skipSeed&&typeof window!=="undefined"&&Array.isArray(window.__TX_SEED_GROUPS)&&window.__TX_SEED_GROUPS.length?window.__TX_SEED_GROUPS:null;
+        if(seedNow){registry.setGroups(seedNow);groupScanRetryRef.current=0;setScanned(true);setGroupScanState("done");if(!opts.skipSeed)autoStopAfterScan();return;}
+        setGroupScanErr(null);
         setGroupScanState("scanning");
         // wait for the flat DOM scan to settle (count stable twice) so the agent
         // sees every transition, not a partial set discovered progressively.
@@ -3620,17 +4143,12 @@
         if(scanTokenRef.current!==token)return;
         const flat=registry.getAll().filter(e=>e.kind!=="phase");
         if(!flat.length){setGroupScanState("idle");return;}
-        // Hardcoded grouping (window.__TX_SEED_GROUPS): a host/demo page can ship a
-        // pre-computed agent grouping so the panel groups instantly with NO relay
-        // or agent round-trip. demo.html uses this to bake in the agent's scan.
-        const seed=typeof window!=="undefined"&&Array.isArray(window.__TX_SEED_GROUPS)?window.__TX_SEED_GROUPS:null;
-        if(seed&&seed.length){registry.setGroups(seed);setGroupScanState("done");return;}
         // valid cache (same content signature) → apply instantly, skip the agent.
         // A stale cache (different sig, e.g. content changed) falls through to a
         // fresh scan and is overwritten below.
         const sig=flatSig(flat);
         const cached=readGroupCache();
-        if(cached&&cached.sig===sig){registry.setGroups(cached.groups);setGroupScanState("done");return;}
+        if(cached&&cached.sig===sig){registry.setGroups(cached.groups);groupScanRetryRef.current=0;setScanned(true);setGroupScanState("done");if(!opts.skipSeed)autoStopAfterScan();return;}
         setGroupScanState("scanning");
         const raw=flat.map(e=>({label:e.label,selector:e.bindings&&e.bindings.selector,
           properties:e.properties,
@@ -3648,14 +4166,30 @@
             const job=await relayGetJob(id);
             if(job.status==="done"){
               const groups=(job.result&&job.result.groups)||[];
-              if(groups.length){registry.setGroups(groups);
+              if(groups.length){registry.setGroups(groups);setScanned(true);
                 try{localStorage.setItem(GROUP_STORE_KEY,JSON.stringify({groups,sig,ts:Date.now()}));}catch{}}
-              setGroupScanState("done");return;}
-            if(job.status==="error"){setGroupScanState("error");return;}
+              groupScanRetryRef.current=0;setGroupScanState("done");if(!opts.skipSeed)autoStopAfterScan();return;}
+            if(job.status==="error"){throw new Error(job.error||"scan job errored");}
           }
+          throw new Error("scan timed out");
+        }catch(e){
+          // Transient failure (a cold-start agent spawn racing on its CLI config,
+          // a relay blip): auto-retry a couple of times with backoff before
+          // surfacing the error, instead of leaving the panel stuck flat.
+          if(scanTokenRef.current!==token)return;
+          if(groupScanRetryRef.current<GROUP_SCAN_MAX_RETRIES){
+            groupScanRetryRef.current++;
+            const backoff=700*groupScanRetryRef.current;
+            setGroupScanState("scanning");
+            setTimeout(()=>{if(scanTokenRef.current===token)runGroupScan(opts);},backoff);
+            return;
+          }
+          // gave up → stay flat, retry next open/rescan. Keep the relay's reason
+          // (agent unavailable / run /refine live) so the header can surface it.
+          setGroupScanErr(String((e&&e.message)||e||"Scan failed"));
           setGroupScanState("error");
-        }catch(e){ setGroupScanState("error"); /* relay down → stay flat, retry next open */ }
-      },[registry,GROUP_STORE_KEY,flatSig,readGroupCache]);
+        }
+      },[registry,GROUP_STORE_KEY,flatSig,readGroupCache,autoStopAfterScan]);
       // manual "Rescan transitions" — drop the cache AND clear the in-memory
       // groups first. Once groups claim every DOM transition the snapshot has no
       // "flat" entries left, so the settle loop above would otherwise spin forever
@@ -3663,25 +4197,28 @@
       // the flat entries the agent needs to re-group.
       const rescanTransitions=useCallback(()=>{
         try{localStorage.removeItem(GROUP_STORE_KEY);}catch{}
+        groupScanRetryRef.current=0; // fresh manual scan → fresh retry budget
         registry.clearGroups();
-        runGroupScan();
+        runGroupScan({skipSeed:true});
       },[runGroupScan,GROUP_STORE_KEY,registry]);
       // Gate the auto group-scan behind a live agent: the panel stays on the
-      // "Before we start" screen until `/refine live` (or a wired REFINE_AGENT_CMD)
-      // makes the relay report an agent. The first time we see a live agent we run
-      // the resolver once — it settles the flat scan, then re-applies cached groups
-      // (signature match, no agent) or kicks off a fresh agent scan. Rescan is
-      // manual after that.
+      // "Connect with your agent" screen until `/refine live` (or a wired
+      // REFINE_AGENT_CMD) makes the relay report an agent. The first time we see a
+      // live agent we run the resolver once — it settles the flat scan, then
+      // re-applies cached groups (signature match, no agent) or kicks off a fresh
+      // agent scan. Rescan is manual after that.
       useEffect(()=>{
         // A host/demo page can hardcode a grouping via window.__TX_SEED_GROUPS so
         // the panel shows it WITHOUT a live agent (demo.html bakes in the agent's
-        // initial scan this way). Otherwise the agent group-scan stays gated behind
-        // a live agent as usual.
+        // initial scan this way). A prior cached grouping likewise lets a returning
+        // user skip the gate — apply it without a live agent. Otherwise the agent
+        // group-scan stays gated behind a live agent as usual.
         const seeded=typeof window!=="undefined"&&Array.isArray(window.__TX_SEED_GROUPS)&&window.__TX_SEED_GROUPS.length;
-        if((!live&&!seeded)||didGroupScanRef.current)return;
+        const cachedExists=!!readGroupCache();
+        if((!live&&!seeded&&!cachedExists)||didGroupScanRef.current)return;
         didGroupScanRef.current=true;
         runGroupScan();
-      },[live,runGroupScan]);
+      },[live,runGroupScan,readGroupCache]);
       useEffect(()=>()=>{scanTokenRef.current++;},[]);
 
       // whole-component open/close uses the transitions.dev panel reveal:
@@ -3744,7 +4281,7 @@
         panelHotRef.current=hoveredRef.current||!!(el&&document.activeElement&&el.contains(document.activeElement));
       },[]);
       const kbdRef=useRef({});
-      kbdRef.current={entries,active,acceptState,acceptDisabled:computeChanges(active).length===0,minimized,
+      kbdRef.current={entries,active,acceptState,acceptDisabled:computeChanges(active,entries).length===0,minimized,
         openRefine,resetOverrides,copyValues,onAccept,setActiveId,setMinimized,setPickOpen};
       useEffect(()=>{
         const onKey=e=>{
@@ -3798,9 +4335,12 @@
         window.addEventListener("keydown",onKey);
         return()=>window.removeEventListener("keydown",onKey);
       },[recomputeHot]);
-      const gate = !live
-        ? (llmAvailable===null ? "loading" : "blocked")
-        : "ready";
+      // Ready once a live agent is connected OR the one-time grouping scan has
+      // produced groups (so the panel stays usable after a chat-loop agent
+      // auto-stops post-scan). Only an un-scanned, agent-less panel shows the gate.
+      const gate = (live || scanned)
+        ? "ready"
+        : (llmAvailable===null ? "loading" : "blocked");
       return h(React.Fragment,null,
         render&&h("div",{className:"t-panel-slide","data-timeline-panel":true,ref:panelRootRef,
             onMouseEnter:()=>{hoveredRef.current=true;},onMouseLeave:()=>{hoveredRef.current=false;},
@@ -3812,8 +4352,10 @@
             h("div",{className:"tl-panel-main"},
               h(Header,{entries,active,onSelect:setActiveId,onReset:resetOverrides,onCopy:copyValues,copied,
                 snap,setSnap,onMinimize:()=>setMinimized(true),onRefine:openRefine,refineActive:refineOpen,
-                onAccept,acceptState,acceptDisabled:computeChanges(active).length===0,acceptError,
-                scanning:groupScanState==="scanning",onRescan:rescanTransitions,pick:pickOpen,setPick:setPickOpen}),
+                onAccept,acceptState,acceptDisabled:computeChanges(active,entries).length===0,acceptError,
+                scanning:groupScanState==="scanning",scanError:groupScanState==="error"?groupScanErr:null,
+                onRescan:rescanTransitions,pick:pickOpen,setPick:setPickOpen,
+                chatLoop,liveStopped,onStopLive:stopLive}),
               active
                 ?h(Body,{entry:active,onPropChange:(prop,o)=>setPropOverride(prop,o),snap})
                 :h("div",{className:"tl-empty"},"Select a transition to inspect and edit it")),
@@ -3825,10 +4367,8 @@
               : h("div",{className:"tl-panel-main"},
                   gate==="blocked" && h("div",{className:"tl-gate"},
                     h("div",{className:"tl-gate-col"},
-                      h("div",{className:"tl-gate-title"},"Before we start"),
-                      h("p",{className:"tl-gate-text"},
-                        "Please run the ",h("code",{className:"tl-code"},"/refine live"),
-                        " command in your agent to enable live features, such as scanning and refining transitions.")))),
+                      h("div",{className:"tl-gate-title"},"Connect with your agent"),
+                      h(AgentConnectBody,{cliMissing:cliInstalled===false})))),
             toast&&createPortal(
               h("div",{className:"tl-toast-wrap","data-tl-ui":"","aria-live":"polite"},
                 h("div",{className:cx("tl-toast",toast.closing&&"is-closing")},
@@ -3847,12 +4387,12 @@
     }
 
     // ── demo boxes ──
-    // Hardcoded grouping — the transitions.dev agent's initial scan of this demo
-    // (run once via the live relay), baked in so the panel groups the morph
-    // instantly with NO relay/agent round-trip. Member labels are cleaned up from
-    // the agent's output ("Morph container"→"Container", "Morph menu"→"Menu panel").
-    // Edit here if the morph's transitions change, or delete window.__TX_SEED_GROUPS
-    // to fall back to a live agent scan. Shape mirrors relay.mjs buildScanPrompt's
+    // Hardcoded groupings — the transitions.dev agent's initial scan of each
+    // prototype, baked in so the panel groups instantly with NO relay/agent
+    // round-trip. The active prototype's seed is written to window.__TX_SEED_GROUPS
+    // by App (PROTO_SEEDS map below). Member labels are cleaned up from the agent's
+    // output. Edit here if a prototype's transitions change, or clear the seed to
+    // fall back to a live agent scan. Shape mirrors relay.mjs buildScanPrompt's
     // groups[] (the same structure TransitionRegistry.setGroups consumes). This is
     // below the inject CUT_MARKER, so it never ships in the injected/website build.
     const _mEO="cubic-bezier(0.22, 1, 0.36, 1)";    // smooth ease-out (open)
@@ -3879,7 +4419,39 @@
           {id:"morph-item-bg",label:"Menu item",selector:".t-morph-menu button.morph-item",propertyTimings:[
             _mpt("background",120,"ease")]}]}]},
     ];
-    if(typeof window!=="undefined")window.__TX_SEED_GROUPS=MORPH_SEED_GROUPS;
+    // Menu dropdown (05-menu-dropdown.md) — the surface scales+fades from its
+    // trigger; the caret flips. Close runs shorter and dips to a smaller scale.
+    const DROPDOWN_SEED_GROUPS=[
+      {id:"dropdown",label:"Menu dropdown",component:null,phases:[
+        {id:"dropdown:open",phase:"open",label:"Open",stateTarget:".t-dropdown",fromState:null,toState:".is-open",members:[
+          {id:"dd-caret",label:"Caret",selector:".dd-caret",propertyTimings:[
+            _mpt("transform",250,_mEO)]},
+          {id:"dd-menu",label:"Menu",selector:".t-dropdown",propertyTimings:[
+            _mpt("transform",250,_mEO),_mpt("opacity",250,_mEO)]}]},
+        {id:"dropdown:close",phase:"close",label:"Close",stateTarget:".t-dropdown",fromState:".is-open",toState:null,members:[
+          {id:"dd-caret",label:"Caret",selector:".dd-caret",propertyTimings:[
+            _mpt("transform",250,_mEO)]},
+          {id:"dd-menu",label:"Menu",selector:".t-dropdown",propertyTimings:[
+            _mpt("transform",150,_mEO),_mpt("opacity",150,_mEO)]}]}]},
+    ];
+    // Modal (06-modal.md) — the dialog scales up from center over a fading
+    // backdrop; close dips back down. Both phases share the standard ease-out.
+    const MODAL_SEED_GROUPS=[
+      {id:"modal",label:"Modal",component:null,phases:[
+        {id:"modal:open",phase:"open",label:"Open",stateTarget:".t-modal",fromState:null,toState:".is-open",members:[
+          {id:"modal-backdrop",label:"Backdrop",selector:".modal-backdrop",propertyTimings:[
+            _mpt("opacity",250,_mEO)]},
+          {id:"modal-dialog",label:"Dialog",selector:".t-modal",propertyTimings:[
+            _mpt("transform",250,_mEO),_mpt("opacity",250,_mEO)]}]},
+        {id:"modal:close",phase:"close",label:"Close",stateTarget:".t-modal",fromState:".is-open",toState:null,members:[
+          {id:"modal-backdrop",label:"Backdrop",selector:".modal-backdrop",propertyTimings:[
+            _mpt("opacity",150,_mEO)]},
+          {id:"modal-dialog",label:"Dialog",selector:".t-modal",propertyTimings:[
+            _mpt("transform",150,_mEO),_mpt("opacity",150,_mEO)]}]}]},
+    ];
+    // Active prototype → seed. App writes window.__TX_SEED_GROUPS[proto] before the
+    // (remounted) panel runs its group scan, so each tab groups agent-free.
+    const PROTO_SEEDS={morph:MORPH_SEED_GROUPS,dropdown:DROPDOWN_SEED_GROUPS,modal:MODAL_SEED_GROUPS};
 
     // Plus → menu morph — transitions.dev (20-plus-menu-morph.md). The trigger
     // button morphs into the panel it opens; CSS owns the morph, JS only flips
@@ -3910,6 +4482,100 @@
               onClick:e=>{e.stopPropagation();setOpen(v=>!v);}},
               h("svg",{width:20,height:20,viewBox:"0 0 20 20",fill:"none"},
                 h("path",{d:"M10 4.5v11M4.5 10h11",stroke:"currentColor","strokeWidth":1.8,"strokeLinecap":"round"}))))));
+    }
+
+    // Menu dropdown — transitions.dev (05-menu-dropdown.md). The .t-dropdown surface
+    // owns the scale+fade; close swaps .is-open for .is-closing, then drops the class
+    // after --dropdown-close-dur so the closing scale animates before it resets.
+    function BoxDropdown(){
+      const[open,setOpen]=useState(false);
+      const[closing,setClosing]=useState(false);
+      const ref=useRef(null), toRef=useRef(null);
+      const close=useCallback(()=>{
+        setOpen(false);setClosing(true);
+        if(toRef.current)clearTimeout(toRef.current);
+        toRef.current=setTimeout(()=>setClosing(false),150);
+      },[]);
+      const toggle=useCallback(()=>{setOpen(o=>{if(o){close();return false;}setClosing(false);return true;});},[close]);
+      useEffect(()=>{
+        const onDoc=e=>{if(ref.current&&!ref.current.contains(e.target))close();};
+        const onKey=e=>{if(e.key==="Escape")close();};
+        document.addEventListener("click",onDoc);
+        document.addEventListener("keydown",onKey);
+        return()=>{document.removeEventListener("click",onDoc);document.removeEventListener("keydown",onKey);if(toRef.current)clearTimeout(toRef.current);};
+      },[close]);
+      const item=(label,icon)=>h("button",{className:"dd-item",type:"button",onClick:close},
+        h(Ic,{name:icon,size:16}),label);
+      return h("div",{className:"card"},
+        h("h2",null,"Menu dropdown"),
+        h("p",null,"Click Menu. The panel grows from its trigger with a scale + fade and the caret flips. Closing runs shorter and dips to a smaller scale."),
+        h("div",{className:"dd-stage"},
+          h("div",{className:cx("dd",open&&"is-open"),ref},
+            h("button",{className:"dd-trigger",type:"button","aria-haspopup":"menu","aria-expanded":String(open),
+              onClick:e=>{e.stopPropagation();toggle();}},
+              "Menu",
+              h("svg",{className:"dd-caret",width:14,height:14,viewBox:"0 0 16 16",fill:"none","aria-hidden":"true"},
+                h("path",{d:"M4 6l4 4 4-4",stroke:"currentColor","strokeWidth":1.6,"strokeLinecap":"round","strokeLinejoin":"round"}))),
+            h("div",{className:cx("t-dropdown","dd-menu",open&&"is-open",closing&&"is-closing"),"data-origin":"top-left",role:"menu","aria-hidden":String(!open)},
+              h("div",{className:"dd-title"},"Actions"),
+              item("New file","copy"),
+              item("Refresh","restart"),
+              item("Settings","gear")))));
+    }
+
+    // Modal — transitions.dev (06-modal.md). The .t-modal dialog scales up from
+    // center over a fading .modal-backdrop; same close-then-cleanup pattern as the
+    // dropdown. Scoped to the stage (not full-viewport) so it stays in the scan root.
+    function BoxModal(){
+      const[open,setOpen]=useState(false);
+      const[closing,setClosing]=useState(false);
+      const toRef=useRef(null);
+      const close=useCallback(()=>{
+        setOpen(false);setClosing(true);
+        if(toRef.current)clearTimeout(toRef.current);
+        toRef.current=setTimeout(()=>setClosing(false),150);
+      },[]);
+      const openIt=useCallback(()=>{setClosing(false);setOpen(true);},[]);
+      useEffect(()=>{
+        const onKey=e=>{if(e.key==="Escape")close();};
+        document.addEventListener("keydown",onKey);
+        return()=>{document.removeEventListener("keydown",onKey);if(toRef.current)clearTimeout(toRef.current);};
+      },[close]);
+      const st=(base)=>cx(base,open&&"is-open",closing&&"is-closing");
+      return h("div",{className:"card"},
+        h("h2",null,"Modal"),
+        h("p",null,"Open the dialog. It scales up from 0.96 over a fading backdrop; closing dips back down. Click the backdrop or press Escape to dismiss."),
+        h("div",{className:"modal-stage"},
+          h("button",{className:"modal-open-btn",type:"button",onClick:openIt},"Open dialog"),
+          h("div",{className:st("modal-backdrop"),onClick:close,"aria-hidden":"true"}),
+          h("div",{className:st("t-modal"),role:"dialog","aria-modal":"true","aria-hidden":String(!open)},
+            h("div",{className:"modal-card-title"},"Delete project?"),
+            h("div",{className:"modal-card-body"},"This permanently removes the project and all of its files. This action can\u2019t be undone."),
+            h("div",{className:"modal-actions"},
+              h("button",{className:"modal-btn secondary",type:"button",onClick:close},"Cancel"),
+              h("button",{className:"modal-btn primary",type:"button",onClick:close},"Delete")))));
+    }
+
+    // Prototype switcher — sliding-pill tabs (16-tabs-sliding.md). JS measures the
+    // active tab's offsetLeft/Width onto the pill; CSS tweens. First paint + resize
+    // snap without a transition; only a user switch animates.
+    function ProtoTabs({value,onChange,items}){
+      const pillRef=useRef(null), tabRefs=useRef({}), firstRef=useRef(true);
+      const place=useCallback((animate)=>{
+        const t=tabRefs.current[value], pill=pillRef.current;
+        if(!t||!pill)return;
+        if(!animate){const prev=pill.style.transition;pill.style.transition="none";
+          pill.style.transform="translateX("+t.offsetLeft+"px)";pill.style.width=t.offsetWidth+"px";
+          void pill.offsetWidth;pill.style.transition=prev;}
+        else{pill.style.transform="translateX("+t.offsetLeft+"px)";pill.style.width=t.offsetWidth+"px";}
+      },[value]);
+      useLayoutEffect(()=>{place(firstRef.current?false:true);firstRef.current=false;},[value,place]);
+      useEffect(()=>{const onR=()=>place(false);window.addEventListener("resize",onR);return()=>window.removeEventListener("resize",onR);},[place]);
+      return h("div",{className:"proto-tabs",role:"tablist"},
+        h("span",{className:"proto-tabs-pill","aria-hidden":"true",ref:pillRef}),
+        items.map(it=>h("button",{key:it.key,role:"tab",type:"button","aria-selected":String(value===it.key),
+          className:cx("proto-tab",value===it.key&&"is-active"),ref:el=>{tabRefs.current[it.key]=el;},
+          onClick:()=>onChange(it.key)},it.label)));
     }
 
     // ── live controls for the whole-panel reveal transition (demo harness) ──
@@ -4011,9 +4677,25 @@
       );
     }
 
+    // Prototypes the demo can switch between. Each owns a component + a description
+    // + a baked-in seed grouping (PROTO_SEEDS) so the panel groups it agent-free.
+    const PROTOS=[
+      {key:"morph",   label:"Morph menu", comp:BoxMorph,    desc:"the plus \u2192 menu morph"},
+      {key:"dropdown",label:"Dropdown",   comp:BoxDropdown, desc:"an anchored menu dropdown"},
+      {key:"modal",   label:"Modal",      comp:BoxModal,    desc:"a centered modal dialog"},
+    ];
     function App(){
-      const rootRef=useRef(null);const registry=useMemo(()=>new TransitionRegistry(),[]);const[activeId,setActiveId]=useState(null);
-      useEffect(()=>{const root=rootRef.current??document.body;const scanner=new DomScanner(root,registry);scanner.start();return()=>{scanner.stop();};},[registry]);
+      const[proto,setProto]=useState("dropdown");
+      // Fresh registry per prototype so switching tabs starts the scan clean. The
+      // active prototype's baked grouping is published before the (remounted) panel
+      // runs its seeded group scan — see runGroupScan's window.__TX_SEED_GROUPS path.
+      if(typeof window!=="undefined")window.__TX_SEED_GROUPS=PROTO_SEEDS[proto];
+      const rootRef=useRef(null);const scanRef=useRef(null);
+      const registry=useMemo(()=>new TransitionRegistry(),[proto]);
+      const[activeId,setActiveId]=useState(null);
+      // Scan only the prototype stage (not the header), so the switcher tabs' own
+      // pill transition is never picked up as a demo transition.
+      useEffect(()=>{const root=scanRef.current??document.body;const scanner=new DomScanner(root,registry);scanner.start();return()=>{scanner.stop();};},[registry]);
       const ctx=useMemo(()=>({registry,activeId,setActiveId}),[registry,activeId]);
       // Demo-only tweak controls: hidden by default. Append ?controls to the URL
       // to show them for testing. (This whole block is below the inject CUT_MARKER,
@@ -4022,6 +4704,7 @@
       // TESTING ONLY (not part of the tool): top-right toggle to hide the demo
       // page content so the panel can be inspected against a blank page.
       const[demoHidden,setDemoHidden]=useState(false);
+      const active=PROTOS.find(p=>p.key===proto)||PROTOS[0];
       return h(TimelineCtx.Provider,{value:ctx},
         showControls&&h(PanelControls),
         h("button",{type:"button",onClick:()=>setDemoHidden(v=>!v),
@@ -4032,9 +4715,13 @@
             font:"500 12px/1 ui-sans-serif,system-ui,sans-serif",
             boxShadow:"0 1px 3px rgba(0,0,0,0.12)"}},
           demoHidden?"Show demo":"Hide demo"),
-        h("div",{ref:rootRef,className:"demo-root",style:{display:demoHidden?"none":undefined}},h("div",{className:"demo-header"},h("h1",null,"Timeline Inspector \u2014 Demo"),h("p",null,"A single transitions.dev element: the plus \u2192 menu morph. Its transitions are auto-detected \u2014 select one below, drag the bars to edit timing, then interact with the component itself to preview the change.")),
-          h("div",{className:"demo-grid"},h(BoxMorph))),
-        h(TimelinePanel));
+        h("div",{ref:rootRef,className:"demo-root",style:{display:demoHidden?"none":undefined}},
+          h("div",{className:"demo-header"},
+            h("h1",null,"Timeline Inspector \u2014 Demo"),
+            h("p",null,"A live transitions.dev component: ",active.desc,". Its transitions are auto-detected \u2014 select one below, drag the bars to edit timing, then interact with the component itself to preview the change."),
+            h(ProtoTabs,{value:proto,onChange:setProto,items:PROTOS})),
+          h("div",{ref:scanRef,className:"demo-grid"},h(active.comp,{key:proto}))),
+        h(TimelinePanel,{key:proto}));
     }
 
     createRoot(document.getElementById("root")).render(h(App));

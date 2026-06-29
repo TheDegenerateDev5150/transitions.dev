@@ -28,7 +28,7 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
-import { refineTimings, DURATION_TOKENS, SMOOTH_OUT } from "./motion-tokens.mjs";
+import { refineTimings, DURATION_TOKENS, SCALE_TOKENS, BLUR_TOKENS, SMOOTH_OUT } from "./motion-tokens.mjs";
 import { buildInjectModule } from "./inject.mjs";
 
 const PORT = Number(process.env.REFINE_RELAY_PORT) || 7331;
@@ -86,6 +86,11 @@ const POLLER_TTL_MS = Number(process.env.REFINE_POLLER_TTL_MS) || 120000;
 // How long a pending LLM job waits to be claimed before erroring. Comfortably
 // above one long-poll cycle so a transient polling gap doesn't fail the job.
 const PENDING_TIMEOUT_MS = Number(process.env.REFINE_PENDING_TIMEOUT_MS) || 120000;
+// Idle auto-stop for the in-chat `/refine live` loop. The chat poll loop costs
+// agent turns even while idle, so after this long with no job we tell the loop
+// to stop (it returns {stop:true} from /jobs/next). 0 disables. Only the chat
+// loop is affected — a wired REFINE_AGENT_CMD never polls /jobs/next.
+const POLLER_IDLE_STOP_MS = Number(process.env.REFINE_POLLER_IDLE_STOP_MS) || 600000;
 
 /** @type {Map<string, Job>} */
 const jobs = new Map();
@@ -96,6 +101,15 @@ const now = () => Date.now();
 let lastPollAt = 0;
 const pollerActive = () => now() - lastPollAt < POLLER_TTL_MS;
 const llmAvailable = () => Boolean(AGENT_CMD) || pollerActive();
+
+// Stop signal for the in-chat `/refine live` loop. Set by POST /poller/stop
+// (the panel's "Stop" button) or by the idle auto-stop; consumed by the next
+// GET /jobs/next, which returns {stop:true} so the loop exits cleanly.
+let stopRequested = false;
+// When did a real job last arrive? Drives idle auto-stop so a forgotten loop
+// can't poll (and bill) forever. Seeded on first poll so a fresh loop gets the
+// full idle window before any auto-stop.
+let lastJobAt = 0;
 
 // Whether the Cursor CLI (cursor-agent) is installed on this machine. Drives the
 // panel's two agent-unavailable states: "Cursor CLI not installed" vs. simply
@@ -131,6 +145,7 @@ function createJob(request) {
     updatedAt: now(),
   };
   jobs.set(id, job);
+  lastJobAt = now(); // real work → reset the chat-loop idle auto-stop window
   if (jobs.size > 100) {
     const oldest = [...jobs.values()].sort((a, b) => a.updatedAt - b.updatedAt)[0];
     if (oldest && oldest.status !== "pending" && oldest.status !== "working") jobs.delete(oldest.id);
@@ -162,6 +177,10 @@ const MOTION_TOKENS_BLOCK = [
   `Default easing "Smooth ease out": ${SMOOTH_OUT}.`,
   "Token easings (already on-grid — leave unchanged): ease-out, ease-in-out, linear, cubic-bezier(0.34, 1.36, 0.64, 1) (bouncy overshoot, badge pop), cubic-bezier(0.34, 3.85, 0.64, 1) (strong overshoot, avatar return).",
   'Generic curves to nudge toward "Smooth ease out": "ease", "ease-in", or any hand-rolled cubic-bezier()/linear() that is not a token above.',
+  "Scales (the non-resting 'pre' scale a surface animates FROM — it always settles to 1):",
+  ...SCALE_TOKENS.map((t) => `  - ${t.v} ${t.name}: ${t.usage}`),
+  "Blur (the non-resting 'pre' blur a surface animates FROM — it always settles to 0):",
+  ...BLUR_TOKENS.map((t) => `  - ${t.px}px ${t.name}: ${t.usage}`),
 ].join("\n");
 
 // Inlined recipe catalog + decision hints (mirrors the transitions-dev skill's
@@ -199,48 +218,70 @@ function buildPrompt(job) {
   const rawType = r.refineType || "small";
   const refineType = rawType === "replace" ? "replace" : rawType === "both" ? "both" : "small";
   const needsRecipe = refineType === "replace" || refineType === "both";
+  // A grouped transition usually has related phases (open + close). When the panel
+  // sends them, a recipe swap is ONE motion and must update every phase together —
+  // so the agent returns a `patches` array (one entry per phase) instead of a
+  // single-phase `patch`.
+  const phases = Array.isArray(r.phases) ? r.phases.filter((p) => p && p.phase) : [];
+  const multiPhase = needsRecipe && phases.length > 1;
   const lines = [
     "You are refining ONE CSS transition against the transitions.dev library and motion tokens.",
     MOTION_TOKENS_BLOCK,
     "",
     "Transition context (JSON):",
-    JSON.stringify({ label: r.label, selector: r.selector, refineType, timings: r.timings }, null, 2),
+    JSON.stringify({ label: r.label, selector: r.selector, refineType, timings: r.timings, phases: phases.length ? phases : undefined }, null, 2),
     "",
     "Infer each declaration's USAGE (modal close, dropdown open, tooltip, badge, resize, color/theme change…) from the label/selector. Match on usage intent, not the nearest number.",
+    "",
+    "Some timings carry VALUES too: a `transform` lane may include `scale` (its non-resting pre-scale, e.g. 0.8) and a `filter` lane may include `blur` (its non-resting pre-blur in px). When present, also check these against the Scales/Blur tokens by USAGE (a dropdown-open surface should pre-scale to 0.97, not whatever number it has) and propose a fix when they differ. A lane may also carry `varName` (the CSS custom property backing the value) — pass it straight through in the patch so the edit targets that variable.",
     "",
   ];
   if (needsRecipe) {
     lines.push(
-      "To pick a whole-transition replacement, match the inferred USAGE against the recipe list below (the skill's decision rules are summarised here — do NOT read SKILL.md or any reference file). Derive the `patch`'s duration/easing from the MOTION TOKENS above for the recipe's phase (open vs close), and put the recipe's reference filename in `reference` so the user can paste the full recipe themselves. The patch only drives the live preview; exact keyframes/structure come from that pasted file — so you never need to open it.",
+      "To pick a whole-transition replacement, match the inferred USAGE against the recipe list below (the skill's decision rules are summarised here — do NOT read SKILL.md or any reference file). Derive the duration/easing from the MOTION TOKENS above for the recipe's phase (open vs close), and put the recipe's reference filename in `reference` so the user can paste the full recipe themselves. The patch only drives the live preview; exact keyframes/structure come from that pasted file — so you never need to open it.",
       "",
       RECIPES_BLOCK,
       "",
     );
+    if (multiPhase) {
+      lines.push(
+        "RELATED PHASES: `phases` lists this transition's related states (e.g. open AND close). They are ONE motion — a recipe swap must update them TOGETHER. For the replace suggestion emit a `patches` array with ONE entry per phase in `phases`, each shaped `{\"phase\":<that phase's name verbatim>,\"property\":\"all\",\"durationMs\":<recipe duration for THAT phase>,\"easing\":<recipe easing>,\"scale\":<recipe pre-scale for THAT phase>,\"blur\":<recipe pre-blur px for THAT phase>}`. Take each phase's duration from the MOTION TOKENS for that phase — open is usually slower than close (e.g. 250ms open / 150ms close) — and use the same easing for both unless the recipe differs. Include `scale`/`blur` ONLY when the recipe animates transform-scale / filter-blur (omit them otherwise), using the Scales/Blur tokens for that phase. Also include a single `patch` equal to the FIRST phase's entry (it drives the live preview). Apply will write every phase from `patches`.",
+        "",
+      );
+    }
   }
   if (refineType === "replace") {
     lines.push(
       "refineType is \"replace\": suggest a WHOLE-TRANSITION replacement ONLY — do NOT propose motion-token tweaks (no kind \"duration\"/\"delay\"/\"easing\").",
-      "Pick the SINGLE best-fit recipe from the list above. Emit ONE suggestion with kind \"replace\": set its `patch` to the motion-token duration/easing for the recipe's phase on the property that already transitions (or \"all\") so Apply works live, add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. If no recipe genuinely fits the usage, return an empty suggestions array.",
+      multiPhase
+        ? "Pick the SINGLE best-fit recipe from the list above. Emit ONE suggestion with kind \"replace\": include the `patches` array (one entry per related phase, as described above) AND a single `patch` (the first phase) for the live preview, add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. If no recipe genuinely fits the usage, return an empty suggestions array."
+        : "Pick the SINGLE best-fit recipe from the list above. Emit ONE suggestion with kind \"replace\": set its `patch` to the motion-token duration/easing for the recipe's phase on the property that already transitions (or \"all\") so Apply works live, add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. If no recipe genuinely fits the usage, return an empty suggestions array.",
       "Answer in ONE response — do NOT read or search files.",
     );
   } else if (refineType === "both") {
     lines.push(
       "refineType is \"both\": produce TWO independent groups in the SAME suggestions array — the UI shows them in separate tabs, so include each group whenever it applies.",
-      "(1) Motion-token tweaks (kind \"duration\"/\"delay\"/\"easing\"): for each declaration, propose the token value only where it DIFFERS from the current one.",
-      "(2) Whole-transition replacement (kind \"replace\"): ALWAYS evaluate one — pick the SINGLE best-fit recipe from the list above. Emit at most ONE \"replace\" suggestion: set its `patch` to the motion-token duration/easing for the recipe's phase on the property that already transitions (or \"all\"), add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. If no recipe genuinely fits, omit the replace suggestion.",
+      "(1) Motion-token tweaks (kind \"duration\"/\"delay\"/\"easing\"/\"scale\"/\"blur\"): for each declaration, propose the token value only where it DIFFERS from the current one. Use \"scale\" for an off-token transform pre-scale and \"blur\" for an off-token filter pre-blur, picked by usage.",
+      multiPhase
+        ? "(2) Whole-transition replacement (kind \"replace\"): ALWAYS evaluate one — pick the SINGLE best-fit recipe. Emit at most ONE \"replace\" suggestion with the `patches` array (one entry per related phase) AND a single `patch` (the first phase), a `reference` field, and the recipe named in `title`/`reason`. If no recipe genuinely fits, omit the replace suggestion."
+        : "(2) Whole-transition replacement (kind \"replace\"): ALWAYS evaluate one — pick the SINGLE best-fit recipe from the list above. Emit at most ONE \"replace\" suggestion: set its `patch` to the motion-token duration/easing for the recipe's phase on the property that already transitions (or \"all\"), add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. If no recipe genuinely fits, omit the replace suggestion.",
       "Answer in ONE response — do NOT read or search files.",
     );
   } else {
     lines.push(
-      "refineType is \"small\": suggest motion-token tweaks ONLY — for each declaration, propose the token value only where it DIFFERS from the current one (kind \"duration\"/\"delay\"/\"easing\"). Do NOT propose a whole-transition replacement (no kind \"replace\") — the Replace tab requests that separately.",
+      "refineType is \"small\": suggest motion-token tweaks ONLY — for each declaration, propose the token value only where it DIFFERS from the current one (kind \"duration\"/\"delay\"/\"easing\"/\"scale\"/\"blur\"). Use \"scale\" for an off-token transform pre-scale and \"blur\" for an off-token filter pre-blur, picked by usage. Do NOT propose a whole-transition replacement (no kind \"replace\") — the Replace tab requests that separately.",
       "Answer in ONE response using ONLY the data above. Do NOT read or search files, run tools, spawn subagents, or explore the codebase — the motion tokens contain everything you need. This is a quick judgement, not a coding task.",
     );
   }
   lines.push(
     "",
     "Output ONLY a JSON object — no prose, no markdown fences — shaped exactly like:",
-    '{"summary":"…","suggestions":[{"id":"width-duration","kind":"duration","property":"width","title":"Duration → Fast","from":"400ms","to":"250ms","patch":{"property":"width","durationMs":250},"reason":"…"}]}',
-    'In each `patch` include only the changed fields (durationMs, delayMs, easing); `property` must match an input property or "all". If nothing should change, return an empty suggestions array.',
+    '{"summary":"…","suggestions":[{"id":"width-duration","kind":"duration","property":"width","member":"Container","title":"Duration → Fast","from":"400ms","to":"250ms","patch":{"property":"width","member":"Container","durationMs":250},"reason":"…"}]}',
+    'A scale tweak looks like {"id":"transform-scale","kind":"scale","property":"transform","member":"Menu","title":"Scale → Medium","from":"0.8","to":"0.97","patch":{"property":"transform","member":"Menu","scale":0.97},"reason":"…"}; a blur tweak like {"id":"filter-blur","kind":"blur","property":"filter","member":"Panel","title":"Blur → Small","from":"8px","to":"2px","patch":{"property":"filter","member":"Panel","blur":2},"reason":"…"}.',
+    "CRITICAL — `member`: every suggestion and its `patch` MUST echo the `member` of the input lane it came from, copied VERBATIM from that lane in the data above. This is REQUIRED whenever any input lane carries a `member` — most importantly when several lanes share the same `property` (e.g. a dropdown where a caret does `transform: rotate` AND a panel does `transform: scale`): the `member` is the ONLY way to tell which lane a `transform` tweak targets. Omitting it mislabels the suggestion onto the wrong element. Omit `member` only for lanes that genuinely have none.",
+    multiPhase
+      ? 'A multi-phase replace suggestion ALSO carries a `patches` array, e.g. "patches":[{"phase":"open","property":"all","durationMs":250,"easing":"cubic-bezier(0.22, 1, 0.36, 1)","scale":0.97},{"phase":"close","property":"all","durationMs":150,"easing":"cubic-bezier(0.22, 1, 0.36, 1)","scale":0.99}]. In each `patch`/`patches` entry include only the changed fields (durationMs, delayMs, easing, scale, blur — plus `member` copied from the input lane, and `varName` if the input lane had one); `property` must match an input property or "all".'
+      : 'In each `patch` include only the changed fields (durationMs, delayMs, easing, scale, blur — plus `member` copied from the input lane, and `varName` if the input lane had one); `property` must match an input property or "all". If nothing should change, return an empty suggestions array.',
   );
   return lines.join("\n");
 }
@@ -281,7 +322,31 @@ function parseScanOutput(stdout) {
   return { groups: obj.groups, summary: obj.summary ?? null };
 }
 
-function runAgentCmd(cmd, prompt, parse = parseAgentOutput) {
+// Serialize cursor-agent spawns. Two cursor-agent processes started at once race
+// on their shared CLI config — one renames `…/cli-config.json.tmp → cli-config.json`
+// while the other already moved it, so the loser crashes with ENOENT mid config
+// save and its scan/refine job fails. Because the relay fires every job via
+// setImmediate, a cold-start scan + any other job spawn in parallel and trip this.
+// Running cursor-agent one-at-a-time removes the race; jobs are rarely concurrent
+// so the queuing cost is negligible (and each attempt is still bounded by
+// AGENT_TIMEOUT_MS). Non-cursor CLIs are left to run freely.
+let agentLock = Promise.resolve();
+function withAgentLock(fn) {
+  const run = agentLock.then(fn, fn);
+  // keep the chain alive regardless of this run's outcome
+  agentLock = run.then(() => {}, () => {});
+  return run;
+}
+
+// Failures worth retrying: transient agent startup / shared-config races, not
+// genuine "the model answered wrong" errors (those reject from parse, not here)
+// or timeouts (a retry would just time out again).
+const AGENT_TRANSIENT_RE = /ENOENT|EAGAIN|EBUSY|ECONNRESET|EPIPE|cli-config|\brename\b|failed to start/i;
+const AGENT_RETRIES = Number.isFinite(Number(process.env.REFINE_AGENT_RETRIES))
+  ? Number(process.env.REFINE_AGENT_RETRIES)
+  : 2;
+
+function runAgentOnce(cmd, prompt, parse) {
   return new Promise((resolve, reject) => {
     const child = spawn("sh", ["-c", cmd], { stdio: ["pipe", "pipe", "pipe"] });
     let out = "";
@@ -310,6 +375,34 @@ function runAgentCmd(cmd, prompt, parse = parseAgentOutput) {
   });
 }
 
+// Spawn the agent CLI once per attempt, serializing cursor-agent runs and
+// retrying transient startup/config-race failures with backoff. A retry re-spawns
+// a fresh process (read-only scan/refine, idempotent apply), so it's safe — and
+// the backoff happens OUTSIDE the lock so a retrying job doesn't block others.
+async function runAgentCmd(cmd, prompt, parse = parseAgentOutput) {
+  const isCursor = /(^|\s|\/)cursor-agent(\s|$)/.test(cmd || "");
+  const attempt = () =>
+    isCursor ? withAgentLock(() => runAgentOnce(cmd, prompt, parse)) : runAgentOnce(cmd, prompt, parse);
+  const maxTries = 1 + Math.max(0, AGENT_RETRIES);
+  let lastErr;
+  for (let i = 0; i < maxTries; i++) {
+    try {
+      return await attempt();
+    } catch (e) {
+      lastErr = e;
+      const msg = String((e && e.message) || e);
+      if (i < maxTries - 1 && AGENT_TRANSIENT_RE.test(msg)) {
+        const backoff = 250 * (i + 1) + Math.floor(Math.random() * 150);
+        console.warn(`  ↻ agent attempt ${i + 1}/${maxTries} failed (${msg.slice(0, 120)}) — retrying in ${backoff}ms`);
+        await new Promise((r) => setTimeout(r, backoff));
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastErr;
+}
+
 // Prompt for an "apply" job: the agent edits the user's source so the selected
 // transition uses the approved timings.
 function buildApplyPrompt(job) {
@@ -320,11 +413,11 @@ function buildApplyPrompt(job) {
     "Change context (JSON):",
     JSON.stringify({ label: r.label, selector: r.selector, component: r.component, group: r.group, phase: r.phase, changes: r.changes }, null, 2),
     "",
-    "If `phase` is set (e.g. \"open\"/\"close\"), the change targets ONE state of a component — edit the rule for THAT state (e.g. the `.is-open` rule for open, the `.is-closing`/base rule for close), not the other phase. Each change may carry its own `member` + `selector` identifying which element it belongs to.",
+    "Each change may carry its own `phase` (e.g. \"open\"/\"close\"), `member`, and `selector`. A change's `phase` targets ONE state of the component — edit the rule for THAT state (e.g. the `.is-open` rule for open; the `.is-closing`/base rule for close), NOT the other phase. The top-level `phase` is only a fallback for changes that omit their own. A recipe swap may include changes for BOTH open and close — apply each to its own phase's rule so the open and close timings end up different where the recipe says so.",
     "",
     "Steps:",
     "1. Find where this transition is defined in the source. Search by the per-change `selector`/`member`, the `component` hint, and class names. Handle plain CSS, CSS Modules, styled-components/emotion template literals, Tailwind utilities/config, inline style objects, and Motion/Framer variants — the browser selector is a hint, the real declaration may live in any of these.",
-    "2. For each change, edit the source so that property's transition uses the `to` values: durationMs (ms), easing, delayMs (ms). Keep the file's existing unit/format conventions (e.g. `0.25s` vs `250ms`) and only touch the timing of the named property on the right member + phase. If a CSS variable / design token backs the value, update it at the most sensible single place.",
+    "2. For each change, edit the source so that property's transition uses the `to` values. A change's `to` may include timing (durationMs in ms, easing, delayMs in ms) AND/OR values: `scale` (the non-resting transform pre-scale, e.g. set `transform: scale(0.97)` on the pre-open/closed state — never the resting scale(1)) and `blur` (the non-resting filter pre-blur in px, e.g. `filter: blur(2px)` on that same state). If the change carries `varName`, the value is backed by that CSS custom property — update the variable's value at its definition instead of the inline declaration. Keep the file's existing unit/format conventions (e.g. `0.25s` vs `250ms`) and only touch the named property on the right member + phase.",
     "3. Make the minimal edit. Do not reformat or change unrelated code.",
     "",
     'Output ONLY a JSON object — no prose, no markdown fences — shaped exactly like:',
@@ -369,7 +462,8 @@ function refineDeterministic(job) {
       summary: "Replacing a whole transition needs the agent — switch to the Agent tab and run `/refine live`.",
     };
   }
-  const suggestions = refineTimings(job.request?.timings || []);
+  const r = job.request || {};
+  const suggestions = refineTimings(r.timings || [], { label: r.label, selector: r.selector, phase: r.phase });
   return {
     suggestions,
     summary: suggestions.length
@@ -560,11 +654,27 @@ const server = createServer(async (req, res) => {
   // GET /jobs/next — long-poll claimed by a `/refine live` agent (LLM jobs).
   if (method === "GET" && path === "/jobs/next") {
     lastPollAt = now();
+    if (!lastJobAt) lastJobAt = now(); // seed idle window on the loop's first poll
+    // Stop signal (manual Stop button or idle auto-stop) → tell the loop to exit.
+    // A pending job always wins so we never drop real work on the stop edge.
+    if ((stopRequested || (POLLER_IDLE_STOP_MS && now() - lastJobAt >= POLLER_IDLE_STOP_MS)) && !nextPendingLlm()) {
+      stopRequested = false;
+      lastJobAt = 0;
+      lastPollAt = 0; // loop is exiting → report it inactive immediately on /health
+      return send(res, 200, { stop: true });
+    }
     const deadline = now() + LONGPOLL_MS;
     const attempt = () => {
       if (res.writableEnded) return;
+      if (stopRequested && !nextPendingLlm()) {
+        stopRequested = false;
+        lastJobAt = 0;
+        lastPollAt = 0; // loop is exiting → report it inactive immediately on /health
+        return send(res, 200, { stop: true });
+      }
       const job = nextPendingLlm();
       if (job) {
+        lastJobAt = now();
         job.status = "working";
         job.updatedAt = now();
         return send(res, 200, { id: job.id, request: job.request });
@@ -573,6 +683,13 @@ const server = createServer(async (req, res) => {
       setTimeout(attempt, 400);
     };
     return attempt();
+  }
+
+  // POST /poller/stop — the panel's "Stop" button. Flags the in-chat loop to
+  // exit on its next poll. No-op for a wired REFINE_AGENT_CMD (never polls).
+  if (method === "POST" && path === "/poller/stop") {
+    stopRequested = true;
+    return send(res, 200, { ok: true, stopping: pollerActive() });
   }
 
   const m = path.match(/^\/jobs\/([^/]+)(?:\/(status|result|error))?$/);

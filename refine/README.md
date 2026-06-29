@@ -29,26 +29,29 @@ npx transitions-refine stop
 
 1. injects one `<script type="module" src=".../inject.js">` into your page (it looks for `index.html`, `public/index.html`, … or pass `--page <path>`),
 2. drops the `refine-live` + `transitions-dev` skills into `.agents/skills/` (so the agent makes token-aware picks),
-3. starts the local relay (which serves the panel at `/inject.js`).
+3. **auto-wires an LLM backend** — it detects the agent hosting this run and points the relay at *its* CLI, so Refine uses the subscription you already have (Cursor → `cursor-agent`, Claude Code → `claude`, Codex → `codex`),
+4. starts the local relay (which serves the panel at `/inject.js`).
 
 Open your app — the panel is now on the page. Press Ctrl-C to stop the relay and remove the injected tag.
 
 ## LLM quality (recommended)
 
-The default answerer snaps each value to the nearest motion token. For *usage-aware* picks (a 300 ms modal close → `Quick` 150 ms, a dropdown open → `Fast` 250 ms), back the panel with an LLM. Two ways:
+The default answerer snaps each value to the nearest motion token. For *usage-aware* picks (a 300 ms modal close → `Quick` 150 ms, a dropdown open → `Fast` 250 ms), back the panel with an LLM.
+
+Plain `npx transitions-refine live` already does this when an agent CLI is available: it prefers the **host agent** so it bills your existing plan, persistently (no `/refine live` loop to keep alive). The CLI must be authenticated once — Cursor: run `cursor-agent` to log in (or set `CURSOR_API_KEY`); Claude Code: run `claude` to sign in; Codex: run `codex` to sign in (or set `CODEX_API_KEY`).
 
 ```bash
-# A) persistent: install/wire the Cursor CLI so the relay answers LLM jobs itself,
-#    per click, with no /refine live loop to keep alive (one-time CLI install)
+# auto: use whichever agent hosts this run (cursor-agent / claude / codex)
+npx transitions-refine live
+
+# force a specific agent regardless of host
+npx transitions-refine live --agent claude   # cursor | claude | codex
+
+# no agent on the machine? install the Cursor CLI as a fallback
 npx transitions-refine live --llm
 ```
 
-After `--llm`, make sure the CLI is authenticated once: run `cursor-agent` to log in, or set `CURSOR_API_KEY`.
-
-```
-# B) in-IDE agent: run this in your editor to become the answerer yourself
-/refine live
-```
+Resolution order: `REFINE_AGENT_CMD` (explicit) → `--agent <name>` → detected host agent → any installed agent → (with `--llm`) install cursor-agent. If none is available the panel falls back to the in-IDE loop — run `/refine live` in your editor to answer jobs yourself (works in Cursor, Claude Code, or Codex; stays live only while that session keeps polling).
 
 You can also point the relay at any one-shot agent CLI via `REFINE_AGENT_CMD` (the relay feeds it the prompt on stdin and reads a JSON result from stdout):
 
@@ -102,6 +105,30 @@ Endpoints: `POST /jobs` (refine, `kind: "apply"`, or `kind: "scan"`), `GET /jobs
 
 Refine suggestions stay as live overrides until you press **Accept**, which is the explicit step that writes them into your source.
 
-## License
+## Terms & License
 
-MIT
+> Full terms: https://transitions.dev/terms.html
+
+- **Beta software.** Refine is an early Beta. Features, commands, the panel, and
+  its behavior may change, regress, or be removed at any time without notice. No
+  guarantee of availability, stability, or fitness for any purpose.
+- **Your agent credits.** Refine triggers *your own* AI coding agent (Cursor,
+  Claude Code, Codex, …). Every Refine click and any `npx transitions-refine
+  live` / `/refine live` session consumes *your* provider's tokens/credits —
+  including while a live session sits idle and keeps polling. You are solely
+  responsible for that spend; this project is not liable for and will not
+  reimburse any credits, fees, or overages. Run `npx transitions-refine stop`
+  (or say `stop refine`) when you're done.
+- **The agent changes your code.** Accepting a suggestion writes changes into
+  your source files. Suggestions are AI-generated and may be wrong. Use version
+  control, review every change before committing, and keep backups. Use at your
+  own risk.
+- **No warranty.** The software is provided **"AS IS"**, without warranty of any
+  kind. To the maximum extent permitted by law, the authors are not liable for
+  any damages — direct, indirect, incidental, or consequential, including lost
+  work or lost credits — arising from its use.
+
+### MIT License
+
+MIT — Copyright (c) 2026 Jakub Antalik / Transitions.dev. See
+https://transitions.dev/terms.html for the full license text.

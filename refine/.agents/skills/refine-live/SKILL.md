@@ -1,11 +1,23 @@
 ---
 name: refine-live
-description: Become the live "Refine" agent for the Timeline Inspector. Use when the user runs `/refine live`, asks to "refine live", "go live", "answer refine jobs", or wants the timeline panel's Refine button (LLM mode), Accept button, or grouped scan to be backed by a real agent. Long-polls the local refine relay, reasons about each CSS transition with the transitions-dev skill, posts suggestions back to the browser panel, for "scan" jobs groups the page's transitions into components with open/close phases by reading the source, and for "apply" jobs writes the accepted timing changes into the user's source code.
+description: In-chat fallback for the Timeline Inspector Refine agent. Use when the user runs `/refine live`, asks to "refine live", "go live", or answer refine jobs — but ONLY when no persistent agent is wired (no `npx transitions-refine live`). Prefer `npx transitions-refine live` for run-and-forget (relay spawns agent per click, no idle credit burn). This skill long-polls the relay, posts suggestions, handles scan/apply jobs.
 ---
 
 # Refine Live
 
-Turn yourself into the LLM behind the Timeline Inspector's **Refine** button. While
+## Two modes
+
+**Persistent (recommended — run and forget)**  
+Run `npx transitions-refine live` from your project. The CLI starts the relay and wires `REFINE_AGENT_CMD` so the relay spawns your agent CLI **per Refine click**. No chat loop; idle = zero credit burn. Works hours later as long as the relay process keeps running. Stop with Ctrl-C (or `npx transitions-refine stop`).
+
+**In-chat loop (fallback — this skill)**  
+Run `/refine live` in Cursor/Claude/Codex when the relay is up but has **no** `REFINE_AGENT_CMD`. **You** become the poller via `GET /jobs/next`. The Agent tab stays available only while you keep polling — **each idle poll cycle consumes chat turns/credits**. Say "stop refine" to exit.
+
+Use the in-chat loop only when you cannot wire a persistent agent CLI.
+
+---
+
+Turn yourself into the LLM behind the Timeline Inspector's **Refine** button (**in-chat fallback mode**). While
 this loop runs, the panel's **LLM** tab is "available": each click sends one
 transition here, you reason about it, and your suggestions appear in the panel.
 
@@ -19,15 +31,28 @@ Browser (Refine, LLM tab) ──POST /jobs──► relay ──GET /jobs/next�
                           ◄──GET /jobs/:id── relay ◄──POST /jobs/:id/result── YOU
 ```
 
-## The loop — stay live for the whole session
+## The loop — stay live, but don't burn credits forever
 
-**Keep polling continuously until the user explicitly stops you.** This is the
-only thing that keeps the panel's LLM tab "available", so do not give up on idle.
-A long stretch of `204` responses is *normal and expected* — it just means no one
-has clicked Refine yet. Re-poll immediately every time; never treat repeated
-`204`s as a reason to stop. The relay reports the agent as "available" for ~120s
-after your last poll, so as long as you keep looping you stay live and the user
-never has to re-run `/refine live`.
+Keep polling so the panel's LLM tab stays "available", but this loop costs chat
+turns/credits even while idle, so it is **not** truly run-and-forget — it has
+three exits, in priority order:
+
+1. **Relay stop signal (authoritative).** `GET /jobs/next` may return `200` with
+   `{"stop": true}`. The relay sends this when the user clicks **Stop** in the
+   panel, or automatically after ~10 min with no jobs. **Always honor it: stop
+   looping immediately**, tell the user the LLM tab will go unavailable and how to
+   resume (`/refine live`), and end your turn. Never re-poll after a stop signal.
+2. **The user says so** — "stop refine", "exit live", etc.
+3. **Your own idle backoff (safety net).** A long stretch of `204`s is normal —
+   it just means no one has clicked Refine yet — but to avoid spending credits on
+   a forgotten loop, **back off as idle grows** instead of hammering immediately:
+   re-poll right away for the first few empty cycles, then pause ~5s between polls,
+   and after ~10 min of unbroken idle stop on your own (same as the relay's
+   auto-stop) and tell the user how to resume. Any real job resets the backoff.
+
+The relay reports the agent as "available" for ~120s after your last poll, so
+short pauses keep you live. A successful job always resets idle, so an active
+session never backs off.
 
 1. **Claim the next job (long-poll).** This call blocks up to ~25s, then returns.
 
@@ -35,8 +60,12 @@ never has to re-run `/refine live`.
    curl -s http://localhost:7331/jobs/next
    ```
 
-   - HTTP `204` / empty body → no work yet. Immediately call it again.
-   - HTTP `200` with JSON → a job. Shape:
+   - HTTP `204` / empty body → no work yet. Poll again, applying the idle
+     backoff above (immediate at first, then ~5s pauses, then stop after ~10 min).
+   - HTTP `200` with `{"stop": true}` → **the loop must end.** Stop polling, tell
+     the user the LLM tab is now unavailable and that `/refine live` resumes it,
+     and end your turn. Do not treat it as a job.
+   - HTTP `200` with a job JSON → work to do. Shape:
 
      ```json
      {
@@ -197,9 +226,10 @@ never has to re-run `/refine live`.
      -H 'Content-Type: application/json' -d '{"message":"…"}'
    ```
 
-5. **Go back to step 1.** Keep looping indefinitely. **Only stop when the user
-   explicitly tells you to** (e.g. "stop refine", "exit live"). Do not stop just
-   because it's been quiet — idle is the normal state between clicks. If you do
+5. **Go back to step 1.** Keep looping, but honor the three exits from
+   [the loop section](#the-loop--stay-live-but-dont-burn-credits-forever): a
+   `{"stop": true}` from the relay, the user telling you to stop, or your own idle
+   backoff/auto-stop after ~10 min quiet. A real job resets idle. Whenever you do
    stop, tell them the LLM tab will go unavailable and how to restart
    (`/refine live`).
 
