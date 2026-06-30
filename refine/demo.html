@@ -1412,10 +1412,10 @@
       transition: background 150ms ease-out, border-color 150ms ease-out, opacity 150ms ease-out; }
     .tl-gate-recheck:hover { background: rgba(0, 0, 0, 0.07); border-color: rgba(0, 0, 0, 0.12); }
     .tl-gate-recheck:disabled { opacity: 0.55; cursor: default; }
-    html[data-theme="dark"] .tl-gate-reason { color: #7e7e7e; }
-    html[data-theme="dark"] .tl-gate-recheck { color: #d4d4d4; background: rgba(255, 255, 255, 0.06);
+    html[data-tl-theme="dark"] .tl-gate-reason { color: #7e7e7e; }
+    html[data-tl-theme="dark"] .tl-gate-recheck { color: #d4d4d4; background: rgba(255, 255, 255, 0.06);
       border-color: rgba(255, 255, 255, 0.12); }
-    html[data-theme="dark"] .tl-gate-recheck:hover { background: rgba(255, 255, 255, 0.1);
+    html[data-tl-theme="dark"] .tl-gate-recheck:hover { background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.16); }
     @media (prefers-reduced-motion: reduce) { .tl-gate-recheck { transition: none; } }
     @media (prefers-reduced-motion: reduce) {
@@ -1471,7 +1471,7 @@
       animation: tl-live-in 250ms cubic-bezier(0.22,1,0.36,1) both; }
     .tl-live-main { display: inline-flex; align-items: center; gap: 5px; flex: none; }
     .tl-live-label { font-size: 12px; font-weight: 400; line-height: 14px; color: #18a32f; white-space: nowrap; }
-    html[data-theme="dark"] .tl-live-label { color: #4ade80; }
+    html[data-tl-theme="dark"] .tl-live-label { color: #70e984; }
     .tl-live-dot { width: 8px; height: 8px; border-radius: 50%; flex: none;
       background: #34CC20; box-shadow: inset 0 0 0 0.5px rgba(0,182,30,0.55);
       animation: tl-live-pulse 1600ms linear infinite; }
@@ -1486,9 +1486,9 @@
         color 150ms cubic-bezier(0.22,1,0.36,1); }
     .tl-live-stop:hover,
     .tl-live-stop:active { background: rgba(68,167,84,0.2); color: #057217; }
-    html[data-theme="dark"] .tl-live-stop { color: #4ade80; }
-    html[data-theme="dark"] .tl-live-stop:hover,
-    html[data-theme="dark"] .tl-live-stop:active { color: #86efac; }
+    html[data-tl-theme="dark"] .tl-live-stop { color: #70e984; }
+    html[data-tl-theme="dark"] .tl-live-stop:hover,
+    html[data-tl-theme="dark"] .tl-live-stop:active { color: #8ef09e; }
     .tl-live-stop:focus-visible { outline: 2px solid #118c25; outline-offset: 1px; }
     /* LIVE OFF — node 594:22912 (gray, no button) */
     .tl-live-chip.is-stopped { width: auto; justify-content: flex-start; padding: 0 9px;
@@ -1498,7 +1498,7 @@
     .tl-live-chip.is-stopped .tl-live-dot { background: #A1A1A1;
       box-shadow: inset 0 0 0 0.5px rgba(146,146,146,0.6); animation: none; }
     .tl-live-chip.is-stopped .tl-live-label { color: #525252; }
-    html[data-theme="dark"] .tl-live-chip.is-stopped .tl-live-label { color: #a1a1a1; }
+    html[data-tl-theme="dark"] .tl-live-chip.is-stopped .tl-live-label { color: #848484; }
     @keyframes tl-live-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
     @keyframes tl-live-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
     @media (prefers-reduced-motion: reduce) {
@@ -1684,6 +1684,243 @@
       .tl-scan-beam { animation: none !important; }
       .tl-pill { animation: none !important; }
     }
+
+    /* ═════════════════════════════════════════════════════════════════════
+       DARK THEME — html[data-tl-theme="dark"]
+       System-default, overridable from the 3-dot menu Theme row. Scoped to
+       .tl-* / .t-* so a host page (which has no such classes) is never touched.
+       Values are the exact Figma dark tokens; missing ones are derived. Purely
+       additive — light mode stays byte-for-byte unchanged.
+       ═════════════════════════════════════════════════════════════════════ */
+
+    /* — token overrides: auto-themes everything token-driven — */
+    html[data-tl-theme="dark"] {
+      --c-text: #fbfbfb; --c-text-strong: #fbfbfb; --c-text-mut: #979797;
+      --c-text-mut2: #979797; --c-text-faint: #8b8b8b; --c-count: #8b8b8b;
+      /* surfaces / overlay system (Figma node 580:652) */
+      --c-sec: rgba(255,255,255,0.06); --c-sec-h: rgba(255,255,255,0.1); --c-sec-a: rgba(255,255,255,0.12);
+      --c-circle: rgba(255,255,255,0.06); --c-circle-h: rgba(255,255,255,0.1); --c-circle-a: rgba(255,255,255,0.12);
+      --c-ghost-h: rgba(255,255,255,0.04); --c-ghost-a: rgba(255,255,255,0.06);
+      --c-field-bg: rgba(255,255,255,0.04); --c-fill: rgba(255,255,255,0.1); --c-fill-a: rgba(255,255,255,0.12);
+      --c-track: rgba(255,255,255,0.1); --c-track-h: rgba(255,255,255,0.14); --c-thumb: #767676;
+      --c-line: #262626; --c-hairline: rgba(255,255,255,0.04); --c-hairline2: rgba(255,255,255,0.06);
+      /* blue accents */
+      --c-blue: #3b9bff; --c-blue-pressed: #5cb0ff; --c-blue-bg: rgba(0,128,255,0.17);
+      --c-blue-bg-h: rgba(0,128,255,0.24); --c-blue-bg-a: rgba(0,128,255,0.3); --c-blue-ring: rgba(85,207,255,0.06);
+      /* tooltip surface */
+      --tt-bg: #262626; --tt-fg: #fbfbfb;
+      /* shadow / ring recipes — drop 0 1px1px rgba(0,0,0,.24) + white insets */
+      --ring: inset 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 0 rgba(255,255,255,0.06);
+      --ring-fill: inset 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 0 rgba(255,255,255,0.06);
+      --ring-blue: inset 0 0 0 1px rgba(85,207,255,0.04), inset 0 1px 0 0 rgba(85,207,255,0.06);
+      --drop: 0 1px 1px 0 rgba(0,0,0,0.24);
+      --drop-btn: 0 1px 1px 0 rgba(0,0,0,0.24);
+      --drop-line: 0 1px 1px 0 rgba(0,0,0,0.24);
+      --shadow-btn: 0 1px 1px 0 rgba(0,0,0,0.24), inset 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 0 rgba(255,255,255,0.06);
+      --shadow-btn-inset: inset 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 0 rgba(255,255,255,0.06);
+      --menu-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.05), 0 4px 42px rgba(0,0,0,0.24);
+      --panel-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 2px 6px rgba(0,0,0,0.4), 0 4px 42px rgba(0,0,0,0.5);
+      --card-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    /* — panel surfaces — */
+    html[data-tl-theme="dark"] .tl-panel-body { background: #1b1b1b;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 2px 6px 0 rgba(0,0,0,0.4), 0 4px 42px 0 rgba(0,0,0,0.5); }
+    html[data-tl-theme="dark"] .tl-refine-inner { background: #1b1b1b; }
+    html[data-tl-theme="dark"] .tl-refine-panel {
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 2px 6px 0 rgba(0,0,0,0.4), 0 4px 42px 0 rgba(0,0,0,0.5); }
+    html[data-tl-theme="dark"] .tl-empty { background: #202020; }
+
+    /* — timeline rows / ruler / bars / member chips — */
+    html[data-tl-theme="dark"] .tl-prop-row:hover { background: rgba(255,255,255,0.02); }
+    html[data-tl-theme="dark"] .tl-prop-row.selected { background: rgba(255,255,255,0.04); }
+    html[data-tl-theme="dark"] .tl-prop-row.selected .tl-prop-label { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-prop-member,
+    html[data-tl-theme="dark"] .tl-prop-row.selected .tl-prop-member,
+    html[data-tl-theme="dark"] .tl-insp-member { background: rgba(255,255,255,0.04); color: #bdbdbd; box-shadow: 0 0 0 1px rgba(255,255,255,0.08); }
+    html[data-tl-theme="dark"] .tl-insp-label { color: #8b8b8b; }
+    html[data-tl-theme="dark"] .tl-bar {
+      box-shadow: 0 1px 3px 0 rgba(0,0,0,0.24), inset 0 0 0 1px rgba(255,255,255,0.06), inset 0 -1px 0 0 rgba(0,0,0,0.2); }
+    html[data-tl-theme="dark"] .tl-ruler .tick { background: rgba(255,255,255,0.18); }
+
+    /* — refine header / tabs / titles — */
+    html[data-tl-theme="dark"] .tl-refine-head { border-bottom-color: #262626; }
+    html[data-tl-theme="dark"] .tl-refine-tabs { background: #1b1b1b; border-bottom-color: #262626; }
+    html[data-tl-theme="dark"] .tl-refine-titles h3 { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-refine-titles p { color: #979797; }
+    html[data-tl-theme="dark"] .tl-refine-tab { color: #8b8b8b; }
+    html[data-tl-theme="dark"] .tl-refine-tab:hover:not([aria-selected="true"]) { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-refine-tab[aria-selected="true"] { background: rgba(255,255,255,0.06); color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-refine-mode { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-refine-mode:hover,
+    html[data-tl-theme="dark"] .tl-refine-mode.is-open { background: rgba(255,255,255,0.06); }
+    html[data-tl-theme="dark"] .tl-refine-close { color: #979797; }
+    html[data-tl-theme="dark"] .tl-refine-close:hover { background: rgba(255,255,255,0.06); color: #fbfbfb; }
+
+    /* — idle / unavailable / gate / inline code — */
+    html[data-tl-theme="dark"] .tl-refine-idle-text,
+    html[data-tl-theme="dark"] .tl-refine-unavail-text,
+    html[data-tl-theme="dark"] .tl-gate-text { color: #979797; }
+    html[data-tl-theme="dark"] .tl-refine-unavail-title,
+    html[data-tl-theme="dark"] .tl-gate-title { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-gate-text .tl-code { color: #cfcfcf; }
+    html[data-tl-theme="dark"] code.tl-code { color: #fbfbfb; background: rgba(255,255,255,0.08); }
+    html[data-tl-theme="dark"] .tl-refine-empty { color: #979797; }
+    html[data-tl-theme="dark"] .tl-refine-error { color: #ff8a7a; background: rgba(192,57,43,0.14); }
+
+    /* — header buttons that hardcode white — */
+    html[data-tl-theme="dark"] .tl-accept-btn { background: rgba(255,255,255,0.06); color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-accept-btn > svg { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-accept-btn:hover:not(:disabled),
+    html[data-tl-theme="dark"] .tl-accept-btn:active:not(:disabled) { background: rgba(255,255,255,0.1); }
+    html[data-tl-theme="dark"] .tl-accept-spin { border-color: rgba(255,255,255,0.2); border-top-color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-header .tl-icon-btn:not(.ghost) { background: rgba(255,255,255,0.06); }
+    html[data-tl-theme="dark"] .tl-header .tl-icon-btn:not(.ghost):hover:not(:disabled),
+    html[data-tl-theme="dark"] .tl-header .tl-icon-btn:not(.ghost).is-active,
+    html[data-tl-theme="dark"] .tl-header .tl-icon-btn:not(.ghost):active:not(:disabled) { background: rgba(255,255,255,0.1); }
+    html[data-tl-theme="dark"] .tl-sec-btn { background: rgba(255,255,255,0.06); color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-sec-btn:hover:not(:disabled),
+    html[data-tl-theme="dark"] .tl-sec-btn:active:not(:disabled) { background: rgba(255,255,255,0.1); }
+
+    /* — Refine button + scan-morph (layered blue fill) — */
+    html[data-tl-theme="dark"] .tl-refine-btn,
+    html[data-tl-theme="dark"] .tl-refine-btn > svg { color: #90dcff; }
+    html[data-tl-theme="dark"] .tl-refine-btn::before { background: rgba(0,128,255,0.17); }
+    html[data-tl-theme="dark"] .tl-refine-btn.is-active { color: #b3e6ff; }
+    html[data-tl-theme="dark"] .tl-refine-btn.is-active::before { background: rgba(0,128,255,0.3); }
+    html[data-tl-theme="dark"] .tl-scan-morph { color: #90dcff; }
+    html[data-tl-theme="dark"] .tl-scan-morph::before { background: rgba(0,128,255,0.17); }
+    html[data-tl-theme="dark"] .tl-scan-morph:hover:not(:disabled):not(.is-scanning)::before,
+    html[data-tl-theme="dark"] .tl-scan-morph:active:not(.is-scanning):not(:disabled)::before { background: rgba(0,128,255,0.24); }
+    html[data-tl-theme="dark"] .tl-scan-morph:disabled:not(.is-scanning)::before { background: rgba(0,128,255,0.17); }
+    html[data-tl-theme="dark"] .tl-scan-morph.is-scanning { color: #979797; }
+    html[data-tl-theme="dark"] .tl-scan-morph.is-scanning::before { background: #202020; }
+
+    /* — resize handle — */
+    html[data-tl-theme="dark"] .tl-resize-handle::after { background: rgba(255,255,255,0.14); }
+
+    /* — toast / minimized pill / transitions count badge — */
+    html[data-tl-theme="dark"] .tl-toast { background: #202020; color: #fbfbfb;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 2px 6px 0 rgba(0,0,0,0.4), 0 4px 42px 0 rgba(0,0,0,0.5); }
+    html[data-tl-theme="dark"] .tl-toast-ic { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-pill { background: #1b1b1b; }
+    html[data-tl-theme="dark"] .tl-pill:hover,
+    html[data-tl-theme="dark"] .tl-pill:active { background: #262626; }
+    html[data-tl-theme="dark"] .tl-pill-label { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-pill-count { background: #fbfbfb; color: #1b1b1b;
+      box-shadow: 0 1px 3px 0 rgba(0,0,0,0.3), inset 0 0 0 1px rgba(0,0,0,0.06), inset 0 -1px 0 0 rgba(0,0,0,0.06); }
+
+    /* — dropdown menu surface + rows (Figma node 620:976) — */
+    html[data-tl-theme="dark"] .tl-menu { background: #202020;
+      box-shadow: var(--menu-shadow), inset 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 0 rgba(255,255,255,0.03); }
+    html[data-tl-theme="dark"] .tl-menu-search { border-bottom-color: #262626; }
+    html[data-tl-theme="dark"] .tl-menu-search-input { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-menu-search-input::placeholder { color: #8b8b8b; }
+    html[data-tl-theme="dark"] .tl-menu-item { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-menu-item:hover { background: rgba(255,255,255,0.04); }
+    html[data-tl-theme="dark"] .tl-menu-item:active { background: rgba(255,255,255,0.06); }
+    html[data-tl-theme="dark"] .tl-menu-item:focus-visible { background: transparent; box-shadow: inset 0 0 0 1px rgba(85,207,255,0.5); }
+    html[data-tl-theme="dark"] .tl-menu-dim,
+    html[data-tl-theme="dark"] .tl-menu-value,
+    html[data-tl-theme="dark"] .tl-menu-section,
+    html[data-tl-theme="dark"] .tl-menu-head { color: #8b8b8b; }
+    html[data-tl-theme="dark"] .tl-menu-head-name { color: #4c4c4c; }
+    html[data-tl-theme="dark"] .tl-menu-check { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-menu-divider { background: #262626; }
+    html[data-tl-theme="dark"] .tl-menu-icon,
+    html[data-tl-theme="dark"] .tl-menu-chevr,
+    html[data-tl-theme="dark"] .tl-set-back-ic { color: #8b8b8b; }
+    html[data-tl-theme="dark"] .tl-set-back { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-set-back:hover { background: rgba(255,255,255,0.04); }
+    html[data-tl-theme="dark"] .tl-set-back:active { background: rgba(255,255,255,0.06); }
+    html[data-tl-theme="dark"] .tl-set-back:focus-visible { background: transparent; box-shadow: inset 0 0 0 1px rgba(85,207,255,0.5); }
+    html[data-tl-theme="dark"] .tl-kbd-row { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-kbd { background: rgba(255,255,255,0.06); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); color: #cfcfcf; }
+    html[data-tl-theme="dark"] .tl-kbd-plus { color: #6b6b6b; }
+
+    /* — mode dropdown rows — */
+    html[data-tl-theme="dark"] .tl-mode-row:hover { background: rgba(255,255,255,0.06); }
+    html[data-tl-theme="dark"] .tl-mode-row-title { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-mode-row-desc { color: #979797; }
+    html[data-tl-theme="dark"] .tl-mode-row-check { color: #fbfbfb; }
+
+    /* — fields / selects / steppers / tabs / cubic inputs — */
+    html[data-tl-theme="dark"] .tl-field.is-editing { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14), inset 0 0 0 0.5px rgba(255,255,255,0.06); }
+    html[data-tl-theme="dark"] .tl-field-fill { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), inset 0 -1px 0 0 rgba(0,0,0,0.2), 0 1px 3px 0 rgba(0,0,0,0.24); }
+    html[data-tl-theme="dark"] .tl-select { background: rgba(255,255,255,0.04); color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-select:hover,
+    html[data-tl-theme="dark"] .tl-select.is-open { background: rgba(255,255,255,0.1); }
+    html[data-tl-theme="dark"] .tl-cubic-row input { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-cubic-row input::placeholder { color: #8b8b8b; }
+    html[data-tl-theme="dark"] .tl-cubic-cell:focus-within { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); }
+    html[data-tl-theme="dark"] .tl-custom-input { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06); }
+    html[data-tl-theme="dark"] .tl-seg-btn { color: #8b8b8b; }
+    html[data-tl-theme="dark"] .tl-seg-btn:hover:not(.is-active) { background: rgba(255,255,255,0.04); color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-seg-btn.is-active { background: rgba(255,255,255,0.1); color: #fbfbfb; }
+
+    /* — bezier preview (curve stays light; surfaces darken) — */
+    html[data-tl-theme="dark"] .tl-curve { background: rgba(255,255,255,0.04); }
+    html[data-tl-theme="dark"] .tl-preview-curve svg path { stroke: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-preview-title,
+    html[data-tl-theme="dark"] .tl-preview-chevron,
+    html[data-tl-theme="dark"] .tl-preview-sub-label { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-preview-head:hover .tl-preview-title,
+    html[data-tl-theme="dark"] .tl-preview-head:hover .tl-preview-chevron { color: #fff; }
+    html[data-tl-theme="dark"] .tl-preview-play:hover { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-preview-track { background: rgba(255,255,255,0.04); }
+    html[data-tl-theme="dark"] .tl-preview-rail { border-top-color: rgba(255,255,255,0.14); }
+
+    /* — suggestion cards — */
+    html[data-tl-theme="dark"] .tl-sug { background: #202020; box-shadow: 0 0 0 1px rgba(255,255,255,0.06); }
+    html[data-tl-theme="dark"] .tl-sug-member { background: rgba(255,255,255,0.04); box-shadow: 0 0 0 1px rgba(255,255,255,0.08); color: #bdbdbd; }
+    html[data-tl-theme="dark"] .tl-sug-prop { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-sug-divider { background: #262626; }
+    html[data-tl-theme="dark"] .tl-sug-title { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-sug-from { color: #8b8b8b; }
+    html[data-tl-theme="dark"] .tl-sug-to { color: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-sug-reason,
+    html[data-tl-theme="dark"] .tl-sug-phases { color: #979797; }
+    html[data-tl-theme="dark"] .tl-sug-phase { background: rgba(255,255,255,0.06); color: #cfcfcf; }
+    html[data-tl-theme="dark"] .tl-sug-phase-dur { color: #fbfbfb; }
+
+    /* — colorful category pills: brighten text only (bg/ring kept) — */
+    html[data-tl-theme="dark"] .tl-sug-cat.is-easing { color: #c471ff; }
+    html[data-tl-theme="dark"] .tl-sug-cat.is-duration { color: #50a7ff; }
+    html[data-tl-theme="dark"] .tl-sug-cat.is-scale { color: #64d378; }
+    html[data-tl-theme="dark"] .tl-sug-cat.is-blur { color: #3ec9d6; }
+    html[data-tl-theme="dark"] .tl-sug-cat.is-distance,
+    html[data-tl-theme="dark"] .tl-sug-cat.is-delay { color: #f99032; }
+    html[data-tl-theme="dark"] .tl-sug-cat.is-replace { color: #50a7ff; }
+
+    /* — white pill buttons (card Apply + footer bar) — */
+    html[data-tl-theme="dark"] .tl-pill-btn { background: rgba(255,255,255,0.06); color: #fbfbfb;
+      box-shadow: 0 1px 1px 0 rgba(0,0,0,0.24), inset 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 0 rgba(255,255,255,0.06); }
+    html[data-tl-theme="dark"] .tl-pill-btn .tl-dim { color: #8b8b8b; }
+    html[data-tl-theme="dark"] .tl-pill-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+    html[data-tl-theme="dark"] .tl-pill-btn:disabled { color: #6b6b6b; background: rgba(255,255,255,0.06); box-shadow: none; }
+    html[data-tl-theme="dark"] .tl-pill-btn.is-applied { color: #fbfbfb; background: rgba(255,255,255,0.06); box-shadow: none; }
+    html[data-tl-theme="dark"] .tl-pill-btn.is-applied svg path { stroke: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-refine-foot.is-bar { background: #1b1b1b; border-top-color: #262626; }
+
+    /* — Apply-all footer buttons (.pc-btn, shared into the build) — */
+    html[data-tl-theme="dark"] .pc-btn { background: rgba(255,255,255,0.06); color: #fbfbfb; border-color: rgba(255,255,255,0.12); }
+    html[data-tl-theme="dark"] .pc-btn:hover { background: rgba(255,255,255,0.1); }
+    html[data-tl-theme="dark"] .pc-btn.primary { background: #fbfbfb; color: #1b1b1b; border-color: #fbfbfb; }
+    html[data-tl-theme="dark"] .pc-btn.primary:hover { background: #fff; }
+
+    /* — shimmer / scan status highlights — */
+    html[data-tl-theme="dark"] .tl-scan-shimmer { --shimmer-highlight: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-refine-status-text { --shimmer-base: #6b6b6b; --shimmer-highlight: #fbfbfb; }
+    html[data-tl-theme="dark"] .tl-scan-error { color: #ff8a7a; }
+
+    /* — live chip surfaces (Figma node 580:652) — */
+    html[data-tl-theme="dark"] .tl-live-chip { background: rgba(151,251,142,0.1);
+      box-shadow: 0 1px 3px 0 rgba(0,0,0,0.24), inset 0 0 0 1px rgba(126,224,90,0.06), inset 0 -1px 0 0 rgba(86,218,99,0.08); }
+    html[data-tl-theme="dark"] .tl-live-stop { background: rgba(68,167,84,0.1); box-shadow: inset 0 0 0 1px rgba(112,233,132,0.08); }
+    html[data-tl-theme="dark"] .tl-live-stop:hover,
+    html[data-tl-theme="dark"] .tl-live-stop:active { background: rgba(68,167,84,0.2); }
+    html[data-tl-theme="dark"] .tl-live-chip.is-stopped { background: rgba(180,180,180,0.04);
+      box-shadow: 0 1px 3px 0 rgba(0,0,0,0.24), inset 0 0 0 1px rgba(255,255,255,0.1), inset 0 -1px 0 0 rgba(0,0,0,0.2); }
   </style>
 </head>
 <body>
@@ -1710,6 +1947,19 @@
     // it never drifts; the fallback mirrors the current package.json version for the
     // standalone demo.html.
     const REFINE_VERSION = (typeof window !== "undefined" && window.__TX_REFINE_VERSION) || "0.3.5";
+
+    // Apply the stored theme to <html data-tl-theme> synchronously, before the
+    // panel mounts, so a returning dark-mode user never flashes the light panel.
+    // Runs in both the demo and the injected build (this whole script ships via
+    // inject.mjs). TimelinePanel re-applies + keeps it in sync afterwards.
+    (function applyStoredTheme(){
+      try{
+        const pref=localStorage.getItem("tl-theme-pref")||"system";
+        const sysDark=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const r=pref==="dark"||(pref==="system"&&sysDark)?"dark":"light";
+        document.documentElement.setAttribute("data-tl-theme",r);
+      }catch(e){}
+    })();
 
     // ── helpers ──
     function parseCssTime(v) { const t=v.trim(); if(t.endsWith("ms")) return parseFloat(t); if(t.endsWith("s")) return parseFloat(t)*1000; const n=parseFloat(t); return isNaN(n)?0:n; }
@@ -2722,7 +2972,7 @@
         onReconnect&&h("button",{className:"tl-gate-recheck",disabled:rechecking,onClick:recheck},
           rechecking?(relayDown?"Retrying…":"Reconnecting…"):(relayDown?"Retry connection":"Reconnect agent")));
     }
-    function RefinePanel({open,onClose,phase,label,refineType,onType,suggestions,summary,error,appliedIds,onApply,onApplyAll,mode,onMode,llmAvailable,cliInstalled,relayDown,agentReason,onReconnect,onStart,lanes}){
+    function RefinePanel({open,onClose,phase,label,refineType,onType,suggestions,summary,error,appliedIds,onApply,onApplyAll,mode,onMode,llmAvailable,cliInstalled,relayDown,agentReason,onReconnect,onStart,lanes,resolvedTheme}){
       // mount-on-open; keep mounted through the panel-reveal slide-out, then unmount
       const[render,setRender]=useState(open);
       const[panelOpen,setPanelOpen]=useState(false);
@@ -2790,7 +3040,7 @@
         return h("button",{className:cx("tl-scan-morph","t-resize",scanning&&"is-scanning"),
           disabled:(!!o.disabled)||scanning,"aria-busy":scanning?"true":undefined,
           onClick:(o.disabled||scanning)?undefined:onStart},
-          scanning&&h(BorderBeam,{size:"md",colorVariant:"ocean",theme:"light",duration:2.6,saturation:2,brightness:1.6,className:"tl-scan-beam"},
+          scanning&&h(BorderBeam,{size:"md",colorVariant:"ocean",theme:resolvedTheme==="dark"?"dark":"light",duration:2.6,saturation:2,brightness:1.6,className:"tl-scan-beam"},
             h("span",{className:"tl-scan-beam-fill"})),
           h("span",{className:"tl-scan-content"},
             h("span",{className:"tl-scan-face tl-scan-face-label","aria-hidden":scanning?"true":undefined},
@@ -2937,12 +3187,12 @@
       return out;
     }
 
-    function Header({entries,active,onSelect,onReset,onCopy,copied,snap,setSnap,onMinimize,onRefine,refineActive,onAccept,acceptState,acceptDisabled,acceptError,scanning,scanError,onRescan,pick,setPick,chatLoop,liveStopped,onStopLive}){
+    function Header({entries,active,onSelect,onReset,onCopy,copied,snap,setSnap,onMinimize,onRefine,refineActive,onAccept,acceptState,acceptDisabled,acceptError,scanning,scanError,onRescan,pick,setPick,chatLoop,liveStopped,onStopLive,themePref,setThemePref}){
       const[setg,setSetg]=useState(false);
       // settings dropdown sub-page (main menu ↔ keyboard-shortcuts cheat sheet)
       const[settingsView,setSettingsView]=useState("main"); // "main" | "shortcuts"
-      // theme preference — UI only for now (dark theme not wired up yet)
-      const[themePref,setThemePref]=useState("system"); // "light" | "dark" | "system"
+      // theme preference is owned by TimelinePanel (persisted + applied to <html>);
+      // Header just renders the picker and reports changes up.
       const THEME_OPTS=[{key:"light",label:"Light"},{key:"dark",label:"Dark"},{key:"system",label:"System"}];
       const isMac=typeof navigator!=="undefined"&&/mac/i.test((navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||navigator.userAgent||"");
       const modKey=isMac?"Cmd":"Ctrl";
@@ -3774,6 +4024,33 @@
       const[panelHeight,setPanelHeight]=useState(440);
       const[resizing,setResizing]=useState(false);
       const[snap,setSnap]=useState(true);
+      // ── theme (light / dark / system) ──
+      // Preference persists in localStorage; "system" follows the OS via
+      // matchMedia. The resolved value is mirrored onto <html data-tl-theme> so the
+      // panel AND its body-portaled menus/toasts theme together, and is handed to
+      // BorderBeam to pick its dark beam. A dedicated attribute (not "data-theme")
+      // avoids clobbering a host prototype's own theming in the injected build.
+      const[themePref,setThemePref]=useState(()=>{
+        try{const v=localStorage.getItem("tl-theme-pref");return v==="light"||v==="dark"||v==="system"?v:"system";}catch{return "system";}
+      });
+      const systemDark=()=>{try{return window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;}catch{return false;}};
+      const[resolvedTheme,setResolvedTheme]=useState(()=>themePref==="system"?(systemDark()?"dark":"light"):themePref);
+      useEffect(()=>{
+        try{localStorage.setItem("tl-theme-pref",themePref);}catch{}
+        const apply=()=>{
+          const r=themePref==="system"?(systemDark()?"dark":"light"):themePref;
+          setResolvedTheme(r);
+          try{document.documentElement.setAttribute("data-tl-theme",r);}catch{}
+        };
+        apply();
+        if(themePref!=="system")return;
+        // Follow live OS changes only while on "system".
+        let mq;try{mq=window.matchMedia("(prefers-color-scheme: dark)");}catch{return;}
+        if(!mq)return;
+        const onChange=()=>apply();
+        if(mq.addEventListener)mq.addEventListener("change",onChange);else if(mq.addListener)mq.addListener(onChange);
+        return()=>{if(mq.removeEventListener)mq.removeEventListener("change",onChange);else if(mq.removeListener)mq.removeListener(onChange);};
+      },[themePref]);
       // transition picker open state — lifted out of Header so the panel-focused
       // Cmd/Ctrl+K shortcut can open it.
       const[pickOpen,setPickOpen]=useState(false);
@@ -4625,7 +4902,7 @@
                 onAccept,acceptState,acceptDisabled:computeChanges(active,entries).length===0,acceptError,
                 scanning:groupScanState==="scanning",scanError:groupScanState==="error"?groupScanErr:null,
                 onRescan:rescanTransitions,pick:pickOpen,setPick:setPickOpen,
-                chatLoop,liveStopped,onStopLive:stopLive}),
+                chatLoop,liveStopped,onStopLive:stopLive,themePref,setThemePref}),
               active
                 ?h(Body,{entry:active,onPropChange:(prop,o)=>setPropOverride(prop,o),snap})
                 :h("div",{className:"tl-empty"},"Select a transition to inspect and edit it")),
@@ -4633,7 +4910,7 @@
               refineType,onType:changeRefineType,suggestions:refineSuggestions,summary:refineSummary,error:refineError,
               appliedIds,onApply:applySuggestion,onApplyAll:applyAllSuggestions,
                     mode:refineMode,onMode:changeRefineMode,llmAvailable,cliInstalled,relayDown,agentReason,onReconnect:reconnectAgent,onStart:startScan,
-                    lanes:active?.effectiveTimings||[]}))
+                    lanes:active?.effectiveTimings||[],resolvedTheme}))
               : h("div",{className:"tl-panel-main"},
                   gate==="blocked" && h("div",{className:"tl-gate"},
                     h("div",{className:"tl-gate-col"},
