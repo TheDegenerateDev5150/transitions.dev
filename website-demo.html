@@ -1213,8 +1213,11 @@
       gap: 8px; box-sizing: border-box; padding: 7.5px 7.5px 7.5px 14px;
       border-bottom: 1px solid #f0f0f0; }
     .tl-refine-titles { min-width: 0; }
-    .tl-refine-titles h3 { font-size: 13px; font-weight: 500; line-height: 14px; color: #17181c; }
-    .tl-refine-titles p { margin-top: 2px; font-size: 12px; font-weight: 400; line-height: 14px; color: #676767;
+    /* Explicit margin:0 — the injected build strips the demo-only global *{margin:0}
+       reset, so without this h3/p inherit the UA default block margins (~1em) and
+       the header balloons to ~82px instead of matching the 52px timeline top bar. */
+    .tl-refine-titles h3 { margin: 0; font-size: 13px; font-weight: 500; line-height: 14px; color: #17181c; }
+    .tl-refine-titles p { margin: 2px 0 0; font-size: 12px; font-weight: 400; line-height: 14px; color: #676767;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 190px; }
     .tl-refine-actions { flex: none; display: flex; align-items: center; gap: 2px; }
     .tl-refine-mode { display: flex; align-items: center; gap: 6px; height: 36px;
@@ -4719,7 +4722,19 @@ import React from "https://esm.sh/react@19";
         if(!specs.length) return ()=>txTeardownPhase(store);
         const varsKey=v=>Object.keys(v).sort().map(k=>k+":"+v[k]).join(";");
         const recompute=()=>{
-          const desired=new Map(); // el → {css,vars}
+          // Two concerns, applied DIFFERENTLY:
+          //   • TIMING (the inline `transition` string) is direction-specific —
+          //     open and close share one element + one inline slot, so it must be
+          //     GATED to the active state (open's timing only while open, etc).
+          //   • VALUE VARS (scale/blur custom props, e.g. --dropdown-pre-scale)
+          //     define a STATE's resting value, not the transition itself. A
+          //     "from" var only shows in the OPPOSITE state, so gating it to the
+          //     destination state means it's never visible (this was the bug:
+          //     accepting a scale edit did nothing live). They're safe to apply
+          //     PERSISTENTLY — each var only affects whichever state references
+          //     it — which previews both directions. So: vars = always, css = gated.
+          const desiredCss=new Map();  // el → css  (state-gated)
+          const desiredVars=new Map(); // el → {name:value}  (persistent)
           for(const sp of specs){
             const stEls=fresh(sp.stateTarget);
             // is THIS phase's destination state active on the stateTarget RIGHT NOW?
@@ -4727,19 +4742,31 @@ import React from "https://esm.sh/react@19";
             if(sp.toSuf) active=stEls.length?stEls.some(e=>safeMatches(e,sp.toSuf)):true;        // open
             else if(sp.fromSuf) active=stEls.length?stEls.some(e=>!safeMatches(e,sp.fromSuf)):true; // close = not in fromState
             else active=true; // no state info → always reflect (degrades to old behavior)
-            if(!active)continue;
-            for(const mm of sp.members) for(const el of txMemberEls(mm.selector,sp.stateTarget)){ if(inUI(el))continue; desired.set(el,{css:mm.css,vars:mm.vars}); }
+            for(const mm of sp.members) for(const el of txMemberEls(mm.selector,sp.stateTarget)){
+              if(inUI(el))continue;
+              if(mm.vars&&Object.keys(mm.vars).length){ const ex=desiredVars.get(el)||{}; desiredVars.set(el,{...ex,...mm.vars}); }
+              if(active) desiredCss.set(el,mm.css);
+            }
           }
-          for(const [el,d] of desired){
-            const vars=d.vars||{},vk=varsKey(vars),cur=store.applied.get(el);
-            if(cur&&cur.css===d.css&&cur.vk===vk)continue;
-            if(!cur) store.applied.set(el,{prevInline:el.style.transition||"",prevVars:Object.fromEntries(Object.keys(vars).map(n=>[n,el.style.getPropertyValue(n)])),css:d.css,vk});
-            else store.applied.set(el,{prevInline:cur.prevInline,prevVars:cur.prevVars,css:d.css,vk});
-            try{el.style.transition=d.css;}catch{}
+          const allEls=new Set([...desiredCss.keys(),...desiredVars.keys()]);
+          for(const el of allEls){
+            const css=desiredCss.has(el)?desiredCss.get(el):null;
+            const vars=desiredVars.get(el)||{};
+            const vk=varsKey(vars);
+            const cur=store.applied.get(el);
+            if(cur&&cur.css===css&&cur.vk===vk)continue;
+            if(!cur){
+              store.applied.set(el,{prevInline:el.style.transition||"",prevVars:Object.fromEntries(Object.keys(vars).map(n=>[n,el.style.getPropertyValue(n)])),css,vk});
+            }else{
+              const prevVars={...(cur.prevVars||{})};for(const n of Object.keys(vars)){if(!(n in prevVars))prevVars[n]=el.style.getPropertyValue(n);}
+              store.applied.set(el,{prevInline:cur.prevInline,prevVars,css,vk});
+            }
+            const rec=store.applied.get(el);
+            try{el.style.transition=css!=null?css:rec.prevInline;}catch{}
             for(const n of Object.keys(vars)){try{el.style.setProperty(n,vars[n]);}catch{}}
           }
           for(const [el,rec] of Array.from(store.applied)){
-            if(desired.has(el))continue;
+            if(allEls.has(el))continue;
             try{el.style.transition=rec.prevInline;}catch{}
             for(const n of Object.keys(rec.prevVars||{})){try{const pv=rec.prevVars[n];if(pv)el.style.setProperty(n,pv);else el.style.removeProperty(n);}catch{}}
             store.applied.delete(el);
