@@ -1873,8 +1873,12 @@
     html[data-tl-theme="dark"] .tl-resize-handle::after { background: rgba(255,255,255,0.14); }
 
     /* — toast / minimized pill / transitions count badge — */
+    /* toast + tooltip share the dropdown's dark shadow recipe (menu-shadow +
+       white inset ring) so all floating surfaces read consistently. */
     html[data-tl-theme="dark"] .tl-toast { background: #202020; color: #fbfbfb;
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 2px 6px 0 rgba(0,0,0,0.4), 0 4px 42px 0 rgba(0,0,0,0.5); }
+      box-shadow: var(--menu-shadow), inset 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 0 rgba(255,255,255,0.03); }
+    html[data-tl-theme="dark"] .t-tt {
+      box-shadow: var(--menu-shadow), inset 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 0 rgba(255,255,255,0.03); }
     html[data-tl-theme="dark"] .tl-toast-ic { color: #fbfbfb; }
     html[data-tl-theme="dark"] .tl-pill { background: #1b1b1b; }
     html[data-tl-theme="dark"] .tl-pill:hover,
