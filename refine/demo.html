@@ -514,6 +514,20 @@
     .tl-main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
     .tl-inspector { flex: 0 0 280px; padding: 16px 16px; display: flex; flex-direction: column;
       border-left: 1px solid var(--c-line); min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    /* thin overlay-style scrollbars — scoped to the panel scroll containers so the
+       host page's own scrollbar is never touched */
+    .tl-inspector, .tl-rows, .tl-refine-body, .tl-refine-pages .t-page {
+      scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.18) transparent; }
+    .tl-inspector::-webkit-scrollbar, .tl-rows::-webkit-scrollbar,
+    .tl-refine-body::-webkit-scrollbar, .tl-refine-pages .t-page::-webkit-scrollbar { width: 6px; height: 6px; }
+    .tl-inspector::-webkit-scrollbar-track, .tl-rows::-webkit-scrollbar-track,
+    .tl-refine-body::-webkit-scrollbar-track, .tl-refine-pages .t-page::-webkit-scrollbar-track { background: transparent; }
+    .tl-inspector::-webkit-scrollbar-thumb, .tl-rows::-webkit-scrollbar-thumb,
+    .tl-refine-body::-webkit-scrollbar-thumb, .tl-refine-pages .t-page::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.18); border-radius: 8px; border: 1px solid transparent; background-clip: padding-box; }
+    .tl-inspector::-webkit-scrollbar-thumb:hover, .tl-rows::-webkit-scrollbar-thumb:hover,
+    .tl-refine-body::-webkit-scrollbar-thumb:hover, .tl-refine-pages .t-page::-webkit-scrollbar-thumb:hover {
+      background: rgba(0,0,0,0.28); background-clip: padding-box; }
     /* title sits centered in the ~52px band between the Refine toolbar and the
        Duration field: 16px above + 20px title + 16px below = 52px */
     .tl-insp-title { display: flex; align-items: center; font-size: 13px; font-weight: 500; line-height: 18px; color: #171717; margin-bottom: 16px; text-transform: capitalize; }
@@ -738,9 +752,10 @@
       transition: color 0.12s ease; }
     .tl-preview-head:hover .tl-preview-title,
     .tl-preview-head:hover .tl-preview-chevron { color: #000; }
-    .tl-preview-title { font-size: 13px; font-weight: 500; color: #171717; letter-spacing: 0; line-height: 18px; }
+    .tl-preview-title { font-size: 13px; font-weight: 500; color: #171717; letter-spacing: 0; line-height: 18px;
+      transition: color 0.12s ease; }
     .tl-preview-chevron { display: inline-flex; color: #171717;
-      transform: scaleY(1); transform-origin: center; transition: transform var(--acc-dur) var(--acc-ease); }
+      transform: scaleY(1); transform-origin: center; transition: transform var(--acc-dur) var(--acc-ease), color 0.12s ease; }
     .tl-preview[data-open="true"] .tl-preview-chevron { transform: scaleY(-1); }
     .tl-preview-panel { display: grid; grid-template-rows: 0fr;
       transition: grid-template-rows var(--acc-dur) var(--acc-ease); }
@@ -1735,6 +1750,10 @@
     /* — timeline rows / ruler / bars / member chips — */
     html[data-tl-theme="dark"] .tl-prop-row:hover { background: rgba(255,255,255,0.02); }
     html[data-tl-theme="dark"] .tl-prop-row.selected { background: rgba(255,255,255,0.04); border-bottom-color: #2a2a2a; }
+    /* top hairline of the selected row = bottom border of the row above (no 1px shift) */
+    html[data-tl-theme="dark"] .tl-prop-row:has(+ .tl-prop-row.selected) { border-bottom-color: #2a2a2a; }
+    /* first row selected: recolor the ruler-row divider that sits directly above it */
+    html[data-tl-theme="dark"] .tl-ruler-row:has(+ .tl-rows .tl-prop-row:first-child.selected) { border-bottom-color: #2a2a2a; }
     html[data-tl-theme="dark"] .tl-prop-row.selected .tl-prop-label { color: #fbfbfb; }
     html[data-tl-theme="dark"] .tl-prop-member,
     html[data-tl-theme="dark"] .tl-prop-row.selected .tl-prop-member,
@@ -1744,6 +1763,19 @@
     html[data-tl-theme="dark"] .tl-bar {
       box-shadow: 0 1px 1px 0 rgba(0,0,0,0.24), inset 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 0 rgba(255,255,255,0.06); }
     html[data-tl-theme="dark"] .tl-ruler .tick { background: rgba(255,255,255,0.18); }
+    /* dark thin scrollbars */
+    html[data-tl-theme="dark"] .tl-inspector,
+    html[data-tl-theme="dark"] .tl-rows,
+    html[data-tl-theme="dark"] .tl-refine-body,
+    html[data-tl-theme="dark"] .tl-refine-pages .t-page { scrollbar-color: rgba(255,255,255,0.14) transparent; }
+    html[data-tl-theme="dark"] .tl-inspector::-webkit-scrollbar-thumb,
+    html[data-tl-theme="dark"] .tl-rows::-webkit-scrollbar-thumb,
+    html[data-tl-theme="dark"] .tl-refine-body::-webkit-scrollbar-thumb,
+    html[data-tl-theme="dark"] .tl-refine-pages .t-page::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); background-clip: padding-box; }
+    html[data-tl-theme="dark"] .tl-inspector::-webkit-scrollbar-thumb:hover,
+    html[data-tl-theme="dark"] .tl-rows::-webkit-scrollbar-thumb:hover,
+    html[data-tl-theme="dark"] .tl-refine-body::-webkit-scrollbar-thumb:hover,
+    html[data-tl-theme="dark"] .tl-refine-pages .t-page::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.24); background-clip: padding-box; }
 
     /* — refine header / tabs / titles — */
     html[data-tl-theme="dark"] .tl-refine-head { border-bottom-color: #262626; }
@@ -1789,6 +1821,9 @@
     html[data-tl-theme="dark"] .tl-refine-btn > svg { color: #90dcff; }
     html[data-tl-theme="dark"] .tl-refine-sparks { color: #90dcff; }
     html[data-tl-theme="dark"] .tl-refine-btn::before { background: rgba(0,128,255,0.17); }
+    /* Figma 580:758 hover variant: fill brightens 0.17 -> 0.25, text/icon #90dcff,
+       ring + drop shadow unchanged. Override base p3 hover (0.10) which would dim it. */
+    html[data-tl-theme="dark"] .tl-refine-btn:hover:not(:disabled)::before { background: rgba(0,128,255,0.25); }
     html[data-tl-theme="dark"] .tl-refine-btn.is-active { color: #b3e6ff; }
     html[data-tl-theme="dark"] .tl-refine-btn.is-active::before { background: rgba(0,128,255,0.3); }
     html[data-tl-theme="dark"] .tl-scan-morph { color: #90dcff; }
@@ -1870,7 +1905,8 @@
     html[data-tl-theme="dark"] .tl-preview-title,
     html[data-tl-theme="dark"] .tl-preview-sub-label { color: #fbfbfb; }
     html[data-tl-theme="dark"] .tl-preview-chevron { color: var(--c-ruler); }
-    html[data-tl-theme="dark"] .tl-preview-head:hover .tl-preview-title { color: #fff; }
+    html[data-tl-theme="dark"] .tl-preview-head:hover .tl-preview-title,
+    html[data-tl-theme="dark"] .tl-preview-head:hover .tl-preview-chevron { color: #fff; }
     html[data-tl-theme="dark"] .tl-preview-play:hover { color: #fbfbfb; }
     html[data-tl-theme="dark"] .tl-preview-track { background: rgba(255,255,255,0.04); }
     html[data-tl-theme="dark"] .tl-preview-rail { border-top-color: rgba(255,255,255,0.14); }
