@@ -8,6 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Preload the Saans display face (hero title) so it's fetched before
+       first paint — paired with font-display: optional this removes the
+       fallback→Saans flash/reflow. -->
+  <link rel="preload" as="font" type="font/woff2" href="assets/fonts/Saans-Medium.woff2" crossorigin />
   <script>
     (function () {
       try {
@@ -2192,7 +2196,7 @@
       font-family: "Saans";
       src: url("assets/fonts/Saans-Medium.woff2") format("woff2"),
            url("assets/fonts/Saans-Medium.woff") format("woff");
-      font-weight: 500; font-style: normal; font-display: swap;
+      font-weight: 500; font-style: normal; font-display: optional;
     }
     .app {
       position: relative; max-width: 1008px; margin: 0 auto; width: 100%;

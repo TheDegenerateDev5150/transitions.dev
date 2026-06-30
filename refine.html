@@ -64,6 +64,16 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
+  <!-- Preload the Saans display face (hero title) so it's fetched before
+       first paint — paired with font-display: optional this removes the
+       fallback→Saans flash/reflow. -->
+  <link
+    rel="preload"
+    as="font"
+    type="font/woff2"
+    href="assets/fonts/Saans-Medium.woff2"
+    crossorigin
+  />
 
   <script type="application/ld+json">
     {
@@ -113,7 +123,9 @@
            url("assets/fonts/Saans-Medium.woff") format("woff");
       font-weight: 500;
       font-style: normal;
-      font-display: swap;
+      /* optional (not swap): the browser waits a brief block period for the
+         preloaded font, then renders Saans with no late swap. */
+      font-display: optional;
     }
 
     /* ============================================================ */
@@ -3218,7 +3230,7 @@
       width: 100%;
     }
     .site-nav-inner {
-      max-width: 1280px;
+      max-width: 1240px;
       margin: 0 auto;
       padding: 16px 24px;
       display: flex;
@@ -3229,7 +3241,7 @@
     .site-nav-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 34px;
       min-width: 0;
     }
     .site-nav-right {
@@ -3259,6 +3271,21 @@
     /* Render the mark at its natural 18×20.295 ratio centered in the 24px box
        (Figma 590:14314 - vector inset 7.72%/12.5%), not stretched edge-to-edge. */
     .brand-mark svg { width: 18px; height: 20.295px; display: block; }
+    .brand {
+      transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+      transform-origin: center;
+      will-change: transform;
+    }
+    .brand:hover { transform: scale(1.02); }
+    .brand-mark {
+      transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+      transform-origin: center;
+    }
+    .brand:hover .brand-mark { transform: rotate(60deg); }
+    @media (prefers-reduced-motion: reduce) {
+      .brand, .brand-mark { transition: none; }
+      .brand:hover, .brand:hover .brand-mark { transform: none; }
+    }
     .brand-word {
       font-size: 15px;
       font-weight: 500;
@@ -3910,7 +3937,15 @@
     </section>
 
     <footer class="footer">
-      <a class="footer-name" href="terms.html">Terms &amp; License</a>
+      <span class="footer-muted">Created by</span><a
+        class="footer-name"
+        href="https://x.com/jakubantalik"
+        target="_blank"
+        rel="noopener noreferrer"
+      >Jakub Antalik</a><span class="footer-muted"> &middot;</span><a
+        class="footer-name"
+        href="terms.html"
+      >Terms &amp; License</a>
     </footer>
   </main>
 
