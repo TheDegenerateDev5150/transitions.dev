@@ -9616,6 +9616,21 @@ export function Surface({ open, children }) {
     })();
   </script>
   <script>
+    (function () {
+      /* Smooth-scroll in-page CTAs (e.g. Browse → #components). */
+      document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+        a.addEventListener("click", function (ev) {
+          var id = a.getAttribute("href").slice(1);
+          if (!id) return;
+          var target = document.getElementById(id);
+          if (!target) return;
+          ev.preventDefault();
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    })();
+  </script>
+  <script>
     // --- Mobile menu: hamburger ↔ ✕ morph + blurred backdrop ---
     // Open adds .menu-open (staggered reveal). Close swaps to
     // .menu-closing for a single quiet fade, decoupled from the
