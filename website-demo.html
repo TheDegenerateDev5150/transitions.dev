@@ -3299,15 +3299,45 @@ import React from "https://esm.sh/react@19";
       // motion-token tweaks: ONLY off-token values, exactly like the real engine.
       const tweaks = _txTokenTweaks(t, ctx);
       // related phases (open + close) → a recipe swap updates them together: one
-      // `patches` entry per phase, open slower than close (250ms / 150ms tokens).
+      // group of patches per phase, open slower than close (250ms / 150ms tokens).
+      // Timing rides on a property:"all" patch; the scale value rides on dedicated
+      // per-lane patches that carry the transform lane's BACKING VAR. A bare
+      // property:"all" scale can't go live — the live preview writes a CSS custom
+      // property and needs the var name, which only the scanned timings know.
       const reqPhases = (request && Array.isArray(request.phases)) ? request.phases.filter(p=>p&&p.phase) : [];
-      const replacePatches = reqPhases.length>1
-        ? reqPhases.map(p=>({phase:p.phase, property:"all", durationMs:/close/i.test(p.phase)?150:250, easing:_TX_EASE, scale:/close/i.test(p.phase)?0.99:0.97}))
-        : null;
+      const recipeScale = ph => /close/i.test(ph)?0.99:0.97;
+      const recipeDur   = ph => /close/i.test(ph)?150:250;
+      // one scale patch per transform/filter lane that has a backing var, so the
+      // applied override carries {scale, varName} and the live var gets written.
+      const scalePatchesFor = (phase, timings) => (timings||[])
+        .filter(tt=>tt.varName && tt.scale!=null)
+        .map(tt=>({phase, property:tt.property, member:tt.member||null, varName:tt.varName, scale:recipeScale(phase)}));
+      const phasePatches = (phase, timings) => [
+        {phase, property:"all", durationMs:recipeDur(phase), easing:_TX_EASE},
+        ...scalePatchesFor(phase, timings)];
+      let replacePatches = reqPhases.length>1
+        ? reqPhases.flatMap(p=>phasePatches(p.phase, p.timings))
+        : phasePatches((request&&request.phase)||null, t);
+      // If several phases resolve to the SAME backing var (a demo that reuses one
+      // scale var for open + close), collapse to the most prominent value so the
+      // single var lands on the recipe's open scale (0.97) instead of the subtler
+      // close value (0.99). Real components use distinct vars → no-op here.
+      {
+        const seenVar=new Map(); const collapsed=[];
+        for(const p of replacePatches){
+          if(p.varName&&p.scale!=null){
+            const prev=seenVar.get(p.varName);
+            if(prev){ if(p.scale<prev.scale)prev.scale=p.scale; continue; }
+            seenVar.set(p.varName,p);
+          }
+          collapsed.push(p);
+        }
+        replacePatches=collapsed;
+      }
       const replace = { id:"mock-replace-menu", kind:"replace", property:p0, member:m0,
         title:"Menu dropdown", reference:"05-menu-dropdown.md",
         patch:mp(m0,{property:"all", durationMs:250, easing:_TX_EASE, scale:0.97}),
-        ...(replacePatches?{patches:replacePatches}:{}),
+        ...(replacePatches&&replacePatches.length?{patches:replacePatches}:{}),
         reason:"Best-fit transitions.dev recipe (#05 Menu dropdown): scale 0.97→1 + fade, 250ms open / 150ms close on cubic-bezier(0.22, 1, 0.36, 1)." };
       const suggestions=[...tweaks, replace];
       // Scope to the requested refineType so per-tab caches merge cleanly.
