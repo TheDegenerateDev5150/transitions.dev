@@ -2633,9 +2633,12 @@
             if(tm){const sc=tm[1].match(/scale\(\s*([^),]+)/i);
               if(sc){const inner=sc[1].trim();const vm=inner.match(/var\(\s*(--[\w-]+)/);
                 const num=vm?parseFloat(cs.getPropertyValue(vm[1])):parseFloat(inner);
-                // pick the value furthest from the resting 1 (the real pre-scale).
-                if(Number.isFinite(num)&&Math.abs(num-1)>1e-4&&(!bestScale||Math.abs(num-1)>Math.abs(bestScale.scale-1)))
-                  bestScale={scale:num,...(vm?{varName:vm[1]}:{})};}
+                // pick the value furthest from the resting 1 (the real pre-scale);
+                // a var-backed scale at rest (1) still reports its var — the hook
+                // for ADDING a start-scale the source neutralized (e.g. icon swap).
+                if(Number.isFinite(num)&&(Math.abs(num-1)>1e-4||vm)){
+                  const better=!bestScale||Math.abs(num-1)>Math.abs(bestScale.scale-1)||(bestScale.varName==null&&vm);
+                  if(better)bestScale={scale:num,...(vm?{varName:vm[1]}:{})};}}
               const tr=tm[1].match(/translate(?:X|Y|3d)?\(\s*([^),]+)/i);
               if(tr){const inner=tr[1].trim();const vm=inner.match(/var\(\s*(--[\w-]+)/);
                 const vn=vm?rootVar(vm[1]):null;
@@ -4874,6 +4877,27 @@
           : (s.patch&&s.patch.property?[{...s.patch,phase:(active&&active.phase)||null}]:[]);
         if(!patches.length)return;
         const groupId=active&&active.groupId;
+        // Recipe timing per phase: a replace emits a phase-level timing patch
+        // (property:"all", duration+easing) plus lane-level value patches. An
+        // ADDED lane (e.g. a blur/filter lane the source never had) must ride the
+        // recipe's phase timing — NOT the source lane's leftover timing — so the
+        // whole recipe moves in lockstep (e.g. filter deblurs exactly as the page
+        // finishes sliding, instead of lagging on the old duration). Collect the
+        // phase timing up front so synthesis is order-independent.
+        const phaseTiming=new Map(); // phaseKey -> {durationMs,delayMs,easing}
+        for(const p of patches){
+          if(p.durationMs==null&&p.easing==null&&p.delayMs==null)continue;
+          const key=p.phase||"";
+          const cur=phaseTiming.get(key)||{};
+          // a coarse property:"all" patch describes the whole phase; prefer it.
+          if(p.property==="all"||!phaseTiming.has(key)){
+            phaseTiming.set(key,{
+              durationMs:p.durationMs??cur.durationMs,
+              delayMs:p.delayMs??cur.delayMs,
+              easing:p.easing??cur.easing,
+            });
+          }
+        }
         for(const p of patches){
           if(!p.property)continue;
           const timingOverride={};
@@ -4910,20 +4934,31 @@
           // (readElValueHint reports var-backed values even at their resting 0),
           // so the patch doesn't need to know the page's CSS custom properties.
           const sibling=(prop)=>memberLanes.find(t=>t.property===prop)||memberLanes[0]||et[0]||null;
+          // Prefer this patch's own timing, then the recipe's phase timing, then
+          // the sibling lane's timing — so an added lane matches the recipe, not
+          // the source's stale duration/easing.
+          const pt=phaseTiming.get(p.phase||"")||{};
+          // recipe timing to stamp on a value lane (blur/scale/translate) so it
+          // rides the recipe duration/easing, not the source's leftover timing.
+          const recipeTiming=()=>{const t={};if(pt.durationMs!=null)t.durationMs=pt.durationMs;if(pt.delayMs!=null)t.delayMs=pt.delayMs;if(pt.easing!=null)t.easing=pt.easing;return t;};
           const synthTiming=(base)=>({
-            durationMs:p.durationMs??(base&&base.durationMs)??250,
-            delayMs:p.delayMs??(base&&base.delayMs)??0,
-            easing:p.easing??(base&&base.easing)??"ease",
+            durationMs:p.durationMs??pt.durationMs??(base&&base.durationMs)??250,
+            delayMs:p.delayMs??pt.delayMs??(base&&base.delayMs)??0,
+            easing:p.easing??pt.easing??(base&&base.easing)??"ease",
           });
           const applyValue=(prop,mk)=>{
             // mk(lane, hint) → override fields for one lane, or null to skip.
             let vLanes=lanes.filter(t=>t.property===prop);
             if(!vLanes.length&&p.property==="all")vLanes=et.filter(t=>t.property===prop&&(!p.member||t.member===p.member||t.memberId===p.member));
             if(vLanes.length){
+              const rt=recipeTiming();
               for(const lane of vLanes){
                 const hint=laneValueHint(lane.selector,prop);
                 const ov=mk(lane,hint);
-                if(ov)registry.setPropOverride(target.id,lane.laneId,ov);
+                // an EXISTING lane the recipe reuses (e.g. Page side-by-side's
+                // filter lane at the source's 300ms) must ALSO adopt the recipe's
+                // phase duration/easing, so the value settles in lockstep.
+                if(ov)registry.setPropOverride(target.id,lane.laneId,{...rt,...ov});
               }
               return;
             }

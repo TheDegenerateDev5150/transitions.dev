@@ -592,11 +592,15 @@
           transform var(--page-slide-dur) var(--page-slide-ease);
       }
 
-      /* Generic copy interaction: simple fade out/fade in only. */
+      /* Generic copy interaction: simple fade out/fade in only. Neutralize blur
+         and scale via the recipe VARS (not `filter/transform: none`) so the vars
+         stay live and the Refine tool can raise them to the skill values. */
+      body[data-style="generic"] .proto-root .t-icon-swap {
+        --icon-swap-blur: 0px;
+        --icon-swap-start-scale: 1;
+      }
       body[data-style="generic"] .proto-root .t-icon-swap .t-icon {
         transition: opacity var(--icon-swap-dur) ease-in-out;
-        filter: none;
-        transform: none;
       }
       body[data-style="generic"] .proto-root .t-text-swap {
         transition: opacity var(--text-swap-dur) ease-in-out;
