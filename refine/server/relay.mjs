@@ -269,6 +269,7 @@ const RECIPES_BLOCK = [
   "  - Panel reveal → filter blur 2px (Small)",
   "  - Page side-by-side → filter blur 3px (Medium) AND transform translate distance 8px, both on the sliding page",
   "  - Icon swap → filter blur 2px (Small) AND transform scale 0.25 (start-scale) on the swapping icon",
+  "  - Text states swap → filter blur 2px (Small) AND transform translateY distance 4px, on the swapping text (exit and enter both settle to blur 0 / translate 0)",
   "  - Skeleton loader and reveal → filter blur 2px (Small)",
   "  - Texts reveal → filter blur 3px (Medium)",
   "  - Success check → filter blur 8px (Large)",

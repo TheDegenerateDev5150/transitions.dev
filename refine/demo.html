@@ -2644,8 +2644,12 @@
                 const vn=vm?rootVar(vm[1]):null;
                 // distance is a magnitude — direction lives in the CSS (± calc).
                 const num=Math.abs(vn?parseFloat(cs.getPropertyValue(vn)):parseFloat(inner));
-                if(Number.isFinite(num)&&num>1e-4&&(!bestTranslate||num>bestTranslate.translate))
-                  bestTranslate={translate:num,...(vn?{translateVarName:vn}:{})};}}
+                // a var-backed translate at rest (0) still reports its var — the
+                // hook for ADDING a slide distance the source neutralized (e.g. a
+                // generic text swap with --text-swap-translate-y: 0).
+                if(Number.isFinite(num)&&(num>1e-4||vn)){
+                  const better=!bestTranslate||num>bestTranslate.translate||(bestTranslate.translateVarName==null&&vn);
+                  if(better)bestTranslate={translate:num,...(vn?{translateVarName:vn}:{})};}}}
           }else{
             const fm=txt.match(/filter\s*:\s*([^;}]+)/i);
             if(fm){const bl=fm[1].match(/blur\(\s*([^)]+)\)/i);

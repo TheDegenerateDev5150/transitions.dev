@@ -102,9 +102,6 @@
       --page-exit-enabled: 1;
       --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
       --page-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
-      /* Accordion chevron flip (21) */
-      --acc-chevron: 250ms;
-      --acc-ease: cubic-bezier(0.22, 1, 0.36, 1);
       --icon-swap-dur: 200ms;
       --icon-swap-blur: 2px;
       --icon-swap-start-scale: 0.25;
@@ -284,9 +281,7 @@
     html[data-theme="dark"] .share-btn:hover { background: color-mix(in srgb, var(--bg-modal) 88%, #fff); }
     .share-btn:active { transform: scale(0.97); }
 
-    /* Chevron flip — same as index accordion (.p21-chevron / 21-accordion).
-       scaleY(-1) about the centre; symmetric stroke path + non-scaling
-       stroke so the flip passes through a flat line at the midpoint. */
+    /* Chevron — static; no flip on open/close. */
     .share-btn .chev {
       display: inline-flex;
       width: 16px;
@@ -294,12 +289,8 @@
       flex: 0 0 16px;
       opacity: 0.7;
       line-height: 0;
-      transform: scaleY(1);
-      transform-origin: center;
-      transition: transform var(--acc-chevron) var(--acc-ease);
     }
     .share-btn .chev svg { display: block; }
-    .share-btn[aria-expanded="true"] .chev { transform: scaleY(-1); }
 
     /* ── Dropdown shell / menu (Figma 632:3816) ───────────────────── */
     .dd-shell {
@@ -494,7 +485,7 @@
 
     /* prefers-reduced-motion — required by every snippet. */
     @media (prefers-reduced-motion: reduce) {
-      .proto-root .t-dropdown, .proto-root .t-icon-swap .t-icon, .proto-root .t-text-swap, .proto-root .dd-tabs-pill, .proto-root .dd-tab, .proto-root .dd-body, .proto-root .t-page-slide .t-page, .proto-root .share-btn .chev {
+      .proto-root .t-dropdown, .proto-root .t-icon-swap .t-icon, .proto-root .t-text-swap, .proto-root .dd-tabs-pill, .proto-root .dd-tab, .proto-root .dd-body, .proto-root .t-page-slide .t-page {
         transition: none !important;
       }
     }
@@ -510,11 +501,6 @@
       }
       body[data-style="generic"] .proto-root .t-dropdown.is-open { transform: scale(1); opacity: 1; }
       body[data-style="generic"] .proto-root .t-dropdown.is-closing { transform: scale(0.85); opacity: 0; }
-
-      /* Chevron flip — re-enable on generic pane too. */
-      body[data-style="generic"] .proto-root .share-btn .chev {
-        transition: transform var(--acc-chevron) var(--acc-ease);
-      }
 
       /* Keep tabs/pill snappy in the bad example. */
       body[data-style="generic"] .proto-root .dd-tabs-pill,
@@ -556,13 +542,13 @@
       body[data-style="generic"] .proto-root .t-icon-swap .t-icon {
         transition: opacity var(--icon-swap-dur) ease-in-out;
       }
+      /* Neutralize text-swap blur + translate via the recipe VARS (not
+         filter/transform: none) so the hooks stay live and Refine can raise
+         them to the skill values on apply. */
       body[data-style="generic"] .proto-root .t-text-swap {
+        --text-swap-blur: 0px;
+        --text-swap-translate-y: 0px;
         transition: opacity var(--text-swap-dur) ease-in-out;
-      }
-      body[data-style="generic"] .proto-root .t-text-swap.is-exit,
-      body[data-style="generic"] .proto-root .t-text-swap.is-enter-start {
-        transform: none;
-        filter: none;
       }
       body[data-style="generic"] .proto-root .t-text-swap.is-enter-start {
         transition: none;
@@ -589,7 +575,7 @@
       <iframe
         id="compareIframeOff"
         class="compare-pane-iframe"
-        src="example-dropdown.html?embed=1&style=generic&v=20260709-13"
+        src="example-dropdown.html?embed=1&style=generic&v=20260709-15"
         title="Share dropdown demo without Transitions.dev skill"
         loading="lazy"
       ></iframe>
@@ -606,7 +592,7 @@
       <iframe
         id="compareIframeOn"
         class="compare-pane-iframe"
-        src="example-dropdown.html?embed=1&v=20260709-13"
+        src="example-dropdown.html?embed=1&v=20260709-15"
         title="Share dropdown demo with Transitions.dev skill"
         loading="lazy"
       ></iframe>
