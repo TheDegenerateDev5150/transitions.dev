@@ -133,6 +133,7 @@ export function refineTimings(timings, ctx) {
   const suggestions = [];
   if (!Array.isArray(timings)) return suggestions;
   const c = ctx || {};
+  const blurByMember = new Map(); // memberKey -> {member,hint,sawBlur,varName}
 
   for (const t of timings) {
     const prop = t.property || "all";
@@ -140,6 +141,13 @@ export function refineTimings(timings, ctx) {
     // with this lane's own property/member so component words (dropdown, modal,
     // page slide…) are visible to the usage matcher.
     const hint = [c.label, c.selector, c.phase, t.hint, t.property, t.member].filter(Boolean).join(" ");
+    const memberKey = t.member || "__all__";
+    if (!blurByMember.has(memberKey)) {
+      blurByMember.set(memberKey, { member: t.member || null, hint, sawBlur: false, varName: null });
+    }
+    const bm = blurByMember.get(memberKey);
+    bm.hint = [bm.hint, hint].filter(Boolean).join(" ");
+    if (t.varName && (!bm.varName || prop === "filter")) bm.varName = t.varName;
 
     // Duration → nearest token (skip if already on-grid or within 10ms).
     if (Number.isFinite(t.durationMs)) {
@@ -199,6 +207,7 @@ export function refineTimings(timings, ctx) {
     // Blur → a transitions.dev blur token (usage-first, nearest fallback). The
     // captured value is the non-resting "pre" blur (settles to 0); skip 0/none.
     if (Number.isFinite(t.blur) && t.blur > 1e-4) {
+      bm.sawBlur = true;
       const usage = pickBlurByUsage(hint);
       const { token: near, delta } = nearestBlur(t.blur);
       const token = usage || near;
@@ -216,6 +225,31 @@ export function refineTimings(timings, ctx) {
         });
       }
     }
+  }
+
+  // Missing-blur detection: when usage clearly maps to a blur token but no blur
+  // lane is present, suggest adding one so the motion isn't opacity-only.
+  for (const [memberKey, info] of blurByMember) {
+    if (info.sawBlur) continue;
+    const token = pickBlurByUsage(info.hint);
+    if (!token) continue;
+    const member = info.member;
+    suggestions.push({
+      id: `${memberKey}-blur-add`,
+      kind: "blur",
+      property: "filter",
+      member,
+      title: `Blur → ${token.name}`,
+      from: "0px",
+      to: `${token.px}px`,
+      patch: {
+        property: "filter",
+        blur: token.px,
+        ...(info.varName ? { varName: info.varName } : {}),
+        ...(member ? { member } : {}),
+      },
+      reason: `${token.name} (${token.px}px) is the transitions.dev blur token for ${token.usage}. This transition currently has no blur.`,
+    });
   }
 
   return suggestions;

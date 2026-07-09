@@ -2891,10 +2891,16 @@
     // Token-faithful tweaks for one lane list (mirrors refineTimings()).
     function _txTokenTweaks(timings, ctx){
       const out=[]; const c=ctx||{};
+      const blurByMember=new Map(); // memberKey -> {member,hint,sawBlur,varName}
       for(const t of (timings||[])){
         const prop=t.property||"all";
         const member=t.member||null;
         const hint=[c.label,c.selector,c.phase,t.property,t.member].filter(Boolean).join(" ");
+        const memberKey=member||"__all__";
+        if(!blurByMember.has(memberKey))blurByMember.set(memberKey,{member,hint,sawBlur:false,varName:null});
+        const bm=blurByMember.get(memberKey);
+        bm.hint=[bm.hint,hint].filter(Boolean).join(" ");
+        if(t.varName&&(!bm.varName||prop==="filter"))bm.varName=t.varName;
         const mp=(rest)=> member ? {member, ...rest} : rest;
         if(Number.isFinite(t.durationMs)){const {token,delta}=_txNearest(_TX_DUR_TOKENS,t.durationMs);
           if(delta>10)out.push({id:"mock-"+prop+"-duration",kind:"duration",property:prop,member,
@@ -2911,10 +2917,22 @@
             patch:mp({property:prop,scale:token.v,...(t.varName?{varName:t.varName}:{})}),
             reason:token.name+" ("+token.v+") is the transitions.dev scale token for "+token.usage+". "+t.scale+" is "+(usage?"off the usage token":"off-grid")+"."});}
         if(Number.isFinite(t.blur)&&t.blur>1e-4){const usage=_txBlurUsage(hint);const {token:near,delta}=_txNearest(_TX_BLUR_TOKENS,t.blur);const token=usage||near;
+          bm.sawBlur=true;
           if(token&&(usage||delta>0.5)&&Math.abs(token.v-t.blur)>1e-4)out.push({id:"mock-"+prop+"-blur",kind:"blur",property:prop,member,
             title:"Blur → "+token.name,from:t.blur+"px",to:token.v+"px",
             patch:mp({property:prop,blur:token.v,...(t.varName?{varName:t.varName}:{})}),
             reason:token.name+" ("+token.v+"px) is the transitions.dev blur token for "+token.usage+". "+t.blur+"px is "+(usage?"off the usage token":"off-grid")+"."});}
+      }
+      // Missing-blur detection (demo parity with server token engine).
+      for(const [memberKey,info] of blurByMember){
+        if(info.sawBlur)continue;
+        const token=_txBlurUsage(info.hint);
+        if(!token)continue;
+        const member=info.member||null;
+        out.push({id:"mock-"+memberKey+"-blur-add",kind:"blur",property:"filter",member,
+          title:"Blur → "+token.name,from:"0px",to:token.v+"px",
+          patch:{property:"filter",blur:token.v,...(member?{member}:{}),...(info.varName?{varName:info.varName}:{})},
+          reason:token.name+" ("+token.v+"px) is the transitions.dev blur token for "+token.usage+". This transition currently has no blur."});
       }
       return out;
     }
@@ -2938,15 +2956,20 @@
       // property and needs the var name, which only the scanned timings know.
       const reqPhases = (request && Array.isArray(request.phases)) ? request.phases.filter(p=>p&&p.phase) : [];
       const recipeScale = ph => /close/i.test(ph)?0.99:0.97;
+      const recipeBlur  = ph => /close/i.test(ph)?2:2;
       const recipeDur   = ph => /close/i.test(ph)?150:250;
       // one scale patch per transform/filter lane that has a backing var, so the
       // applied override carries {scale, varName} and the live var gets written.
       const scalePatchesFor = (phase, timings) => (timings||[])
         .filter(tt=>tt.varName && tt.scale!=null)
         .map(tt=>({phase, property:tt.property, member:tt.member||null, varName:tt.varName, scale:recipeScale(phase)}));
+      const blurPatchesFor = (phase, timings) => (timings||[])
+        .filter(tt=>tt.varName && tt.blur!=null)
+        .map(tt=>({phase, property:tt.property, member:tt.member||null, varName:tt.varName, blur:recipeBlur(phase)}));
       const phasePatches = (phase, timings) => [
         {phase, property:"all", durationMs:recipeDur(phase), easing:_TX_EASE},
-        ...scalePatchesFor(phase, timings)];
+        ...scalePatchesFor(phase, timings),
+        ...blurPatchesFor(phase, timings)];
       let replacePatches = reqPhases.length>1
         ? reqPhases.flatMap(p=>phasePatches(p.phase, p.timings))
         : phasePatches((request&&request.phase)||null, t);
@@ -4797,15 +4820,10 @@
         const groupId=active&&active.groupId;
         for(const p of patches){
           if(!p.property)continue;
-          const o={};
-          if(p.durationMs!=null)o.durationMs=p.durationMs;
-          if(p.delayMs!=null)o.delayMs=p.delayMs;
-          if(p.easing!=null)o.easing=p.easing;
-          // value edits: keep the new value, the backing var, and the from-value
-          // (parsed off the suggestion) so computeChanges can write source on Accept.
-          if(p.scale!=null){o.scale=p.scale;o.scaleFrom=(s.from!=null?parseFloat(s.from):undefined);}
-          if(p.blur!=null){o.blur=p.blur;o.blurFrom=(s.from!=null?parseFloat(s.from):undefined);}
-          if(p.varName!=null)o.varName=p.varName;
+          const timingOverride={};
+          if(p.durationMs!=null)timingOverride.durationMs=p.durationMs;
+          if(p.delayMs!=null)timingOverride.delayMs=p.delayMs;
+          if(p.easing!=null)timingOverride.easing=p.easing;
           // resolve the phase entry this patch targets (its sibling open/close
           // lives in the same group); default to the active entry.
           let target=active;
@@ -4820,7 +4838,35 @@
           let lanes=p.property==="all"?et:et.filter(t=>t.property===p.property);
           if(p.member)lanes=lanes.filter(t=>(t.member===p.member||t.memberId===p.member));
           const ids=lanes.length?lanes.map(t=>t.laneId):[p.property];
-          for(const id of ids)registry.setPropOverride(target.id,id,o);
+          if(Object.keys(timingOverride).length){
+            for(const id of ids)registry.setPropOverride(target.id,id,timingOverride);
+          }
+
+          // Value edits (scale/blur) must land on concrete lanes so live preview
+          // can write the right backing var. For coarse recipe patches that use
+          // property:"all" and omit varName, fan out by lane type.
+          if(p.scale!=null){
+            let scaleLanes=lanes.filter(t=>t.property==="transform"||t.scale!=null);
+            if(!scaleLanes.length&&p.property==="all")scaleLanes=et.filter(t=>t.property==="transform"||t.scale!=null);
+            const scaleFrom=(s.from!=null?parseFloat(s.from):undefined);
+            for(const lane of scaleLanes){
+              const ov={scale:p.scale,scaleFrom};
+              const vn=p.varName??lane.varName;
+              if(vn!=null)ov.varName=vn;
+              registry.setPropOverride(target.id,lane.laneId,ov);
+            }
+          }
+          if(p.blur!=null){
+            let blurLanes=lanes.filter(t=>t.property==="filter"||t.blur!=null);
+            if(!blurLanes.length&&p.property==="all")blurLanes=et.filter(t=>t.property==="filter"||t.blur!=null);
+            const blurFrom=(s.from!=null?parseFloat(s.from):undefined);
+            for(const lane of blurLanes){
+              const ov={blur:p.blur,blurFrom};
+              const vn=p.varName??lane.varName;
+              if(vn!=null)ov.varName=vn;
+              registry.setPropOverride(target.id,lane.laneId,ov);
+            }
+          }
         }
         setAppliedIds(prev=>({...prev,[s.id]:true}));
       },[registry,active,entries]);

@@ -4026,6 +4026,7 @@
           <li><span class="feature-name">Refine: small improvements</span><span class="feature-desc">The agent nudges your timings toward proven motion tokens for cleaner, snappier feel.</span></li>
           <li><span class="feature-name">Refine: replace transitions</span><span class="feature-desc">Swap a transition for a better-fit recipe straight from the transitions.dev library.</span></li>
           <li><span class="feature-name">Accept changes</span><span class="feature-desc">Write the refined values back into your source in whatever styling approach you use.</span></li>
+          <li><span class="feature-name">motion.dev support</span><span class="feature-desc">Motion animations are detected automatically via the Web Animations API - previewed, refined and written back to your transition props.</span></li>
         </ul>
       </div>
 
@@ -4069,7 +4070,7 @@
             </button>
             <div class="t-acc-panel">
               <div class="t-acc-panel-inner">
-                <p>Refine scans your project and detects the CSS transitions and animations automatically. They show up in the transition dropdown - select one to load its timeline and value controls.</p>
+                <p>Refine scans your project and detects the CSS transitions and animations automatically. It also picks up <a href="https://motion.dev" target="_blank" rel="noopener">motion.dev</a> (Framer Motion) animations by intercepting the Web Animations API - no wrapper or code changes needed. They show up in the transition dropdown - select one to load its timeline and value controls. One caveat: Motion animations driven by its JS loop (some springs and layout animations) bypass the Web Animations API and aren't detected automatically.</p>
               </div>
             </div>
           </div>
