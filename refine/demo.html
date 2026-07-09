@@ -2443,11 +2443,25 @@
         }
         return out;
       }
-      _applyOverrides(baseLanes,po){
-        return baseLanes.map(t=>{const o=po[t.laneId]||{};return {...t,durationMs:o.durationMs??t.durationMs,delayMs:o.delayMs??t.delayMs,easing:o.easing??t.easing,spring:o.spring??t.spring,
+      _applyOverrides(baseLanes,po,memberFilter){
+        const out=baseLanes.map(t=>{const o=po[t.laneId]||{};return {...t,durationMs:o.durationMs??t.durationMs,delayMs:o.delayMs??t.delayMs,easing:o.easing??t.easing,spring:o.spring??t.spring,
           // value overrides (scale/blur) come only from applied refine suggestions;
           // they carry their own from-value + backing var so Accept + live preview work.
-          scale:o.scale??t.scale,blur:o.blur??t.blur,varName:o.varName??t.varName,scaleFrom:o.scaleFrom??t.scaleFrom,blurFrom:o.blurFrom??t.blurFrom};});
+          scale:o.scale??t.scale,blur:o.blur??t.blur,varName:o.varName??t.varName,scaleFrom:o.scaleFrom??t.scaleFrom,blurFrom:o.blurFrom??t.blurFrom,
+          translate:o.translate??t.translate,translateFrom:o.translateFrom??t.translateFrom,translateVarName:o.translateVarName??t.translateVarName};});
+        // Synthetic lanes: a refine recipe can ADD a lane the source never
+        // animated (e.g. blur on a transition with no `filter`). Overrides that
+        // carry their own `property` and match no base lane become new lanes so
+        // the transition string, live preview and Accept all see them.
+        // memberFilter: undefined → include all; otherwise only lanes whose
+        // memberId matches (null for flat entries).
+        const have=new Set(baseLanes.map(t=>t.laneId));
+        for(const[laneId,o]of Object.entries(po||{})){
+          if(have.has(laneId)||!o||!o.property)continue;
+          if(memberFilter!==undefined&&(o.memberId??null)!==memberFilter)continue;
+          out.push({laneId,synthetic:true,...o});
+        }
+        return out;
       }
       _notify(){
         this.effectiveCache.clear();
@@ -2463,7 +2477,7 @@
             const members=(ph.members||[]).map(m=>{
               const mb=baseLanes.filter(l=>l.memberId===m.id);
               return {memberId:m.id,label:m.label||m.id,selector:m.selector,toState:m.toState,
-                lanes:this._applyOverrides(mb,po),baseLanes:mb};
+                lanes:this._applyOverrides(mb,po,m.id),baseLanes:mb};
             });
             const item={id,kind:"phase",groupId:g.id,groupLabel:g.label||g.id,component:g.component||null,
               phase:ph.phase||null,phaseLabel:ph.label||ph.phase||"Phase",
@@ -2581,9 +2595,12 @@
     }
 
     // Read the non-resting ("pre") VALUE a lane animates from the live stylesheets:
-    // transform-scale (≠1) and filter-blur (≠0), plus the CSS custom property
-    // backing it (var-backed values are the ones we can live-preview). Returns
-    // {scale?|blur?, varName?}. Only meaningful for transform/filter lanes.
+    // transform-scale (≠1), transform-translate distance (≠0) and filter-blur,
+    // plus the CSS custom property backing each (var-backed values are the ones we
+    // can live-preview). Returns {scale?, blur?, varName?, translate?,
+    // translateVarName?}. A var-backed blur is reported even at 0px — the var is
+    // how an ADDED blur (recipe lane the source lacks) goes live. Only meaningful
+    // for transform/filter lanes.
     function readElValueHint(el, property){
       const out={};
       try{
@@ -2593,8 +2610,24 @@
         const esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
         const tokRes=own.map(c=>new RegExp("\\."+esc(c)+"(?![\\w-])"));
         const matchTok=sel=>!own.length||tokRes.some(re=>re.test(sel));
-        let bestScale=null,bestBlur=null;
-        const consider=txt=>{
+        let bestScale=null,bestBlur=null,bestTranslate=null;
+        // custom-property definitions seen on matching rules — lets a var chain
+        // resolve to its token var (--t-page-from-x: calc(var(--page-slide-distance)
+        // * -1) → --page-slide-distance), which is the var shared across members.
+        const varDefs=new Map();
+        // walk nested var() definitions to the innermost ("token") var.
+        const rootVar=(name)=>{let n=name,guard=0;
+          while(guard++<4){const def=varDefs.get(n);const nm=def&&def.match(/var\(\s*(--[\w-]+)/);if(!nm)break;n=nm[1];}
+          return n;};
+        const texts=[];
+        const collect=list=>{for(const rule of Array.from(list||[])){
+          if(rule.cssRules&&rule.selectorText===undefined){collect(rule.cssRules);continue;}
+          const sel=rule.selectorText;if(!sel||!matchTok(sel))continue;
+          if(rule.cssText)texts.push(rule.cssText);}};
+        for(const sheet of Array.from(document.styleSheets||[])){let r;try{r=sheet.cssRules;}catch{continue;}collect(r);}
+        for(const txt of texts){const defRe=/(--[\w-]+)\s*:\s*([^;}]+)/g;let dm;
+          while((dm=defRe.exec(txt)))if(!varDefs.has(dm[1]))varDefs.set(dm[1],dm[2].trim());}
+        for(const txt of texts){
           if(property==="transform"){
             const tm=txt.match(/transform\s*:\s*([^;}]+)/i);
             if(tm){const sc=tm[1].match(/scale\(\s*([^),]+)/i);
@@ -2602,23 +2635,27 @@
                 const num=vm?parseFloat(cs.getPropertyValue(vm[1])):parseFloat(inner);
                 // pick the value furthest from the resting 1 (the real pre-scale).
                 if(Number.isFinite(num)&&Math.abs(num-1)>1e-4&&(!bestScale||Math.abs(num-1)>Math.abs(bestScale.scale-1)))
-                  bestScale={scale:num,...(vm?{varName:vm[1]}:{})};}}
+                  bestScale={scale:num,...(vm?{varName:vm[1]}:{})};}
+              const tr=tm[1].match(/translate(?:X|Y|3d)?\(\s*([^),]+)/i);
+              if(tr){const inner=tr[1].trim();const vm=inner.match(/var\(\s*(--[\w-]+)/);
+                const vn=vm?rootVar(vm[1]):null;
+                // distance is a magnitude — direction lives in the CSS (± calc).
+                const num=Math.abs(vn?parseFloat(cs.getPropertyValue(vn)):parseFloat(inner));
+                if(Number.isFinite(num)&&num>1e-4&&(!bestTranslate||num>bestTranslate.translate))
+                  bestTranslate={translate:num,...(vn?{translateVarName:vn}:{})};}}
           }else{
             const fm=txt.match(/filter\s*:\s*([^;}]+)/i);
             if(fm){const bl=fm[1].match(/blur\(\s*([^)]+)\)/i);
               if(bl){const inner=bl[1].trim();const vm=inner.match(/var\(\s*(--[\w-]+)/);
                 const num=vm?parseFloat(cs.getPropertyValue(vm[1])):parseFloat(inner);
-                if(Number.isFinite(num)&&num>1e-4&&(!bestBlur||num>bestBlur.blur))
+                // var-backed 0px still reports the var (the hook for ADDING blur).
+                if(Number.isFinite(num)&&(num>1e-4||vm)&&(!bestBlur||num>bestBlur.blur))
                   bestBlur={blur:num,...(vm?{varName:vm[1]}:{})};}}
           }
-        };
-        const collect=list=>{for(const rule of Array.from(list||[])){
-          if(rule.cssRules&&rule.selectorText===undefined){collect(rule.cssRules);continue;}
-          const sel=rule.selectorText;if(!sel||!matchTok(sel))continue;
-          if(rule.cssText)consider(rule.cssText);}};
-        for(const sheet of Array.from(document.styleSheets||[])){let r;try{r=sheet.cssRules;}catch{continue;}collect(r);}
+        }
         if(bestScale)Object.assign(out,bestScale);
         if(bestBlur)Object.assign(out,bestBlur);
+        if(bestTranslate)Object.assign(out,bestTranslate);
       }catch{}
       return out;
     }
@@ -3240,7 +3277,10 @@
                         "Updates ",
                         s.patches.map((pp,pi)=>h("span",{className:"tl-sug-phase",key:pi},
                           (cap(pp.phase)||pp.phase||"Phase"),
-                          pp.durationMs!=null&&h("span",{className:"tl-sug-phase-dur"},pp.durationMs+"ms")))))
+                          pp.durationMs!=null&&h("span",{className:"tl-sug-phase-dur"},pp.durationMs+"ms"),
+                          pp.scale!=null&&h("span",{className:"tl-sug-phase-dur"},"scale "+pp.scale),
+                          pp.blur!=null&&h("span",{className:"tl-sug-phase-dur"},"blur "+pp.blur+"px"),
+                          pp.translate!=null&&h("span",{className:"tl-sug-phase-dur"},"slide "+pp.translate+"px")))))
                   : h(React.Fragment,null,
                       s.title&&h("div",{className:"tl-sug-title"},s.title),
                       (s.from||s.to)&&h("div",{className:"tl-sug-delta"},
@@ -3532,14 +3572,21 @@
         const base=tgt.baseLanes||[];
         const bmap=new Map(base.map(t=>[t.laneId,t]));
         for(const t of (tgt.effectiveTimings||[])){
-          const b=bmap.get(t.laneId);if(!b)continue;
-          if(t.durationMs!==b.durationMs||t.delayMs!==b.delayMs||(t.easing||"")!==(b.easing||"")){
+          const b=bmap.get(t.laneId);
+          // a SYNTHETIC lane (recipe added a property the source never animated,
+          // e.g. blur on a filter-less transition) has no base — write it as an
+          // addition: the lane's timing plus its value(s) below.
+          if(!b&&!t.synthetic)continue;
+          if(!b){
+            out.push({property:t.property,member:t.member||null,selector:t.selector||null,phase:tgt.phase||null,added:true,
+              from:null,to:{durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing}});
+          }else if(t.durationMs!==b.durationMs||t.delayMs!==b.delayMs||(t.easing||"")!==(b.easing||"")){
             out.push({property:t.property,member:t.member||null,selector:t.selector||null,phase:tgt.phase||null,
               from:{durationMs:b.durationMs,delayMs:b.delayMs,easing:b.easing},
               to:{durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing}});
           }
-          // value edits (scale/blur) live as overrides on the effective lane and
-          // carry their own from-value + backing var; emit one change each.
+          // value edits (scale/blur/translate) live as overrides on the effective
+          // lane and carry their own from-value + backing var; emit one change each.
           if(t.scale!=null){
             out.push({property:t.property,member:t.member||null,selector:t.selector||null,phase:tgt.phase||null,varName:t.varName||null,
               from:{scale:t.scaleFrom},to:{scale:t.scale}});
@@ -3547,6 +3594,10 @@
           if(t.blur!=null){
             out.push({property:t.property,member:t.member||null,selector:t.selector||null,phase:tgt.phase||null,varName:t.varName||null,
               from:{blur:t.blurFrom},to:{blur:t.blur}});
+          }
+          if(t.translate!=null){
+            out.push({property:t.property,member:t.member||null,selector:t.selector||null,phase:tgt.phase||null,varName:t.translateVarName||null,
+              from:{translate:t.translateFrom},to:{translate:t.translate}});
           }
         }
       }
@@ -4602,7 +4653,10 @@
       const[refineLabel,setRefineLabel]=useState(null);
       const[appliedIds,setAppliedIds]=useState({});
       const[refineMode,setRefineMode]=useState("llm"); // llm (Agent) | deterministic
-      const[refineType,setRefineType]=useState("small"); // small | replace
+      // small | replace — last selected tab persists (same pattern as tl-theme-pref)
+      const[refineType,setRefineType]=useState(()=>{
+        try{const v=localStorage.getItem("tl-refine-tab-pref");return v==="small"||v==="replace"?v:"small";}catch{return "small";}
+      });
       const[llmAvailable,setLlmAvailable]=useState(null); // null=unknown, true/false from /health
       const[cliInstalled,setCliInstalled]=useState(null); // null=unknown, true/false from /health
       const[agentReason,setAgentReason]=useState(null); // why no CLI is wired (/health agentReason)
@@ -4741,7 +4795,8 @@
           // attach the lane's non-resting scale/blur value (+ backing var) so the
           // agent + deterministic engine can refine transform/filter VALUES too.
           const withVal=(t)=>{const v=laneValueHint(t.selector,t.property);return {property:t.property,member:t.member||null,durationMs:t.durationMs,delayMs:t.delayMs,easing:t.easing,
-            ...(v.scale!=null?{scale:v.scale}:{}),...(v.blur!=null?{blur:v.blur}:{}),...(v.varName?{varName:v.varName}:{})};};
+            ...(v.scale!=null?{scale:v.scale}:{}),...(v.blur!=null?{blur:v.blur}:{}),...(v.varName?{varName:v.varName}:{}),
+            ...(v.translate!=null?{translate:v.translate}:{}),...(v.translateVarName?{translateVarName:v.translateVarName}:{})};};
           const timings=et.map(withVal);
           const selector=(active.bindings&&active.bindings.selector)||(et[0]&&et[0].selector)||null;
           // A recipe swap (replace/both) on a grouped phase should update its related
@@ -4769,6 +4824,7 @@
       // (idle/error), tabs just preview copy and never auto-scan.
       const changeRefineType=useCallback((t)=>{
         setRefineType(t);
+        try{localStorage.setItem("tl-refine-tab-pref",t);}catch{}
         if(!active)return;
         if(scanModeRef.current==="deterministic")return;
         if(refinePhase!=="done"&&refinePhase!=="scanning")return;
@@ -4835,6 +4891,7 @@
           // map the property patch onto the matching lane(s) — a property can span
           // several members in a grouped phase, so apply to each.
           const et=target.effectiveTimings||[];
+          const memberLanes=p.member?et.filter(t=>(t.member===p.member||t.memberId===p.member)):et;
           let lanes=p.property==="all"?et:et.filter(t=>t.property===p.property);
           if(p.member)lanes=lanes.filter(t=>(t.member===p.member||t.memberId===p.member));
           const ids=lanes.length?lanes.map(t=>t.laneId):[p.property];
@@ -4842,31 +4899,68 @@
             for(const id of ids)registry.setPropOverride(target.id,id,timingOverride);
           }
 
-          // Value edits (scale/blur) must land on concrete lanes so live preview
-          // can write the right backing var. For coarse recipe patches that use
-          // property:"all" and omit varName, fan out by lane type.
-          if(p.scale!=null){
-            let scaleLanes=lanes.filter(t=>t.property==="transform"||t.scale!=null);
-            if(!scaleLanes.length&&p.property==="all")scaleLanes=et.filter(t=>t.property==="transform"||t.scale!=null);
-            const scaleFrom=(s.from!=null?parseFloat(s.from):undefined);
-            for(const lane of scaleLanes){
-              const ov={scale:p.scale,scaleFrom};
-              const vn=p.varName??lane.varName;
-              if(vn!=null)ov.varName=vn;
-              registry.setPropOverride(target.id,lane.laneId,ov);
+          // Value edits (scale/blur/translate) must land on concrete lanes so live
+          // preview can write the right backing var. For coarse recipe patches that
+          // use property:"all" and omit varName, fan out by lane type. When a
+          // recipe prescribes a value the source has NO lane for (e.g. blur on a
+          // transition that never animated `filter`), SYNTHESIZE the lane: an
+          // override keyed by a fresh laneId that carries its own property, member
+          // and timing, which the registry surfaces as a new effective lane.
+          // The backing var is probed from the live stylesheets at apply time
+          // (readElValueHint reports var-backed values even at their resting 0),
+          // so the patch doesn't need to know the page's CSS custom properties.
+          const sibling=(prop)=>memberLanes.find(t=>t.property===prop)||memberLanes[0]||et[0]||null;
+          const synthTiming=(base)=>({
+            durationMs:p.durationMs??(base&&base.durationMs)??250,
+            delayMs:p.delayMs??(base&&base.delayMs)??0,
+            easing:p.easing??(base&&base.easing)??"ease",
+          });
+          const applyValue=(prop,mk)=>{
+            // mk(lane, hint) → override fields for one lane, or null to skip.
+            let vLanes=lanes.filter(t=>t.property===prop);
+            if(!vLanes.length&&p.property==="all")vLanes=et.filter(t=>t.property===prop&&(!p.member||t.member===p.member||t.memberId===p.member));
+            if(vLanes.length){
+              for(const lane of vLanes){
+                const hint=laneValueHint(lane.selector,prop);
+                const ov=mk(lane,hint);
+                if(ov)registry.setPropOverride(target.id,lane.laneId,ov);
+              }
+              return;
             }
-          }
-          if(p.blur!=null){
-            let blurLanes=lanes.filter(t=>t.property==="filter"||t.blur!=null);
-            if(!blurLanes.length&&p.property==="all")blurLanes=et.filter(t=>t.property==="filter"||t.blur!=null);
-            const blurFrom=(s.from!=null?parseFloat(s.from):undefined);
-            for(const lane of blurLanes){
-              const ov={blur:p.blur,blurFrom};
-              const vn=p.varName??lane.varName;
-              if(vn!=null)ov.varName=vn;
-              registry.setPropOverride(target.id,lane.laneId,ov);
-            }
-          }
+            // no such lane on this member → synthesize one next to its siblings.
+            // A new filter lane rides the transform (slide) timing per the skill.
+            const sib=sibling(prop==="filter"?"transform":"opacity");
+            if(!sib)return;
+            const hint=laneValueHint(sib.selector,prop);
+            const ov=mk(null,hint);
+            if(!ov)return;
+            const laneId=(sib.memberId?sib.memberId+"::":"")+prop;
+            registry.setPropOverride(target.id,laneId,{
+              property:prop,memberId:sib.memberId??null,member:sib.member??null,selector:sib.selector??null,
+              ...synthTiming(sib),...ov,
+            });
+          };
+          if(p.scale!=null)applyValue("transform",(lane,hint)=>{
+            const ov={scale:p.scale,scaleFrom:(lane&&lane.scale)??hint.scale??(s.from!=null?parseFloat(s.from):undefined)};
+            const vn=p.varName??(lane&&lane.varName)??hint.varName;
+            if(vn!=null)ov.varName=vn;
+            return ov;
+          });
+          if(p.blur!=null)applyValue("filter",(lane,hint)=>{
+            const ov={blur:p.blur,blurFrom:(lane&&lane.blur)??hint.blur??0};
+            const vn=p.varName??(lane&&lane.varName)??hint.varName;
+            if(vn!=null)ov.varName=vn;
+            return ov;
+          });
+          if(p.translate!=null)applyValue("transform",(lane,hint)=>{
+            const ov={translate:p.translate,translateFrom:(lane&&lane.translate)??hint.translate??0};
+            const vn=p.translateVarName??p.varName??(lane&&lane.translateVarName)??hint.translateVarName;
+            // a translate distance can only go live through a backing var — the
+            // inline transition string can't express keyframe positions. Still
+            // record the edit (Accept writes it) even when no var exists.
+            if(vn!=null)ov.translateVarName=vn;
+            return ov;
+          });
         }
         setAppliedIds(prev=>({...prev,[s.id]:true}));
       },[registry,active,entries]);
@@ -4892,11 +4986,13 @@
         if(typeof document==="undefined")return;
         const applied=liveAppliedRef.current;
         const desired=new Map(); // el → {css, vars:{name:value}}
-        // collect the var-backed scale/blur overrides on a set of lanes into a
-        // {varName: cssValue} map (scale → unitless, blur → px) for live preview.
-        const lanesToVars=(lanes)=>{const v={};for(const l of (lanes||[])){if(!l.varName)continue;
-          if(l.scale!=null)v[l.varName]=String(l.scale);
-          if(l.blur!=null)v[l.varName]=l.blur+"px";}return v;};
+        // collect the var-backed scale/blur/translate overrides on a set of lanes
+        // into a {varName: cssValue} map (scale → unitless, blur/translate → px).
+        const lanesToVars=(lanes)=>{const v={};for(const l of (lanes||[])){
+          if(l.varName){
+            if(l.scale!=null)v[l.varName]=String(l.scale);
+            if(l.blur!=null)v[l.varName]=l.blur+"px";}
+          if(l.translate!=null&&l.translateVarName)v[l.translateVarName]=l.translate+"px";}return v;};
         const add=(els,css,vars)=>{ for(const el of els){ if(!el||(el.closest&&el.closest("[data-timeline-panel],[data-tl-ui]")))continue; desired.set(el,{css,vars:vars||{}}); } };
         for(const item of entries){
           if(item.kind==="phase")continue; // phases handled by the state-scoped effect
@@ -4962,9 +5058,11 @@
         if(livePhaseRef.current) txTeardownPhase(livePhaseRef.current);
         const store={observers:[],ptr:null,applied:new Map(),pending:false};
         livePhaseRef.current=store;
-        const lanesToVars=(lanes)=>{const v={};for(const l of (lanes||[])){if(!l.varName)continue;
-          if(l.scale!=null)v[l.varName]=String(l.scale);
-          if(l.blur!=null)v[l.varName]=l.blur+"px";}return v;};
+        const lanesToVars=(lanes)=>{const v={};for(const l of (lanes||[])){
+          if(l.varName){
+            if(l.scale!=null)v[l.varName]=String(l.scale);
+            if(l.blur!=null)v[l.varName]=l.blur+"px";}
+          if(l.translate!=null&&l.translateVarName)v[l.translateVarName]=l.translate+"px";}return v;};
         const inUI=el=>el&&el.closest&&el.closest("[data-timeline-panel],[data-tl-ui]");
         const safeMatches=(el,sel)=>{ if(!sel)return false; try{return el.matches(sel);}catch{return false;} };
         const fresh=sel=>{ if(!sel)return []; try{return Array.from(document.querySelectorAll(sel)).filter(e=>!inUI(e));}catch{return [];} };

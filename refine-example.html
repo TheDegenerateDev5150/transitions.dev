@@ -583,8 +583,10 @@
         --page-fade-ease: ease-in-out;
         --page-blur: 0px;
       }
+      /* No `filter: none` here: --page-blur is 0px in generic mode, so there is
+         visually no blur — but the var hook stays live, which is what lets the
+         Refine tool ADD blur on apply (it writes the var + a filter lane). */
       body[data-style="generic"] .proto-root .t-page-slide .t-page {
-        filter: none;
         transition:
           opacity   var(--page-fade-dur)  var(--page-fade-ease),
           transform var(--page-slide-dur) var(--page-slide-ease);
@@ -910,8 +912,7 @@
         if (Date.now() - t0 > 8000) { show(); clearInterval(poll); }
       }, 400);
     })();
-  </script>
-<!-- timeline-inject:start -->
+  </script><!-- timeline-inject:start -->
 <script type="module" src="http://localhost:7331/inject.js"></script>
 <!-- timeline-inject:end -->
 </body>
