@@ -5168,10 +5168,32 @@
             if(sp.toSuf) active=stEls.length?stEls.some(e=>safeMatches(e,sp.toSuf)):true;        // open
             else if(sp.fromSuf) active=stEls.length?stEls.some(e=>!safeMatches(e,sp.fromSuf)):true; // close = not in fromState
             else active=true; // no state info → always reflect (degrades to old behavior)
+            const spVars={}; // union of this phase's value vars (scale/blur/translate)
+            const memberEls=[]; // {el,css} of resolved members this phase
             for(const mm of sp.members) for(const el of txMemberEls(mm.selector,sp.stateTarget)){
               if(inUI(el))continue;
-              if(mm.vars&&Object.keys(mm.vars).length){ const ex=desiredVars.get(el)||{}; desiredVars.set(el,{...ex,...mm.vars}); }
+              if(mm.vars&&Object.keys(mm.vars).length){ const ex=desiredVars.get(el)||{}; desiredVars.set(el,{...ex,...mm.vars}); Object.assign(spVars,mm.vars); }
               if(active) desiredCss.set(el,mm.css);
+              memberEls.push({el,css:mm.css});
+            }
+            // SHARED-VAR recipes (icon/text swap, page slide, …) drive the non-
+            // resting look through a custom property read by SEVERAL stacked
+            // members from a COMMON ANCESTOR — and the "from" member is often not
+            // even a captured lane (e.g. only opacity animates at rest, so the
+            // entering icon has no filter/transform lane). Writing the var inline
+            // on one member can't reach its siblings, and only the captured
+            // member gets the recipe timing. So when a phase carries value vars:
+            //   (1) set the vars on the stateTarget container — every descendant
+            //       member inherits them, and each state's own CSS rule
+            //       (active → blur(0)/scale(1); inactive → blur(var)/scale(var))
+            //       gates where they actually show; and
+            //   (2) give the same recipe timing to the member's same-slot stacked
+            //       siblings (element children of the same parent sharing a class)
+            //       so the ENTERING member animates the new filter/transform lanes
+            //       instead of snapping.
+            if(Object.keys(spVars).length){
+              for(const el of stEls){ if(inUI(el))continue; const ex=desiredVars.get(el)||{}; desiredVars.set(el,{...ex,...spVars}); }
+              if(active) for(const{el,css}of memberEls){ const parent=el.parentElement; if(!parent)continue; const cls=[...(el.classList||[])]; for(const sib of Array.from(parent.children)){ if(sib===el||inUI(sib)||!sib.classList)continue; if(cls.some(c=>sib.classList.contains(c))&&!desiredCss.has(sib))desiredCss.set(sib,css); } }
             }
           }
           const allEls=new Set([...desiredCss.keys(),...desiredVars.keys()]);
