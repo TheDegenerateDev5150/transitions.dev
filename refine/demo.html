@@ -4872,11 +4872,34 @@
         // A replace suggestion may carry `patches` (one per related phase, e.g.
         // open + close) — a recipe swap is one motion, so applying it writes BOTH.
         // Otherwise fall back to the single `patch` on the active phase.
-        const patches=Array.isArray(s.patches)&&s.patches.length
+        let patches=Array.isArray(s.patches)&&s.patches.length
           ? s.patches
           : (s.patch&&s.patch.property?[{...s.patch,phase:(active&&active.phase)||null}]:[]);
         if(!patches.length)return;
         const groupId=active&&active.groupId;
+        // Same-slot swap recipes (icon/text swaps) use two stacked members in one
+        // group. The agent can sometimes return the recipe's blur/scale value for
+        // only the currently selected member; expand those value patches to every
+        // sibling member so replace applies the WHOLE group, not just the exiting
+        // icon/text.
+        const isSameSlotSwap=s.kind==="replace"&&/icon[-\s]?swap|text states swap|text[-\s]?swap|09-icon-swap|04-text-states-swap/i.test([s.title,s.reference,s.reason].filter(Boolean).join(" "));
+        if(isSameSlotSwap&&groupId){
+          const extra=[]; const has=new Set(patches.map(p=>[p.phase||"",p.property||"",p.member||"",p.blur!=null?"blur":"",p.scale!=null?"scale":"",p.translate!=null?"translate":""].join("|")));
+          const valuePatches=patches.filter(p=>p.member&&(p.blur!=null||p.scale!=null)&&(p.property==="filter"||p.property==="transform"));
+          for(const p of valuePatches){
+            const target=entries.find(e=>e.kind==="phase"&&e.groupId===groupId&&(!p.phase||e.phase===p.phase))||active;
+            const members=new Map();
+            for(const t of (target&&target.effectiveTimings)||[]){
+              const m=t.member||t.memberId;if(m&&!members.has(m))members.set(m,m);
+            }
+            for(const member of members.values()){
+              const k=[p.phase||"",p.property||"",member,p.blur!=null?"blur":"",p.scale!=null?"scale":"",p.translate!=null?"translate":""].join("|");
+              if(has.has(k))continue;
+              has.add(k); extra.push({...p,member});
+            }
+          }
+          if(extra.length)patches=patches.concat(extra);
+        }
         // Recipe timing per phase: a replace emits a phase-level timing patch
         // (property:"all", duration+easing) plus lane-level value patches. An
         // ADDED lane (e.g. a blur/filter lane the source never had) must ride the
