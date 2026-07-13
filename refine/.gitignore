@@ -1,5 +1,6 @@
-# Generated at publish time from ../skills/transitions-dev (see scripts/sync-skill.mjs)
+# Generated at publish time from ../skills/<skill> (see scripts/sync-skill.mjs)
 .agents/skills/transitions-dev/
+.agents/skills/transitions-polish/
 
 # npm pack output
 *.tgz

@@ -28,7 +28,7 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { delimiter, join } from "node:path";
-import { refineTimings, DURATION_TOKENS, SCALE_TOKENS, BLUR_TOKENS, SMOOTH_OUT } from "./motion-tokens.mjs";
+import { refineTimings, DURATION_TOKENS, SCALE_TOKENS, BLUR_TOKENS, DISTANCE_TOKENS, SMOOTH_OUT } from "./motion-tokens.mjs";
 import { buildInjectModule } from "./inject.mjs";
 import { resolveAgentCmd } from "./agent-resolve.mjs";
 import { groupDeterministic } from "./group-deterministic.mjs";
@@ -236,6 +236,8 @@ const MOTION_TOKENS_BLOCK = [
   ...SCALE_TOKENS.map((t) => `  - ${t.v} ${t.name}: ${t.usage}`),
   "Blur (the non-resting 'pre' blur a surface animates FROM — it always settles to 0):",
   ...BLUR_TOKENS.map((t) => `  - ${t.px}px ${t.name}: ${t.usage}`),
+  "Distances (the non-resting 'pre' translate a surface animates FROM — it always settles to 0):",
+  ...DISTANCE_TOKENS.map((t) => `  - ${t.px}px ${t.name}: ${t.usage}`),
 ].join("\n");
 
 // Inlined recipe catalog + decision hints (mirrors the transitions-dev skill's
@@ -291,6 +293,42 @@ const RECIPES_BLOCK = [
 const MISSING_BLUR_NOTE =
   "MISSING BLUR: blur can be ABSENT, not just off-token. When the inferred usage clearly implies a non-resting pre-blur per the Blur tokens above (e.g. a page slide / page side-by-side panel → 3px Medium; an icon swap, text swap, panel reveal, skeleton reveal or number pop-in → 2px Small; a text reveal → 3px Medium; a success check → 8px Large) but the input timings carry NO `filter` lane, ADD one: emit a `blur` suggestion with `property:\"filter\"`, `from:\"0px\"`, `to` the usage token (e.g. \"3px\"), echoing the `member` (and `varName` if present) of the sibling lanes so the sliding/swapping element gains the recipe's blur. Only add blur when the usage genuinely calls for it — never on motion that is intentionally opacity-only (a plain fade, a colour/theme change).";
 
+// Optional `transitions-polish` add-on skill. When the user has it installed in
+// their project, its `_refine-rules.md` (open/close asymmetry, hover in/out,
+// stagger & delay, distance guidance) is inlined into the Small/Both refine
+// prompt so per-click suggestions honor those rules with ZERO extra file reads —
+// the Small prompt forbids the agent from reading files for speed, so inlining is
+// the only way to get the rules in. Resolved relative to the relay's cwd (the
+// user's project, where `npx transitions-refine` runs) across the same skill
+// locations the agents use. Cached with a short TTL, mirroring the agent
+// resolver, so a mid-session install is picked up without restarting the relay.
+const POLISH_RULES_TTL_MS = Number(process.env.REFINE_POLISH_RECHECK_MS) || 10000;
+const POLISH_RULES_FILE = "_refine-rules.md";
+const POLISH_SKILL_DIRS = [
+  ".agents/skills/transitions-polish",
+  ".claude/skills/transitions-polish",
+  "skills/transitions-polish",
+];
+let _polish = { at: 0, rules: null };
+function loadPolishRules() {
+  if (_polish.at !== 0 && now() - _polish.at < POLISH_RULES_TTL_MS) return _polish.rules;
+  let rules = null;
+  for (const dir of POLISH_SKILL_DIRS) {
+    const p = join(process.cwd(), dir, POLISH_RULES_FILE);
+    try {
+      if (existsSync(p)) {
+        rules = readFileSync(p, "utf8").trim() || null;
+        if (rules) break;
+      }
+    } catch {}
+  }
+  const had = Boolean(_polish.rules);
+  _polish = { at: now(), rules };
+  if (rules && !had) console.log("✓ transitions-polish skill detected — inlining polish rules into Small refinements");
+  else if (!rules && had) console.log("• transitions-polish skill no longer found — reverting to base motion-token refinements");
+  return rules;
+}
+
 function buildPrompt(job) {
   const r = job.request || {};
   // "All transitions" replace scope: the panel sends EVERY detected transition
@@ -337,6 +375,8 @@ function buildPrompt(job) {
   const rawType = r.refineType || "small";
   const refineType = rawType === "replace" ? "replace" : rawType === "both" ? "both" : "small";
   const needsRecipe = refineType === "replace" || refineType === "both";
+  // Token-tweak passes (small + both) get the optional polish-skill rules inlined.
+  const polishRules = refineType === "replace" ? null : loadPolishRules();
   // A grouped transition usually has related phases (open + close). When the panel
   // sends them, a recipe swap is ONE motion and must update every phase together —
   // so the agent returns a `patches` array (one entry per phase) instead of a
@@ -380,17 +420,19 @@ function buildPrompt(job) {
   } else if (refineType === "both") {
     lines.push(
       "refineType is \"both\": produce TWO independent groups in the SAME suggestions array — the UI shows them in separate tabs, so include each group whenever it applies.",
-      "(1) Motion-token tweaks (kind \"duration\"/\"delay\"/\"easing\"/\"scale\"/\"blur\"): for each declaration, propose the token value only where it DIFFERS from the current one. Use \"scale\" for an off-token transform pre-scale and \"blur\" for an off-token filter pre-blur, picked by usage.",
+      "(1) Motion-token tweaks (kind \"duration\"/\"delay\"/\"easing\"/\"scale\"/\"blur\"/\"distance\"): for each declaration, propose the token value only where it DIFFERS from the current one. Use \"scale\" for an off-token transform pre-scale, \"blur\" for an off-token filter pre-blur, and \"distance\" for an off-token transform translate distance, picked by usage.",
       MISSING_BLUR_NOTE,
       multiPhase
         ? "(2) Whole-transition replacement (kind \"replace\"): ALWAYS evaluate one — pick the SINGLE best-fit recipe. Emit at most ONE \"replace\" suggestion with the `patches` array (one entry per related phase) AND a single `patch` (the first phase), a `reference` field, and the recipe named in `title`/`reason`. If no recipe genuinely fits, omit the replace suggestion."
         : "(2) Whole-transition replacement (kind \"replace\"): ALWAYS evaluate one — pick the SINGLE best-fit recipe from the list above. Emit at most ONE \"replace\" suggestion: set its `patch` to the recipe's documented duration AND easing (see \"Recipe timing & easing\" — do NOT keep the source's easing when the recipe differs) on the property that already transitions (or \"all\"); if the recipe prescribes a non-resting pre-blur/pre-scale/slide-distance (see \"Recipe non-resting values\" above) put those `blur`/`scale`/`translate` values on the `patch` too so e.g. Page side-by-side gains its 3px blur and 8px distance. Add a `reference` field with the reference filename, and name the recipe in `title`/`reason`. If no recipe genuinely fits, omit the replace suggestion.",
+      ...(polishRules ? ["", polishRules] : []),
       "Answer in ONE response — do NOT read or search files.",
     );
   } else {
     lines.push(
-      "refineType is \"small\": suggest motion-token tweaks ONLY — for each declaration, propose the token value only where it DIFFERS from the current one (kind \"duration\"/\"delay\"/\"easing\"/\"scale\"/\"blur\"). Use \"scale\" for an off-token transform pre-scale and \"blur\" for an off-token filter pre-blur, picked by usage. Do NOT propose a whole-transition replacement (no kind \"replace\") — the Replace tab requests that separately.",
+      "refineType is \"small\": suggest motion-token tweaks ONLY — for each declaration, propose the token value only where it DIFFERS from the current one (kind \"duration\"/\"delay\"/\"easing\"/\"scale\"/\"blur\"/\"distance\"). Use \"scale\" for an off-token transform pre-scale, \"blur\" for an off-token filter pre-blur, and \"distance\" for an off-token transform translate distance, picked by usage. Do NOT propose a whole-transition replacement (no kind \"replace\") — the Replace tab requests that separately.",
       MISSING_BLUR_NOTE,
+      ...(polishRules ? ["", polishRules] : []),
       "Answer in ONE response using ONLY the data above. Do NOT read or search files, run tools, spawn subagents, or explore the codebase — the motion tokens contain everything you need. This is a quick judgement, not a coding task.",
     );
   }
@@ -398,7 +440,7 @@ function buildPrompt(job) {
     "",
     "Output ONLY a JSON object — no prose, no markdown fences — shaped exactly like:",
     '{"summary":"…","suggestions":[{"id":"width-duration","kind":"duration","property":"width","member":"Container","title":"Duration → Fast","from":"400ms","to":"250ms","patch":{"property":"width","member":"Container","durationMs":250},"reason":"…"}]}',
-    'A scale tweak looks like {"id":"transform-scale","kind":"scale","property":"transform","member":"Menu","title":"Scale → Medium","from":"0.8","to":"0.97","patch":{"property":"transform","member":"Menu","scale":0.97},"reason":"…"}; a blur tweak like {"id":"filter-blur","kind":"blur","property":"filter","member":"Panel","title":"Blur → Small","from":"8px","to":"2px","patch":{"property":"filter","member":"Panel","blur":2},"reason":"…"}.',
+    'A scale tweak looks like {"id":"transform-scale","kind":"scale","property":"transform","member":"Menu","title":"Scale → Medium","from":"0.8","to":"0.97","patch":{"property":"transform","member":"Menu","scale":0.97},"reason":"…"}; a blur tweak like {"id":"filter-blur","kind":"blur","property":"filter","member":"Panel","title":"Blur → Small","from":"8px","to":"2px","patch":{"property":"filter","member":"Panel","blur":2},"reason":"…"}; a distance tweak like {"id":"transform-distance","kind":"distance","property":"transform","member":"Page","title":"Distance → Base","from":"24px","to":"8px","patch":{"property":"transform","member":"Page","translate":8,"translateVarName":"--page-slide-distance"},"reason":"…"}.',
     "CRITICAL — `member`: every suggestion and its `patch` MUST echo the `member` of the input lane it came from, copied VERBATIM from that lane in the data above. This is REQUIRED whenever any input lane carries a `member` — most importantly when several lanes share the same `property` (e.g. a dropdown where a caret does `transform: rotate` AND a panel does `transform: scale`): the `member` is the ONLY way to tell which lane a `transform` tweak targets. Omitting it mislabels the suggestion onto the wrong element. Omit `member` only for lanes that genuinely have none.",
     multiPhase
       ? 'A multi-phase replace suggestion ALSO carries a `patches` array. Put timing in phase-level entries (`property:"all"`, duration/easing), and put scale/blur/translate in lane-level entries (`property:"transform"`/`"filter"` plus the lane `member` and `varName`/`translateVarName` from input timings). In each `patch`/`patches` entry include only changed fields (durationMs, delayMs, easing, scale, blur, translate — plus `member` copied from input lane and `varName`/`translateVarName` when present); `property` must match an input property or "all".'

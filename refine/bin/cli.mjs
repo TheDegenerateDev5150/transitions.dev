@@ -104,6 +104,7 @@ function dropSkill(name) {
   const src = join(PKG_ROOT, ".agents/skills", name);
   const destDir = join(CWD, ".agents/skills", name);
   if (!existsSync(src)) return false;
+  if (resolve(src) === resolve(destDir)) return "exists"; // running inside the package's own repo — nothing to copy
   const marker = join(destDir, ".refine-version");
   const existed = existsSync(destDir);
   if (existed) {

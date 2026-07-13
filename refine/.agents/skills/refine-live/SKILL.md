@@ -153,6 +153,22 @@ session never backs off.
      `cubic-bezier(0.34, 3.85, 0.64, 1)` (avatar return).
    - **Nudge toward Smooth ease out:** generic `ease`, `ease-in`, or any
      hand-rolled cubic-bezier()/linear() that isn't a token above.
+   - **Scale / blur / distance** (the non-resting `transform` pre-scale or
+     translate distance, and the `filter` pre-blur a lane carries): scale 0.96
+     Large (modal) · 0.97 Medium (dropdown open) · 0.98 Small (tooltip) · 0.99
+     Tiny (dropdown close); blur 2px (panel/icon/text swap, skeleton, number) ·
+     3px (page slide, text reveal) · 8px (success check); distance 4px (text
+     swap) · 6px (shake small) · 8px (badge, page slide, shake large) · 12px
+     (text reveal) · 30px (check badge). Propose `kind:"scale"`/`"blur"`/
+     `"distance"` (patch key `scale`/`blur`/`translate`, pass `translateVarName`
+     through) only where a lane's value differs from its usage token.
+   - **Polish add-on (optional):** if the project has the `transitions-polish`
+     skill installed (`.agents/skills/transitions-polish/_refine-rules.md`,
+     `.claude/…`, or `skills/…`), read that ONE file a single time and also apply
+     its rules — open/close asymmetry (closes faster/quieter than opens), hover
+     in fast / out soft, stagger totals under ~300ms, 80ms intent delays, and
+     never delay a close. This is the only file read allowed on a Small job, and
+     only when that skill is present.
 
    **3b. Whole-transition recipe swap (`refineType === "replace"` only — no file
    reads).** Match the inferred usage to ONE recipe below (this list *is* the

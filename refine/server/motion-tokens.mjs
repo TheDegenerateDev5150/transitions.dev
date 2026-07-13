@@ -37,6 +37,18 @@ export const BLUR_TOKENS = [
   { px: 8, name: "Large", usage: "success check open" },
 ];
 
+// Distances (px) — from the skill's "## Motion tokens" Distances table. The
+// non-resting translate a surface animates FROM (it always settles to 0). The
+// transitions-polish add-on skill documents these; without it, the base skill
+// only names them in prose. Mirrors the scale/blur usage-first matching.
+export const DISTANCE_TOKENS = [
+  { px: 4, name: "Micro", usage: "text swap" },
+  { px: 6, name: "Small", usage: "error shake (small segment)" },
+  { px: 8, name: "Base", usage: "badge diagonal reveal, page slide, error shake (large segment)" },
+  { px: 12, name: "Medium", usage: "text reveal" },
+  { px: 30, name: "Large", usage: "check badge appear" },
+];
+
 // Easing values that ARE motion tokens — leave these alone.
 const TOKEN_EASINGS = new Set(
   [
@@ -86,6 +98,16 @@ function nearestBlur(px) {
   return { token: best, delta: bestDelta };
 }
 
+function nearestDistance(px) {
+  let best = DISTANCE_TOKENS[0];
+  let bestDelta = Infinity;
+  for (const t of DISTANCE_TOKENS) {
+    const d = Math.abs(t.px - px);
+    if (d < bestDelta) { bestDelta = d; best = t; }
+  }
+  return { token: best, delta: bestDelta };
+}
+
 const norm = (s) => String(s || "").toLowerCase();
 
 // Usage-aware token pick — the skill says "match on USAGE, not the nearest
@@ -114,6 +136,18 @@ function pickBlurByUsage(hint) {
   return null;
 }
 
+function pickDistanceByUsage(hint) {
+  const h = norm(hint);
+  if (!h) return null;
+  // Order matters: more specific usages first so a "text reveal" beats "text swap".
+  if (/success|check|badge.*appear|appear.*badge/.test(h)) return DISTANCE_TOKENS.find((t) => t.px === 30);
+  if (/text/.test(h) && /reveal/.test(h)) return DISTANCE_TOKENS.find((t) => t.px === 12);
+  if (/\bpage\b|\bslide\b|\bbadge\b|\bnotification\b/.test(h)) return DISTANCE_TOKENS.find((t) => t.px === 8);
+  if (/shake|error|invalid/.test(h)) return DISTANCE_TOKENS.find((t) => t.px === 6);
+  if (/text/.test(h) && /swap/.test(h)) return DISTANCE_TOKENS.find((t) => t.px === 4);
+  return null;
+}
+
 // A generic/non-token easing the skill would nudge toward the default ease-out.
 function shouldRefineEasing(easing) {
   const n = normEase(easing);
@@ -125,7 +159,7 @@ function shouldRefineEasing(easing) {
 
 /**
  * Produce token-alignment suggestions for a list of property timings.
- * @param {{property:string,durationMs:number,delayMs:number,easing:string,scale?:number,blur?:number,varName?:string,hint?:string}[]} timings
+ * @param {{property:string,durationMs:number,delayMs:number,easing:string,scale?:number,blur?:number,translate?:number,varName?:string,translateVarName?:string,hint?:string}[]} timings
  * @param {{label?:string,selector?:string,phase?:string}} [ctx] usage hints for scale/blur token selection
  * @returns {object[]} suggestions
  */
@@ -222,6 +256,30 @@ export function refineTimings(timings, ctx) {
           to: `${token.px}px`,
           patch: { property: prop, blur: token.px, ...(t.varName ? { varName: t.varName } : {}), ...(t.member ? { member: t.member } : {}) },
           reason: `${token.name} (${token.px}px) is the transitions.dev blur token for ${token.usage}. ${t.blur}px is ${usage ? "off the usage token" : "off-grid"}.`,
+        });
+      }
+    }
+
+    // Translate distance → a transitions.dev distance token (usage-first,
+    // nearest fallback). The captured value is the non-resting "pre" translate
+    // (settles to 0); skip 0/none. This is the transitions-polish dimension the
+    // engine previously didn't check.
+    if (Number.isFinite(t.translate) && Math.abs(t.translate) > 1e-4) {
+      const dist = Math.abs(t.translate);
+      const usage = pickDistanceByUsage(hint);
+      const { token: near, delta } = nearestDistance(dist);
+      const token = usage || near;
+      if (token && (usage || delta > 1) && Math.abs(token.px - dist) > 1e-4) {
+        suggestions.push({
+          id: `${prop}-distance`,
+          kind: "distance",
+          property: prop,
+          member: t.member || null,
+          title: `Distance → ${token.name}`,
+          from: `${dist}px`,
+          to: `${token.px}px`,
+          patch: { property: prop, translate: token.px, ...(t.translateVarName ? { translateVarName: t.translateVarName } : {}), ...(t.member ? { member: t.member } : {}) },
+          reason: `${token.name} (${token.px}px) is the transitions.dev distance token for ${token.usage}. ${dist}px is ${usage ? "off the usage token" : "off-grid"}.`,
         });
       }
     }
