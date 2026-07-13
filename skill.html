@@ -3121,7 +3121,7 @@
       display: flex;
       width: 100%;
       max-width: 1100px;
-      margin: 0 auto 56px;
+      margin: 32px auto 56px;
       padding: 0 24px;
       gap: 24px;
       flex-direction: row;
@@ -3359,7 +3359,8 @@
        reader can scan the bold command first and then the rationale,
        while the section's outer gap is widened so the commands
        don't look like a tight rhythm of similar rows. */
-    #commands .skill-section-rows { gap: 16px; }
+    #commands .skill-section-rows,
+    #installation .skill-section-rows { gap: 16px; }
     .skill-command {
       display: flex;
       flex-direction: column;
@@ -3654,31 +3655,10 @@
           <span>View on GitHub</span>
         </a>
       </div>
-      <div class="skill-tabs-row">
-        <div class="skill-tabs" id="skill-tabs" role="tablist" aria-label="Skill">
-          <span class="skill-tabs-pill" aria-hidden="true"></span>
-          <button
-            type="button"
-            class="skill-tab"
-            role="tab"
-            data-skill-tab="dev"
-            aria-selected="true"
-          >Main skill</button>
-          <button
-            type="button"
-            class="skill-tab"
-            role="tab"
-            data-skill-tab="polish"
-            aria-selected="false"
-          >Polish skill</button>
-        </div>
-      </div>
     </header>
 
-    <!-- ─── Compare: side-by-side desktop, tabs on mobile. Main skill
-         only — Polish skill tunes motion that already exists, so
-         there's no generic-vs-skill diff to show. ─ -->
-    <div class="skill-compare-stage" id="skill-compare-stage" data-active="off" data-skill-panel="dev">
+    <!-- ─── Compare: side-by-side desktop, tabs on mobile ─ -->
+    <div class="skill-compare-stage" id="skill-compare-stage" data-active="off">
       <div class="skill-compare-tabs" role="tablist" aria-label="Compare AI output">
         <button
           type="button"
@@ -3788,31 +3768,55 @@
       </div>
     </div>
 
-    <section class="skill-content" data-skill-panel="dev" aria-label="Main skill contents">
+    <section class="skill-content" aria-label="Skill contents">
       <div class="skill-section" id="installation">
         <h2 class="skill-section-title">Installation</h2>
         <div class="skill-section-rows">
-          <div class="skill-code-row">
-            <code id="install-cmd">npx skills add Jakubantalik/transitions.dev</code>
-            <button
-              type="button"
-              class="card-copy"
-              aria-label="Copy install command"
-              data-copy-target="#install-cmd"
-            >
-              <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </button>
+          <div class="skill-command">
+            <div class="skill-code-row">
+              <code id="install-cmd">npx skills add Jakubantalik/transitions.dev</code>
+              <button
+                type="button"
+                class="card-copy"
+                aria-label="Copy install command"
+                data-copy-target="#install-cmd"
+              >
+                <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+            </div>
+            <p class="skill-section-note">
+              Installs the main skill with the transitions library, 21+ production-ready transitions. Works with Claude Code, Cursor, GitHub Copilot, Codex, and Gemini CLI.
+            </p>
+          </div>
+          <div class="skill-command">
+            <div class="skill-code-row">
+              <code id="install-cmd-polish">npx skills add Jakubantalik/transitions.dev -s transitions-polish</code>
+              <button
+                type="button"
+                class="card-copy"
+                aria-label="Copy install polish skill command"
+                data-copy-target="#install-cmd-polish"
+              >
+                <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+            </div>
+            <p class="skill-section-note">
+              Installs the Polish skill, an add-on that aligns motion you already have to the transitions.dev token scale. Works alongside the main skill or on its own.
+            </p>
           </div>
         </div>
-        <p class="skill-section-note">
-          Works with Claude Code, Cursor, GitHub Copilot, Codex, and Gemini CLI.
-        </p>
       </div>
 
       <div class="skill-section" id="commands">
@@ -3906,6 +3910,28 @@
               Scan the whole project for ad-hoc transitions, hardcoded durations, and custom keyframes, then suggest the matching motion token to reference — using each token's <em>usage</em>, not the raw number, as the deciding factor. Read-only — nothing gets edited. Also triggers on "replace hardcoded durations with motion tokens" or "tokenize my animations".
             </p>
           </div>
+          <div class="skill-command">
+            <div class="skill-code-row">
+              <code id="cmd-polish">transitions polish</code>
+              <button
+                type="button"
+                class="card-copy"
+                aria-label="Copy transitions polish command"
+                data-copy-target="#cmd-polish"
+              >
+                <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </button>
+            </div>
+            <p class="skill-section-note">
+              Layers the open/close, hover in/out, and stagger/delay rules on top of <code>transitions refine</code>'s token matching, plus explicit distance coverage. Read-only — nothing gets edited. Works with the Polish skill installed. Also triggers on "polish my transitions" or "align to the motion tokens".
+            </p>
+          </div>
         </div>
       </div>
 
@@ -3953,119 +3979,6 @@
               class="card-copy"
               aria-label="Copy prompt"
               data-copy-target="#prompt-3"
-            >
-              <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="skill-content" data-skill-panel="polish" hidden aria-label="Polish skill contents">
-      <div class="skill-section" id="installation-polish">
-        <h2 class="skill-section-title">Installation</h2>
-        <div class="skill-section-rows">
-          <div class="skill-code-row">
-            <code id="install-cmd-polish">npx skills add Jakubantalik/transitions.dev -s transitions-polish</code>
-            <button
-              type="button"
-              class="card-copy"
-              aria-label="Copy install command"
-              data-copy-target="#install-cmd-polish"
-            >
-              <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        <p class="skill-section-note">
-          An add-on to <code>transitions-dev</code> — install it alongside (drop <code>-s transitions-polish</code> to pick both) or on its own. Works with Claude Code, Cursor, GitHub Copilot, Codex, and Gemini CLI.
-        </p>
-      </div>
-
-      <div class="skill-section" id="commands-polish">
-        <h2 class="skill-section-title">Commands</h2>
-        <div class="skill-section-rows">
-          <div class="skill-command">
-            <div class="skill-code-row">
-              <code id="cmd-polish">transitions polish</code>
-              <button
-                type="button"
-                class="card-copy"
-                aria-label="Copy transitions polish command"
-                data-copy-target="#cmd-polish"
-              >
-                <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                </svg>
-                <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </button>
-            </div>
-            <p class="skill-section-note">
-              Scans the whole project — stylesheets, inline <code>style=</code>, CSS-in-JS, and Tailwind arbitrary values — for duration, easing, distance, scale, and blur, then suggests the motion token each should reference, matched by what the motion <em>does</em> rather than the nearest number. Also checks open/close asymmetry, hover-in vs hover-out, and stagger/delay timing. Read-only — nothing gets edited. Also triggers on "polish my transitions", "align to the motion tokens", or "fix the stagger".
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="skill-section" id="try-it-polish">
-        <h2 class="skill-section-title">Try it</h2>
-        <div class="skill-section-rows">
-          <div class="skill-code-row">
-            <code id="prompt-polish-1">Polish the dropdown transition timing based on transitions-polish skill</code>
-            <button
-              type="button"
-              class="card-copy"
-              aria-label="Copy prompt"
-              data-copy-target="#prompt-polish-1"
-            >
-              <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="skill-code-row">
-            <code id="prompt-polish-2">Align all my transition durations to motion tokens based on transitions-polish skill</code>
-            <button
-              type="button"
-              class="card-copy"
-              aria-label="Copy prompt"
-              data-copy-target="#prompt-polish-2"
-            >
-              <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-              <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="skill-code-row">
-            <code id="prompt-polish-3">Fix the stagger timing on my list based on transitions-polish skill</code>
-            <button
-              type="button"
-              class="card-copy"
-              aria-label="Copy prompt"
-              data-copy-target="#prompt-polish-3"
             >
               <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
@@ -4296,64 +4209,6 @@
       }
 
       fetchGitHubStars();
-
-      /* ── Skill switcher (Main / Polish) ────────────────────────
-         Sliding-pill tabs — same pattern as the site's own "tabs
-         sliding" transition. Toggling swaps which .skill-content
-         section (and, for Main only, the compare stage) is shown. */
-      (function initSkillTabs() {
-        var bar = document.getElementById("skill-tabs");
-        if (!bar) return;
-        var pill = bar.querySelector(".skill-tabs-pill");
-        var tabs = Array.prototype.slice.call(bar.querySelectorAll(".skill-tab"));
-        var panels = Array.prototype.slice.call(document.querySelectorAll("[data-skill-panel]"));
-
-        function tabFor(skill) {
-          for (var i = 0; i < tabs.length; i++) {
-            if (tabs[i].getAttribute("data-skill-tab") === skill) return tabs[i];
-          }
-          return tabs[0];
-        }
-
-        function activeSkill() {
-          var t = bar.querySelector('.skill-tab[aria-selected="true"]');
-          return t ? t.getAttribute("data-skill-tab") : "dev";
-        }
-
-        function moveTo(tab, animate) {
-          if (!tab || !pill) return;
-          if (!animate) {
-            var prev = pill.style.transition;
-            pill.style.transition = "none";
-            pill.style.transform = "translateX(" + tab.offsetLeft + "px)";
-            pill.style.width = tab.offsetWidth + "px";
-            void pill.offsetWidth;
-            pill.style.transition = prev;
-          } else {
-            pill.style.transform = "translateX(" + tab.offsetLeft + "px)";
-            pill.style.width = tab.offsetWidth + "px";
-          }
-        }
-
-        function setSkill(skill, animate) {
-          tabs.forEach(function (t) {
-            t.setAttribute("aria-selected", t.getAttribute("data-skill-tab") === skill ? "true" : "false");
-          });
-          panels.forEach(function (p) {
-            p.hidden = p.getAttribute("data-skill-panel") !== skill;
-          });
-          moveTo(tabFor(skill), animate);
-        }
-
-        tabs.forEach(function (tab) {
-          tab.addEventListener("click", function () {
-            setSkill(tab.getAttribute("data-skill-tab"), true);
-          });
-        });
-
-        requestAnimationFrame(function () { moveTo(tabFor(activeSkill()), false); });
-        window.addEventListener("resize", function () { moveTo(tabFor(activeSkill()), false); });
-      })();
 
       /* ── Compare tabs (mobile only — desktop shows both panes) ─ */
       var compareStage = document.getElementById("skill-compare-stage");
