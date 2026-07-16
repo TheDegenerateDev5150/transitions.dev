@@ -4999,11 +4999,29 @@
             </div>
           </div>
           <div class="account-agent">
-            <p class="account-agent-title">Install the Pro skill with your agent</p>
-            <p class="account-agent-sub">Paste this prompt into Cursor, Claude Code, or Codex inside your project. The agent activates this device — you approve it in the browser — and the Pro transitions are pulled straight into your project.</p>
-            <div class="account-agent-code">
-              <pre id="acc-prompt">Install the Transitions Pro skill: run `npx transitions-pro skill`, open the activation link it prints so I can approve this device, then confirm the Pro skill and recipes were installed into my skills directory.</pre>
-              <button type="button" class="account-agent-copy" id="acc-prompt-copy">Copy</button>
+            <p class="account-agent-title">Install with the CLI</p>
+            <p class="account-agent-sub">Run these in your project. The first time, each opens your browser to confirm this device — then your Pro plan is verified and the files are pulled in.</p>
+            <div class="skill-section-rows">
+              <div class="skill-command">
+                <div class="skill-code-row">
+                  <code id="acc-cmd-skill">npx transitions-pro skill</code>
+                  <button type="button" class="card-copy" aria-label="Copy Pro skill install command" data-copy-target="#acc-cmd-skill">
+                    <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                    <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  </button>
+                </div>
+                <p class="skill-section-note">Installs the Pro transitions as an agent skill (CSS, React, TypeScript) into <code>~/.claude/skills/transitions-pro/</code>.</p>
+              </div>
+              <div class="skill-command">
+                <div class="skill-code-row">
+                  <code id="acc-cmd-recipes">npx transitions-pro add --pro</code>
+                  <button type="button" class="card-copy" aria-label="Copy Pro recipes install command" data-copy-target="#acc-cmd-recipes">
+                    <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                    <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  </button>
+                </div>
+                <p class="skill-section-note">Copies every Pro transition recipe straight into your project's <code>./transitions/</code>.</p>
+              </div>
             </div>
           </div>
           <p class="account-note" id="acc-note-dl" role="status" hidden></p>
@@ -5834,6 +5852,10 @@
 
       var currentTab = "account";
       function showTab(name) {
+        // Members is gated to team-plan users; never land on it while its nav
+        // item is hidden (solo users, defunct teams).
+        var mn = el("acc-nav-members");
+        if (name === "members" && mn && mn.hidden) name = "account";
         var switching = name !== currentTab;
         currentTab = name;
         var authed = TP && TP.state && TP.state.authenticated;
@@ -5900,16 +5922,23 @@
       var handledJoined = false;
       function loadTeam() {
         return TP.team.get().then(function (r) {
-          teamState = r && r.team ? r.team : null;
-          el("acc-nav-members").hidden = !teamState;
-          if (teamState) {
-            renderTeam();
-            // Arrived from accepting a team invite — land on the Members tab.
-            if (!handledJoined && new URLSearchParams(location.search).get("joined") === "1") {
-              handledJoined = true;
-              showTab("members");
-              setNote("acc-note-team", "You've joined " + teamState.name + ".", "ok");
-            }
+          var team = r && r.team ? r.team : null;
+          // Members is a Team-plan surface only. Show it solely for a real,
+          // active team — hide it for solo subscribers and for any defunct or
+          // empty (0-seat) team left over from a cancelled plan.
+          var inTeam = !!(team && (team.seats || 0) > 0 && team.status !== "canceled");
+          teamState = inTeam ? team : null;
+          el("acc-nav-members").hidden = !inTeam;
+          if (!inTeam) {
+            if (currentTab === "members") showTab("account");
+            return;
+          }
+          renderTeam();
+          // Arrived from accepting a team invite — land on the Members tab.
+          if (!handledJoined && new URLSearchParams(location.search).get("joined") === "1") {
+            handledJoined = true;
+            showTab("members");
+            setNote("acc-note-team", "You've joined " + teamState.name + ".", "ok");
           }
         }).catch(function () {});
       }
@@ -6129,14 +6158,8 @@
       }
       el("acc-dl-library").addEventListener("click", function () { downloadZip("/download/library", el("acc-dl-library"), "acc-note-dl"); });
       el("acc-dl-skills").addEventListener("click", function () { downloadZip("/download/skills", el("acc-dl-skills"), "acc-note-dl"); });
-      el("acc-prompt-copy").addEventListener("click", function () {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(el("acc-prompt").textContent).then(function () {
-            el("acc-prompt-copy").textContent = "Copied";
-            setTimeout(function () { el("acc-prompt-copy").textContent = "Copy"; }, 1600);
-          });
-        }
-      });
+      // The two CLI command blocks copy via the shared .card-copy[data-copy-target]
+      // handler (same as the install page) — no bespoke copy wiring needed here.
     });
   </script>
 </body>
