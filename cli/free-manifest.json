@@ -1,0 +1,107 @@
+[
+  {
+    "slug": "card-resize",
+    "name": "Card resize",
+    "tier": "free"
+  },
+  {
+    "slug": "number-pop-in",
+    "name": "Number pop-in",
+    "tier": "free"
+  },
+  {
+    "slug": "notification-badge",
+    "name": "Notification badge",
+    "tier": "free"
+  },
+  {
+    "slug": "text-states-swap",
+    "name": "Text states swap",
+    "tier": "free"
+  },
+  {
+    "slug": "menu-dropdown",
+    "name": "Menu dropdown",
+    "tier": "free"
+  },
+  {
+    "slug": "modal",
+    "name": "Modal open / close",
+    "tier": "free"
+  },
+  {
+    "slug": "panel-reveal",
+    "name": "Panel reveal",
+    "tier": "free"
+  },
+  {
+    "slug": "page-side-by-side",
+    "name": "Page side-by-side",
+    "tier": "free"
+  },
+  {
+    "slug": "icon-swap",
+    "name": "Icon swap",
+    "tier": "free"
+  },
+  {
+    "slug": "success-check",
+    "name": "Success check",
+    "tier": "free"
+  },
+  {
+    "slug": "avatar-group-hover",
+    "name": "Avatar group hover",
+    "tier": "free"
+  },
+  {
+    "slug": "error-state-shake",
+    "name": "Error state shake",
+    "tier": "free"
+  },
+  {
+    "slug": "input-clear-dissolve",
+    "name": "Input clear with dissolve",
+    "tier": "free"
+  },
+  {
+    "slug": "skeleton-reveal",
+    "name": "Skeleton loader and reveal",
+    "tier": "free"
+  },
+  {
+    "slug": "shimmer-text",
+    "name": "Shimmer text",
+    "tier": "free"
+  },
+  {
+    "slug": "tabs-sliding",
+    "name": "Tabs sliding",
+    "tier": "free"
+  },
+  {
+    "slug": "tooltip",
+    "name": "Tooltip open/close",
+    "tier": "free"
+  },
+  {
+    "slug": "texts-reveal",
+    "name": "Texts reveal",
+    "tier": "free"
+  },
+  {
+    "slug": "card-tilt",
+    "name": "Card hover tilt",
+    "tier": "free"
+  },
+  {
+    "slug": "plus-menu-morph",
+    "name": "Plus to menu morph",
+    "tier": "free"
+  },
+  {
+    "slug": "accordion",
+    "name": "Accordion expand",
+    "tier": "free"
+  }
+]

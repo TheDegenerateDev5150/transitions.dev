@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="color-scheme" content="light dark" />
 
-  <title>Transitions.dev — Essential transitions for web apps</title>
+  <title>Card resize — Transitions.dev</title>
   <meta
     name="description"
     content="Collection of the most essential transitions for web apps that you can just copy and paste into any project."
@@ -24,7 +24,7 @@
   <meta name="apple-mobile-web-app-title" content="Transitions.dev" />
   <meta name="application-name" content="Transitions.dev" />
 
-  <link rel="canonical" href="https://transitions.dev/" />
+  <link rel="canonical" href="https://transitions.dev/detail.html" />
   <link rel="alternate" hreflang="en" href="https://transitions.dev/" />
   <link rel="alternate" hreflang="x-default" href="https://transitions.dev/" />
 
@@ -1182,6 +1182,9 @@
       filter: blur(0);
       transition: opacity 0.2s ease;
     }
+    /* When the menu is open, Get Pro lives in the list — drop the
+       duplicate pill from the top bar (Figma menu-open state). */
+    body.menu-open .nav-get-pro { display: none; }
     body.menu-open { overflow: hidden; }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1470,17 +1473,6 @@
       font-weight: 400;
       line-height: 13px;
       color: var(--text-subtle);
-      /* Every card description stays on a single line — clip with an
-         ellipsis rather than wrapping to two rows. */
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      /* A 13px line-box is 1px too short for descenders (g/p/y), which
-         overflow:hidden then clips. The padding gives them room inside
-         the clip region; the equal negative margin cancels it out so
-         the block's height and vertical position stay exactly as before. */
-      padding-bottom: 3px;
-      margin-bottom: -3px;
     }
 
     html[data-theme="dark"] .card-title { color: #ededed; }
@@ -1813,91 +1805,76 @@
        70px above (after the cards grid) and 70px below (before the
        footer) per the Figma layout. The footer's own top padding is
        set to 0 because this section provides its own breathing room. */
-    /* ─── Sponsors (Figma 2332:82735) — two 106px cards: the course
-       recommendation (keeps the existing "Take the course" pill) and a
-       "Become a sponsor" slot. ─────────────────────────────────────── */
-    .sponsors {
-      /* Matches .cards' rendered width exactly (320px × 3 + 24px × 2
-         gaps = 1008px) so the section's edges line up with the card
-         grid above it instead of using the Figma-spec width. */
+    .course-cta {
+      display: flex;
+      align-items: center;
+      gap: 21px;
       width: 100%;
-      max-width: 1008px;
+      max-width: 720px;
       margin: 70px auto;
       font-family: var(--font-sans);
-    }
-    .sponsors-title {
-      margin: 0 0 16px;
-      font-family: "Saans", var(--font-sans);
-      font-size: 20px;
-      font-weight: 500;
-      line-height: 32px;
-      letter-spacing: -0.1px;
       color: var(--text);
     }
-    .sponsors-row {
-      display: flex;
-      gap: 22px;
+    .course-cta-divider {
+      flex-shrink: 0;
+      width: 2px;
+      height: 78px;
+      background: #d9d9d9;
+      border-radius: 1px;
     }
-    .sponsor-card {
-      flex: 1 1 0;
+    html[data-theme="dark"] .course-cta-divider {
+      background: rgba(255, 255, 255, 0.14);
+    }
+    /* Desktop layout for the inner row: text fills the available
+       space and the pill button gets pushed to the right edge.
+       The wrapper exists so mobile (≤740px) can re-stack the text +
+       button vertically while the divider stays anchored on the left
+       — see the @media block below for the column override. */
+    .course-cta-inner {
+      flex: 1 1 auto;
       min-width: 0;
-      min-height: 106px;
-      box-sizing: border-box;
-      padding: 18px 20px;
-      border-radius: 24px;
-      background: #f6f6f6;
-      box-shadow:
-        inset 0 0 0 1px rgba(0, 0, 0, 0.03),
-        inset 0 -1px 0 0 rgba(0, 0, 0, 0.04);
       display: flex;
       align-items: center;
       gap: 24px;
     }
-    html[data-theme="dark"] .sponsor-card {
-      background: #181818;
-      box-shadow:
-        inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-        inset 0 -1px 0 0 rgba(255, 255, 255, 0.04);
-    }
-    .sponsor-card--course { justify-content: space-between; }
-    .sponsor-card-text {
+    .course-cta-text {
+      flex: 1 1 auto;
+      min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      max-width: 337px;
+      gap: 10px;
+      max-width: 432px;
     }
-    .sponsor-card-headline {
+    .course-cta-headline {
       margin: 0;
-      font-size: 13px;
-      line-height: 20px;
+      font-size: 14px;
+      line-height: 1.4;
       color: var(--text);
     }
-    .sponsor-card-headline a {
+    .course-cta-headline a {
       color: inherit;
       text-decoration: underline;
       text-underline-offset: 2px;
+      /* 50% of the text color at rest, 100% on hover. Using
+         color-mix with currentColor keeps it theme-agnostic — the
+         underline tracks light/dark text without an explicit
+         dark-mode override. */
       text-decoration-color: color-mix(in srgb, currentColor 50%, transparent);
       transition: text-decoration-color 180ms ease;
     }
-    .sponsor-card-headline a:hover { text-decoration-color: currentColor; }
-    .sponsor-card-byline {
+    .course-cta-headline a:hover {
+      text-decoration-color: currentColor;
+    }
+    .course-cta-byline {
       margin: 0;
+      display: flex;
+      flex-direction: column;
       font-size: 13px;
-      line-height: 20px;
-      color: var(--text-muted);
+      line-height: 18px;
+      opacity: 0.7;
     }
-    .sponsor-card--empty {
-      justify-content: center;
-      text-decoration: none;
-      transition: background-color 150ms cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .sponsor-card--empty:hover { background: #f0f0f0; }
-    html[data-theme="dark"] .sponsor-card--empty:hover { background: #1f1f1f; }
-    .sponsor-card-empty-label {
-      font-size: 13px;
-      line-height: 16px;
-      color: var(--text-muted);
-    }
+    .course-cta-name { color: var(--text); }
+    .course-cta-role { color: var(--text-muted); }
 
     /* Pill button mirrors Figma 351:374 (Button/Small/Primary).
        In light mode the pill is near-black with white text, mirrored
@@ -2065,9 +2042,7 @@
       justify-content: center;
       padding-bottom: 56px;
     }
-    /* Prototypes that trigger inline (click/hover on the content itself)
-       instead of a separate .btn-animate don't need that bottom padding
-       reserved — center them on both axes with no offset. */
+
     .stage-inner--no-btn { padding-bottom: 0; }
 
     /* Shared skeleton (matches prototypes.html `.sk` / `.skeleton`) */
@@ -4492,35 +4467,52 @@
     /* ============================================================ */
     @media (max-width: 1100px) {
       .cards { grid-template-columns: repeat(2, 320px); }
-      /* Matches .cards at 2 columns (320px × 2 + 24px gap = 664px). */
-      .sponsors { max-width: 664px; }
-      .footer { max-width: 664px; }
-      /* Two columns puts each sponsor card at ~320px — too narrow for the
-         course copy beside the pill, so stack the text over the button. */
-      .sponsor-card--course { flex-direction: column; align-items: flex-start; gap: 16px; }
-      .sponsor-card--course .course-cta-button { margin-left: 0; }
-      .sponsor-card-text { max-width: none; }
     }
 
     @media (max-width: 740px) {
       .cards { grid-template-columns: 320px; gap: 16px; }
-      /* Sponsors stack vertically on narrow screens; the course card's
-         text + pill re-stack so the pill sits below the copy. */
-      .sponsors { max-width: 320px; margin: 56px auto; }
-      .sponsors-row { flex-direction: column; }
-      /* In the column direction the desktop `flex: 1 1 0` clamps every
-         card to the 106px min-height regardless of content, spilling
-         the course pill over the card below — size to content instead. */
-      .sponsor-card { flex: none; }
-      .sponsor-card--course {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
+      /* Mobile re-layout uses CSS grid so the left divider can occupy
+         only the text row instead of stretching across the button row.
+         `.course-cta-inner` is `display: contents` here so its
+         children participate directly in the grid:
+           [ divider ] [ text   ]   ← row 1
+                       [ button ]   ← row 2
+         Re-enable .course-cta-inner as a flex container on desktop
+         (it stays unchanged outside this @media block). */
+      .course-cta {
+        display: grid;
+        grid-template-columns: 2px 1fr;
+        column-gap: 10px;
+        row-gap: 16px;
+        align-items: start;
+        max-width: 320px;
+        margin: 56px auto;
       }
-      .sponsor-card--course .course-cta-button {
+      .course-cta-divider {
+        grid-column: 1;
+        grid-row: 1;
+        align-self: stretch;
+        height: auto;
+        width: 2px;
+      }
+      .course-cta-inner {
+        display: contents;
+      }
+      .course-cta-text {
+        grid-column: 2;
+        grid-row: 1;
+        max-width: none;
+      }
+      /* Span both columns on row 2 so the pill's left edge lines up
+         with the divider's left edge (not with the text in column 2).
+         `justify-self: start` keeps the pill at its intrinsic content
+         width — without it grid items would stretch to fill the row. */
+      .course-cta-button {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        justify-self: start;
         margin-left: 0;
       }
-      .sponsor-card--empty { min-height: 72px; }
     }
 
     @media (max-width: 639px) {
@@ -4545,9 +4537,6 @@
       /* Cards span the full available width (viewport − 12px margins)
          instead of the fixed 320px desktop width. */
       .cards { grid-template-columns: 1fr; }
-      /* Sponsors follow the cards' full width instead of the fixed
-         320px tablet cap. */
-      .sponsors { max-width: none; }
       /* Compensate for mobile browsers down-sampling the backing
          buffer used by `filter: blur()`. The same numeric radius
          reads visually smaller on phones (especially alongside
@@ -5106,7 +5095,7 @@
     }
     /* Medium screens: the inline nav pills are fixed-width and begin to
        collide with the right-side controls (~837px). Compact the controls
-       so the nav can stay inline — Search → icon-only circle, "Get Pro" →
+       so the nav can stay inline — Search -> icon-only circle, "Get Pro" ->
        "Pro", and the least-essential GitHub / X pills drop out. */
     @media (max-width: 900px) {
       .nav-search-label, .nav-search-kbd { display: none; }
@@ -5133,6 +5122,692 @@
   <!-- Analytics: GoatCounter (privacy-friendly, no cookies). -->
   <script data-goatcounter="https://jakub.goatcounter.com/count"
           async src="//gc.zgo.at/count.js"></script>
+
+  <!-- ── Transition detail (docs) page ──────────────────────────
+       Layout-only styles layered on top of the shared design system.
+       Reuses the existing color tokens (--bg / --text / --card-bg / …)
+       so light + dark themes carry over with no extra work. -->
+  <style>
+    /* On the detail page the hero + course CTA are dropped, and the
+       card grid becomes a hidden "store": the active card is moved
+       live into #detail-stage so all its prototype JS keeps working. */
+    .is-detail .course-cta { display: none; }
+    .is-detail .cards { display: none; }
+
+    /* No horizontal padding/centering of its own — `.docs` sits directly
+       inside `.app`, so its left/right edges share the exact inset the
+       nav (`.site-nav-inner`) uses, and the sidebar lines up with the
+       logo above it. */
+    .docs {
+      width: 100%;
+      padding: 32px 0 96px;
+      display: grid;
+      grid-template-columns: 200px minmax(0, 1fr);
+      column-gap: 56px;
+      align-items: start;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────────── */
+    .docs-sidebar {
+      position: sticky;
+      top: 84px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
+      max-height: calc(100vh - 108px);
+      overflow-y: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .docs-sidebar::-webkit-scrollbar { display: none; }
+    .docs-group { display: flex; flex-direction: column; min-width: 0; }
+    .docs-list { display: flex; flex-direction: column; min-width: 0; }
+    .docs-group-label {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      line-height: 14px;
+      color: var(--text-subtle);
+      padding: 9px 12px;
+    }
+    .docs-link {
+      display: flex;
+      align-items: center;
+      height: 32px;
+      padding: 0 12px;
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      background: transparent;
+      text-align: left;
+      text-decoration: none;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 16px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      transition: background 140ms ease, color 140ms ease;
+    }
+    .docs-link:hover { background: rgba(0, 0, 0, 0.04); }
+    html[data-theme="dark"] .docs-link:hover { background: rgba(255, 255, 255, 0.05); }
+    .docs-link.is-active { background: rgba(0, 0, 0, 0.05); }
+    html[data-theme="dark"] .docs-link.is-active { background: rgba(255, 255, 255, 0.08); }
+    .docs-link--muted { color: var(--text-muted); }
+    .docs-link:focus-visible { outline: 2px solid var(--text-muted); outline-offset: 2px; }
+
+    /* ── Main column ─────────────────────────────────────────── */
+    .docs-main { position: relative; min-width: 0; }
+
+    .detail-topbar {
+      position: absolute;
+      top: 2px;
+      right: 0;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .detail-arrow {
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 50px;
+      background: rgba(0, 0, 0, 0.03);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 140ms ease, opacity 140ms ease;
+    }
+    .detail-arrow:hover { background: rgba(0, 0, 0, 0.06); }
+    html[data-theme="dark"] .detail-arrow { background: rgba(255, 255, 255, 0.05); }
+    html[data-theme="dark"] .detail-arrow:hover { background: rgba(255, 255, 255, 0.09); }
+    .detail-arrow:disabled { opacity: 0.35; cursor: default; }
+    .detail-arrow svg { width: 16px; height: 16px; display: block; }
+
+    .detail-head {
+      display: flex;
+      flex-direction: column;
+      gap: 21px;
+      padding-top: 4px;
+    }
+    .detail-titles { display: flex; flex-direction: column; gap: 12px; }
+    .detail-title {
+      margin: 0;
+      font-family: "Saans", var(--font-sans);
+      font-weight: 500;
+      font-size: 36px;
+      line-height: 42px;
+      letter-spacing: -0.18px;
+      color: var(--text);
+    }
+    .detail-sub {
+      margin: 0;
+      font-family: var(--font-sans);
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 24.2px;
+      color: var(--text-muted);
+    }
+
+    /* Tabs reuse the modal's sliding-pill component (.proto-modal-tabs)
+       so the two surfaces stay identical. */
+    .detail-tabs.proto-modal-tabs { align-self: flex-start; margin-bottom: 0; }
+
+    .detail-body { margin-top: 24px; }
+    .detail-panel[hidden] { display: none; }
+
+    /* ── Preview panel ───────────────────────────────────────────
+       The large panel itself is the muted "stage" surface; the demo
+       sits directly on it (the card's own small stage box is stripped). */
+    .detail-stage {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 686px;
+      min-height: 460px;
+      border-radius: 24px;
+      background: var(--stage-bg);
+      box-shadow: inset 0 0 0 1px var(--stage-border);
+    }
+    /* In the big preview the Pro pill pins to the stage's own top-right
+       corner (24px inset), not the inner card-stage corner. pro-client's
+       inline badge (mounted inside .card-stage) is hidden here in favour
+       of this dedicated one; it's shown only for Pro transitions via the
+       stage's [data-pro="true"] flag (set in selectIndex). */
+    .detail-stage .card-stage .card-pro-badge { display: none; }
+    .detail-pro-badge {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      z-index: 11;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: 50px;
+      background: rgba(0, 115, 255, 0.06);
+      font: 500 11px/1.4 Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      color: rgba(0, 83, 227, 0.8);
+      text-decoration: none;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: background 0.15s ease, filter 0.15s ease;
+      box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        inset 0 0 0 1px rgba(0, 101, 208, 0.1),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.06),
+        inset 0 0 0 1px rgba(196, 196, 196, 0.1);
+    }
+    .detail-pro-badge:hover { background: rgba(0, 115, 255, 0.12); }
+    html[data-theme="dark"] .detail-pro-badge:hover { background: rgba(0, 115, 255, 0.24); }
+    html[data-theme="dark"] .detail-pro-badge {
+      background: rgba(0, 115, 255, 0.16);
+      color: rgba(122, 168, 255, 0.95);
+    }
+    .detail-stage[data-pro="true"] .detail-pro-badge { display: inline-flex; }
+    .detail-stage .card {
+      width: 320px;
+      height: 284px;
+      min-height: 0;
+      max-height: none;
+      background: transparent;
+      box-shadow: none;
+      border-radius: 0;
+      cursor: default;
+    }
+    /* Dark mode: the base `html[data-theme="dark"] .card` rule is more
+       specific than `.detail-stage .card`, so it would otherwise restore
+       the tile's fill + inset ring — leaving a visible square framing the
+       transition on the big preview. Strip both again here. */
+    html[data-theme="dark"] .detail-stage .card {
+      background: transparent;
+      box-shadow: none;
+    }
+    .detail-stage .card-meta,
+    .detail-stage .card-copy { display: none !important; }
+
+    /* P3 — Panel reveal: presented as a true full-bleed bottom sheet in
+       the big preview instead of the homepage tile's small centered
+       frame. The card/card-stage grow to fill `.detail-stage` exactly
+       (so the sheet's edges meet the panel's own edges), and the panel
+       itself switches from margin-top flow placement to bottom-anchored
+       absolute positioning so it reaches the true bottom regardless of
+       stage height. `.p3-panel-clip` keeps its own overflow: hidden —
+       that's the reveal's slide mask, not stage cropping. */
+    .detail-stage:has(.p3-stage-inner) { position: relative; }
+    .detail-stage:has(.p3-stage-inner) .card {
+      position: absolute;
+      inset: 0;
+      width: auto;
+      height: auto;
+    }
+    .detail-stage:has(.p3-stage-inner) .card-stage {
+      position: absolute;
+      inset: 0;
+      width: auto;
+      max-width: none;
+      height: auto;
+    }
+    .detail-stage .p3-panel {
+      margin: 0;
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+    /* Drop the inner stage's own fill + ring so the demo reads as
+       living directly on the large gray panel. Its `overflow: hidden`
+       existed only to crop content to that small homepage tile — lift
+       it here so dropdowns, modals, tooltips, hover lifts, etc. (and
+       their box-shadows) can render at full size instead of being cut
+       off by the old 296×260 frame. */
+    .detail-stage .card-stage {
+      background: transparent;
+      overflow: visible;
+    }
+    .detail-stage .card-stage::after { display: none; }
+    html[data-theme="dark"] .detail-stage .card-stage { background: transparent; }
+
+    /* PRO1 — Confetti burst: let the confetti rain across the whole big
+       preview instead of the small 296×260 homepage tile. Grow the card /
+       card-stage to fill `.detail-stage` so the canvas (inset:0; 100%)
+       and the physics' `stage.getBoundingClientRect()` both span the full
+       area; the Animate button stays anchored bottom-center as its landing
+       surface. */
+    .detail-stage:has(#pro1-stage) { position: relative; }
+    .detail-stage:has(#pro1-stage) .card {
+      position: absolute;
+      inset: 0;
+      width: auto;
+      height: auto;
+    }
+    .detail-stage:has(#pro1-stage) .card-stage {
+      position: absolute;
+      inset: 0;
+      width: auto;
+      max-width: none;
+      height: auto;
+    }
+    /* Center the Animate button in the big preview (it defaults to
+       bottom-anchored on the small homepage tile). Confetti still fills
+       the whole card and lands on it here in the middle. */
+    .detail-stage #pro1-stage .btn-animate {
+      top: 50%;
+      bottom: auto;
+      transform: translate(-50%, -50%);
+    }
+
+    /* ── Docs articles (Introduction / Installation / Accessibility) ──
+       Typography reused verbatim from the Refine tool page's docs
+       content (.skill-content / .skill-section-title / .skill-section-note
+       / .skill-steps / .feature-list), so this page reads as the same
+       "product docs" voice as /refine and /skill instead of inventing
+       its own article style. */
+    .detail-doc { max-width: 686px; margin-top: 14px; }
+    .detail-doc[hidden] { display: none; }
+    .doc-article[hidden] { display: none; }
+
+    .skill-content { width: 100%; display: flex; flex-direction: column; gap: 32px; }
+    .skill-section { display: flex; flex-direction: column; gap: 12px; }
+    .skill-section-title {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 22px;
+      color: var(--text);
+      margin: 0;
+    }
+    .skill-section-note {
+      font-size: 13px;
+      line-height: 20px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+    .skill-section-note code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 18px;
+      padding: 1px 6px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--text);
+    }
+    html[data-theme="dark"] .skill-section-note code { background: rgba(255, 255, 255, 0.06); }
+
+    .skill-steps {
+      margin: 0;
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      font-size: 13px;
+      line-height: 20px;
+      color: var(--text-muted);
+    }
+    .skill-steps li { padding-left: 2px; }
+    .skill-steps li::marker { color: var(--text-muted); font-weight: 500; }
+    .skill-steps code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 18px;
+      padding: 1px 6px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--text);
+    }
+    html[data-theme="dark"] .skill-steps code { background: rgba(255, 255, 255, 0.06); }
+
+    .feature-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 24px; }
+    .feature-list li { font-size: 13px; line-height: 22px; color: var(--text-muted); }
+    /* Regular weight and uniform muted colour — no highlight, the name
+       reads as a label via order alone. */
+    .feature-name { font-weight: 400; color: var(--text-muted); margin-right: 6px; }
+    .feature-desc { font-weight: 400; color: var(--text-muted); }
+    .feature-desc code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 18px;
+      padding: 1px 6px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--text);
+    }
+    html[data-theme="dark"] .feature-desc code { background: rgba(255, 255, 255, 0.06); }
+
+    /* Real, copyable install commands (Skill / Refine tool) — same
+       row component as /skill and /refine's Get Started section. */
+    .skill-command { display: flex; flex-direction: column; gap: 6px; }
+    .skill-command-label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+    .skill-code-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 40px;
+      padding: 4px 8px 4px 14px;
+      border-radius: 10px;
+      background: #f7f7f7;
+    }
+    html[data-theme="dark"] .skill-code-row { background: rgba(255, 255, 255, 0.04); }
+    .skill-code-row code {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 22px;
+      color: #3c3c3c;
+      background: transparent;
+      padding: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    html[data-theme="dark"] .skill-code-row code { color: #d6d6d6; }
+    .skill-code-copy {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      margin-right: -3px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 140ms ease, color 140ms ease;
+    }
+    .skill-code-copy:hover { background: rgba(0, 0, 0, 0.04); color: var(--text); }
+    html[data-theme="dark"] .skill-code-copy:hover { background: rgba(255, 255, 255, 0.06); }
+    .skill-code-copy svg { width: 15px; height: 15px; }
+    .skill-code-copy .icon-check { display: none; }
+    .skill-code-copy[data-copied="true"] .icon-copy { display: none; }
+    .skill-code-copy[data-copied="true"] .icon-check { display: inline-block; color: #12b76a; }
+
+    /* Inline links inside doc copy — same treatment as the hero's
+       "skill" link (.subtitle-skill): text color, no blue, underline
+       only on hover. */
+    .doc-article a {
+      color: var(--text);
+      text-decoration: none;
+    }
+    .doc-article a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+    /* Higher-contrast body copy on the docs pages (Introduction /
+       Installation / Accessibility) — near-black in light mode, a light
+       grey in dark mode so it doesn't disappear. */
+    .doc-article .skill-section-note,
+    .doc-article .skill-steps,
+    .doc-article .feature-list li,
+    .doc-article .feature-name,
+    .doc-article .feature-desc { color: #0d0d0d; }
+    html[data-theme="dark"] .doc-article .skill-section-note,
+    html[data-theme="dark"] .doc-article .skill-steps,
+    html[data-theme="dark"] .doc-article .feature-list li,
+    html[data-theme="dark"] .doc-article .feature-name,
+    html[data-theme="dark"] .doc-article .feature-desc { color: #ededed; }
+
+    /* Doc mode hides the transition-only controls. */
+    .docs-main.is-doc .detail-tabs,
+    .docs-main.is-doc .detail-body,
+    .docs-main.is-doc .detail-topbar { display: none; }
+
+    /* ── Code panels (CSS / React) ───────────────────────────── */
+    .detail-code {
+      position: relative;
+      width: 100%;
+      max-width: 686px;
+      border-radius: 24px;
+      background: var(--card-bg);
+      box-shadow: var(--card-shadow), inset 0 0 0 1px var(--card-border);
+      overflow: hidden;
+    }
+    /* ── Pro paywall — "No access" overlay (Figma 2330:2784) ────────
+       A frosted wash over the code panel: the placeholder code stays
+       laid out underneath and the overlay backdrop-blurs it, with the
+       upsell content centered on top. */
+    .detail-code.is-locked .detail-code-scroll {
+      pointer-events: none;
+      user-select: none;
+    }
+    .detail-code.is-locked .detail-code-copy { display: none; }
+    .detail-paywall {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      text-align: center;
+      padding: 24px;
+      border-radius: inherit;
+      background: rgba(249, 249, 249, 0.5);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
+    html[data-theme="dark"] .detail-paywall {
+      background: rgba(19, 19, 19, 0.55);
+    }
+    .detail-paywall-title {
+      margin: 0;
+      font-family: "Saans", var(--font-sans);
+      font-weight: 500;
+      font-size: 24px;
+      line-height: 32px;
+      letter-spacing: -0.12px;
+      color: var(--text);
+      text-wrap: balance;
+    }
+    /* Gradient "Pro" — same colour stack as the pro.html hero title. */
+    .detail-paywall-title .paywall-pro {
+      background-image:
+        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.88'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(0.34726 -1.3118e-7 8.6482e-7 0.89585 33.5 21)'><stop stop-color='rgba(0,110,245,1)' offset='0'/><stop stop-color='rgba(0,110,245,0)' offset='1'/></radialGradient></defs></svg>"),
+        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.5'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-1.3 0.25 -1.2633 -2.7471 33.5 21)'><stop stop-color='rgba(0,110,245,1)' offset='0'/><stop stop-color='rgba(0,110,245,0)' offset='1'/></radialGradient></defs></svg>"),
+        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.4'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(1.05 -0.8 0.46018 3.6184 33.5 21)'><stop stop-color='rgba(204,0,167,1)' offset='0'/><stop stop-color='rgba(170,0,204,0)' offset='0.71709'/></radialGradient></defs></svg>"),
+        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.51067 -3.3275e-16 -4.3352e-14 -1.1396 33.5 21)'><stop stop-color='rgba(204,0,167,1)' offset='0'/><stop stop-color='rgba(170,0,204,0)' offset='1'/></radialGradient></defs></svg>"),
+        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.45 -0.75 1.9052 -0.7091 33.5 21)'><stop stop-color='rgba(255,173,85,1)' offset='0'/><stop stop-color='rgba(255,173,85,0)' offset='1'/></radialGradient></defs></svg>"),
+        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(1.25 -0.35 -0.4013 3.5959 33.5 21)'><stop stop-color='rgba(0,204,68,1)' offset='0'/><stop stop-color='rgba(0,196,102,0.75)' offset='0.25'/><stop stop-color='rgba(0,187,136,0.5)' offset='0.5'/><stop stop-color='rgba(0,170,204,0)' offset='1'/></radialGradient></defs></svg>"),
+        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.87391 0.73043 -4.1482 -1.9503 33.5 21)'><stop stop-color='rgba(0,170,204,1)' offset='0'/><stop stop-color='rgba(0,170,204,0)' offset='1'/></radialGradient></defs></svg>"),
+        linear-gradient(rgb(108, 108, 108) 0%, rgb(216, 216, 216) 100%);
+      background-size: 180% 180%, 180% 180%, 180% 180%, 180% 180%,
+                       180% 180%, 180% 180%, 180% 180%, 100% 100%;
+      background-repeat: no-repeat;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      padding-left: 6px;
+    }
+    .detail-paywall-sub {
+      margin: 0;
+      font-size: 13px;
+      line-height: 20px;
+      color: #6c6c6c;
+      text-wrap: pretty;
+    }
+    html[data-theme="dark"] .detail-paywall-sub { color: #9a9a9a; }
+    /* Staggered blurred rise on reveal (transitions-dev texts-reveal). */
+    .detail-paywall > div { animation: detail-paywall-rise 500ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+    .detail-paywall > .detail-paywall-actions { animation-delay: 100ms; }
+    @keyframes detail-paywall-rise {
+      from { opacity: 0; transform: translateY(12px); filter: blur(3px); }
+      to   { opacity: 1; transform: none; filter: none; }
+    }
+    .detail-paywall-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .detail-paywall-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 40px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 26px;
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 13px;
+      line-height: 13px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .detail-paywall-btn--primary {
+      background: #151515;
+      color: #fff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    .detail-paywall-btn--secondary {
+      background: #e9e9e9;
+      color: #17181c;
+    }
+    /* Scale on press (0.96). */
+    .detail-paywall-btn { transition: scale 120ms cubic-bezier(0.22, 1, 0.36, 1), background 120ms ease; }
+    .detail-paywall-btn:active { scale: 0.96; }
+    @media (prefers-reduced-motion: reduce) {
+      .detail-paywall > div,
+      .detail-paywall > .detail-paywall-actions { animation: none; }
+      .detail-paywall-btn { transition: none; }
+    }
+    html[data-theme="dark"] .detail-paywall-btn--primary { background: #f2f2f2; color: #111; }
+    html[data-theme="dark"] .detail-paywall-btn--secondary { background: #2a2a2c; color: #f2f2f2; }
+
+    /* Inline "Pro" pill next to Pro items in the sidebar (Figma tab 1). */
+    /* Title label truncates; the Pro pill keeps its full width beside it. */
+    .docs-link-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .docs-link .docs-pro-pill {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 18px;
+      padding: 0 6px;
+      margin-left: 8px;
+      border-radius: 50px;
+      background: rgba(0, 115, 255, 0.06);
+      font-weight: 500;
+      font-size: 11px;
+      line-height: 1.4;
+      color: rgba(0, 83, 227, 0.8);
+      box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        inset 0 0 0 1px rgba(0, 101, 208, 0.1),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.06),
+        inset 0 0 0 1px rgba(196, 196, 196, 0.1);
+      vertical-align: middle;
+    }
+    html[data-theme="dark"] .docs-link .docs-pro-pill {
+      background: rgba(0, 115, 255, 0.16);
+      color: rgba(122, 168, 255, 0.95);
+    }
+    .detail-code-scroll {
+      max-height: 520px;
+      overflow: auto;
+      padding: 24px 26px;
+      /* Thin, theme-matched scrollbar instead of the bulky OS default,
+         so it reads as part of the card rather than sitting on top of it. */
+      scrollbar-width: thin;
+      scrollbar-color: var(--chip-bg-pressed) transparent;
+    }
+    .detail-code-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+    .detail-code-scroll::-webkit-scrollbar-track { background: transparent; }
+    .detail-code-scroll::-webkit-scrollbar-thumb {
+      background: var(--chip-bg-pressed);
+      border-radius: 8px;
+      border: 2px solid var(--card-bg);
+      background-clip: padding-box;
+    }
+    .detail-code-scroll::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+    .detail-code pre { margin: 0; }
+    .detail-code code {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre;
+    }
+    .detail-code-copy {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 9px;
+      background: var(--chip-bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 140ms ease, color 140ms ease;
+    }
+    .detail-code-copy:hover { background: var(--chip-bg-hover); color: var(--text); }
+    .detail-code-copy svg { width: 15px; height: 15px; }
+    .detail-code-copy .icon-check { display: none; }
+    .detail-code-copy[data-copied="true"] .icon-copy { display: none; }
+    .detail-code-copy[data-copied="true"] .icon-check { display: inline-block; color: #12b76a; }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 860px) {
+      .docs {
+        grid-template-columns: 1fr;
+        row-gap: 20px;
+        padding: 20px 0 72px;
+      }
+      /* The whole sidebar collapses into ONE horizontal pill line —
+         Getting-started docs (Introduction / Installation /
+         Accessibility) first, then every transition — scrolling
+         sideways as a single strip. Group labels go; the pills speak
+         for themselves. */
+      .docs-sidebar {
+        position: static;
+        max-height: none;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+      }
+      .docs-group-label { display: none; }
+      .docs-group,
+      .docs-list {
+        flex-direction: row;
+        gap: 6px;
+        flex: 0 0 auto;
+      }
+      .docs-group .docs-link,
+      .docs-list .docs-link { width: auto; flex: 0 0 auto; background: var(--chip-bg); }
+      /* Selected pill: a darker fill so the active doc/transition stands
+         out from the rest of the chip strip (the base is-active rule is
+         outweighed by the chip-bg override above). */
+      .docs-group .docs-link.is-active,
+      .docs-list .docs-link.is-active { background: rgba(0, 0, 0, 0.12); color: var(--text); }
+      html[data-theme="dark"] .docs-group .docs-link.is-active,
+      html[data-theme="dark"] .docs-list .docs-link.is-active { background: rgba(255, 255, 255, 0.16); }
+      /* Prev/next arrows are hidden on mobile — the horizontal doc pills
+         above already cover navigation. */
+      .detail-topbar { display: none; }
+      .detail-title { font-size: 28px; line-height: 34px; }
+      .detail-stage { min-height: 380px; }
+    }
+  </style>
   <style id="pro-preview-css">
     /* ═══ Pro transition previews (cards 22–25) ═══════════════════════
        Preview-only styles — the copyable source lives in the private
@@ -5370,10 +6045,10 @@
       animation: pro3-sweep-mask var(--pro3-shimmer-dur) var(--pro3-sweep-ease) infinite;
       pointer-events: none;
     }
-    /* Edge beam: a uniform ink ring + glow + bloom underneath, shaped
-       only by a comet-profiled 135° mask window phase-locked to the
-       shimmer's clock — the lit segment brightens and fades smoothly as
-       it glides along the border. */
+    /* Edge beam: 9 border-beam palette blobs (colorPalettes.colorful,
+       ×0.6) over a faint neutral base, shaped by a comet-profiled 135°
+       mask window phase-locked to the shimmer's clock. Colour works in
+       both light and dark, so no theme override needed. */
     .pro3-edge {
       position: absolute;
       inset: -20px;
@@ -5424,10 +6099,6 @@
       border-radius: 12px;
       pointer-events: none;
     }
-    /* Ring stroke: the border-beam library's 9 border-palette blobs
-       (colorPalettes.colorful, positions/sizes ×0.6) painted into a
-       1px ring over a faint neutral base that keeps the stroke from
-       vanishing between blobs as the comet window travels. */
     .pro3-edge-ring {
       padding: 1px;
       opacity: var(--pro3-ring-strength);
@@ -5447,9 +6118,6 @@
       mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       mask-composite: exclude;
     }
-    /* Inner glow: the library's PULSE_INNER blob set (×0.6) in real
-       colors + four neutral corner accents, belt-masked with a 44px
-       fade and softened 2px so the coloured lumps melt together. */
     .pro3-edge-glow {
       background:
         radial-gradient(ellipse 39px 21px at 33% -7.4%, rgba(255, 50, 100, 0.34), transparent),
@@ -5476,10 +6144,6 @@
         linear-gradient(to right, white, transparent 44px, transparent calc(100% - 44px), white);
       mask-composite: add;
     }
-    /* Bloom: the library's PULSE_INNER_BLOOM table — 7 expanded blobs
-       (×0.65) in real colors, heavily blurred over a faint neutral
-       wash, in a soft edge belt (not ring-clipped, so the blur can
-       radiate). The big organic coloured glow pouring off the stroke. */
     .pro3-edge-bloom {
       background:
         radial-gradient(ellipse 55px 31px at 33% -7.4%, rgba(255, 50, 100, 0.4), transparent),
@@ -5715,7 +6379,7 @@
     }
   </style>
 </head>
-<body>
+<body class="is-detail">
   <a href="#main" class="skip-link">Skip to content</a>
 
   <main id="main" class="app">
@@ -5732,7 +6396,7 @@
             <span class="brand-word"><span class="brand-word-strong">Transitions</span><span class="brand-word-dim">.dev</span></span>
           </a>
           <nav class="site-nav-menu" aria-label="Primary">
-            <a class="nav-pill" href="detail.html?t=card-resize">Transitions</a>
+            <a class="nav-pill nav-pill--active" href="detail.html?t=card-resize" aria-current="page">Transitions</a>
             <a class="nav-pill" href="/skill.html">Skill</a>
             <a class="nav-pill" href="/refine.html">Refine tool</a>
           </nav>
@@ -5861,36 +6525,162 @@
       </nav>
     </header>
 
-    <header class="header">
-      <div class="header-icon-wrap" aria-hidden="true">
-        <img
-          class="header-icon-img header-icon-img--light"
-          src="assets/icon%20light%202x.png"
-          alt=""
-          width="136"
-          height="140"
-          decoding="async"
-        />
-        <img
-          class="header-icon-img header-icon-img--dark"
-          src="assets/icon-dark-2x.png?v=2"
-          alt=""
-          width="136"
-          height="140"
-          decoding="async"
-        />
+    <div class="docs" id="docs">
+      <aside class="docs-sidebar" aria-label="Documentation">
+        <div class="docs-group">
+          <div class="docs-group-label">Getting started</div>
+          <a class="docs-link" href="?doc=introduction" data-doc="introduction">Introduction</a>
+          <a class="docs-link" href="?doc=installation" data-doc="installation">Installation</a>
+          <a class="docs-link" href="?doc=accessibility" data-doc="accessibility">Accessibility</a>
+        </div>
+        <div class="docs-group">
+          <div class="docs-group-label">Transitions</div>
+          <nav class="docs-list" id="docs-list" aria-label="Transitions"></nav>
+        </div>
+      </aside>
+
+      <div class="docs-main">
+        <div class="detail-topbar">
+          <button type="button" class="detail-arrow" id="detail-prev" aria-label="Previous transition">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.667 8H3.333M6.667 4.667 3.333 8l3.334 3.333"/></svg>
+          </button>
+          <button type="button" class="detail-arrow" id="detail-next" aria-label="Next transition">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.333 8h9.334M9.333 4.667 12.667 8l-3.334 3.333"/></svg>
+          </button>
+        </div>
+
+        <header class="detail-head">
+          <div class="detail-titles">
+            <h1 class="detail-title" id="detail-title">Card resize</h1>
+            <p class="detail-sub" id="detail-sub">Smooth card resize transition</p>
+          </div>
+          <div class="detail-tabs proto-modal-tabs" role="tablist" aria-label="View">
+            <span class="proto-modal-tabs-indicator" aria-hidden="true"></span>
+            <button type="button" class="proto-modal-tab" role="tab" data-detail-tab="preview" aria-selected="true">Preview</button>
+            <button type="button" class="proto-modal-tab" role="tab" data-detail-tab="css" aria-selected="false">CSS</button>
+            <button type="button" class="proto-modal-tab" role="tab" data-detail-tab="react" aria-selected="false">React</button>
+          </div>
+        </header>
+
+        <div class="detail-body">
+          <div class="detail-panel detail-stage" id="detail-stage" data-detail-panel="preview"><a class="detail-pro-badge" href="/pro.html" aria-label="Transitions Pro">Pro</a></div>
+
+          <div class="detail-panel" data-detail-panel="css" hidden>
+            <div class="detail-code">
+              <button type="button" class="detail-code-copy" data-copy-target="css" aria-label="Copy CSS">
+                <svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+              <div class="detail-code-scroll"><pre><code id="detail-css"></code></pre></div>
+            </div>
+          </div>
+
+          <div class="detail-panel" data-detail-panel="react" hidden>
+            <div class="detail-code">
+              <button type="button" class="detail-code-copy" data-copy-target="react" aria-label="Copy React">
+                <svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+              <div class="detail-code-scroll"><pre><code id="detail-react"></code></pre></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-doc" id="detail-doc" hidden>
+          <article class="doc-article skill-content" data-doc="introduction"
+                   data-title="Introduction" data-subtitle="A copy-paste library of production-ready UI transitions" hidden>
+            <div class="skill-section">
+              <p class="skill-section-note">Transitions.dev is a curated collection of the most essential UI transitions for web apps: dropdowns, modals, notification badges, number pop-ins, page slides, accordions and more. Each one is a small, self-contained piece of motion you can drop into any project.</p>
+              <p class="skill-section-note">Every transition is built with plain CSS (plus a little JavaScript only where a demo needs it) and tuned against a shared scale of motion tokens (duration, easing, distance, blur and scale), so they feel consistent no matter where you use them.</p>
+              <p class="skill-section-note">Pick a transition from the sidebar to see it three ways: a live Preview, the portable CSS, and a self-contained React version. When you find one you like, see <a href="?doc=installation" data-doc="installation">Installation</a> for the ways to bring it into your project.</p>
+            </div>
+          </article>
+
+          <article class="doc-article skill-content" data-doc="installation"
+                   data-title="Installation" data-subtitle="Four ways to get transitions into your project" hidden>
+            <div class="skill-section">
+              <h2 class="skill-section-title">Copy the snippet</h2>
+              <p class="skill-section-note">There's nothing to install: open a transition, copy the CSS (or React) from the code panel, and paste it into your project; snippets are namespaced (<code>.t-*</code>) with their motion tokens exposed as CSS variables you can tweak directly.</p>
+            </div>
+            <div class="skill-section">
+              <h2 class="skill-section-title">Install with the CLI (npm)</h2>
+              <p class="skill-section-note">Pull the transitions straight into your project from the terminal, no manual copy. Free transitions work with no account.</p>
+              <div class="skill-command">
+                <span class="skill-command-label">Free version</span>
+                <div class="skill-code-row">
+                  <code id="cli-add-all-cmd">npx transitions-pro add --all</code>
+                  <button type="button" class="skill-code-copy" aria-label="Copy CLI add-all command" data-copy-target="#cli-add-all-cmd">
+                    <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </button>
+                </div>
+                <p class="skill-section-note">Writes every free transition into <code>./transitions/</code>. Run <code>npx transitions-pro list</code> to see everything available.</p>
+              </div>
+              <div class="skill-command">
+                <span class="skill-command-label">Pro version</span>
+                <div class="skill-code-row">
+                  <code id="cli-add-pro-cmd">npx transitions-pro add --pro</code>
+                  <button type="button" class="skill-code-copy" aria-label="Copy CLI add-pro command" data-copy-target="#cli-add-pro-cmd">
+                    <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </button>
+                </div>
+                <p class="skill-section-note">Pro: grabs everything including the Pro CSS and React. The first time, it opens your browser to confirm a short code (no password, no API key in your terminal), then pulls it all in. Sign out any time with <code>logout</code>. See <a href="pro.html">Transitions Pro</a>.</p>
+              </div>
+            </div>
+            <div class="skill-section">
+              <h2 class="skill-section-title">Install with the Skill &amp; Refine tool</h2>
+              <p class="skill-section-note">Prefer not to copy by hand? Two tools deliver transitions straight into your codebase.</p>
+              <div class="skill-command">
+                <span class="skill-command-label">Free version</span>
+                <div class="skill-code-row">
+                  <code id="install-cmd">npx skills add Jakubantalik/transitions.dev</code>
+                  <button type="button" class="skill-code-copy" aria-label="Copy install command" data-copy-target="#install-cmd">
+                    <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </button>
+                </div>
+                <p class="skill-section-note"><a href="skill.html">Skill</a>: installs the full transition library. Works with Claude Code, Cursor, GitHub Copilot, Codex and Gemini CLI. Ask your agent for a transition by name and it drops the right snippet into your files.</p>
+              </div>
+              <div class="skill-command">
+                <span class="skill-command-label">Pro version</span>
+                <div class="skill-code-row">
+                  <code id="cli-skill-cmd">npx transitions-pro skill</code>
+                  <button type="button" class="skill-code-copy" aria-label="Copy Pro skill install command" data-copy-target="#cli-skill-cmd">
+                    <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </button>
+                </div>
+                <p class="skill-section-note"><a href="pro.html">Pro Skill</a>: installs the premium transitions as an agent skill (CSS, React, TypeScript). Opens your browser once to confirm your Pro account, then drops it into your skills directory. See <a href="pro.html">Transitions Pro</a>.</p>
+              </div>
+              <div class="skill-command">
+                <div class="skill-code-row">
+                  <code id="refine-cmd">npx transitions-refine live</code>
+                  <button type="button" class="skill-code-copy" aria-label="Copy Refine tool command" data-copy-target="#refine-cmd">
+                    <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </button>
+                </div>
+                <p class="skill-section-note"><a href="refine.html">Refine tool</a>: run in your terminal to open a live panel on your running app. Scans your existing motion, aligns it to the token scale, and lets you fine-tune duration, easing and stagger visually, then apply the result back to your code.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="doc-article skill-content" data-doc="accessibility"
+                   data-title="Accessibility" data-subtitle="Motion that respects the people using it" hidden>
+            <div class="skill-section">
+              <p class="skill-section-note">Motion should never get in the way. Every transition here stays accessible by default.</p>
+              <ul class="feature-list">
+                <li><span class="feature-name">Respects reduced motion</span><span class="feature-desc">Every transition honors <code>@media (prefers-reduced-motion: reduce)</code>. When a visitor has asked their system to minimize motion, animations and transitions are switched off or collapsed to an instant state change, with no movement, blur or scale, while the functional result (menu open, value updated, panel shown) still happens.</span></li>
+                <li><span class="feature-name">Nothing depends on motion alone</span><span class="feature-desc">Animation is decorative. State is always reflected in the DOM and text, never conveyed only through movement, so screen-reader and reduced-motion users get the same information.</span></li>
+                <li><span class="feature-name">Keyboard and focus</span><span class="feature-desc">Interactive demos use real <code>&lt;button&gt;</code> elements with correct <code>aria</code> states, keep native focus outlines, and are fully operable from the keyboard.</span></li>
+                <li><span class="feature-name">Smooth by design</span><span class="feature-desc">Transitions stick to compositor-friendly properties, namely <code>transform</code>, <code>opacity</code> and <code>filter</code>, and use <code>will-change</code> sparingly, so motion stays smooth without taxing lower-end devices.</span></li>
+              </ul>
+            </div>
+          </article>
+        </div>
       </div>
-      <h1 class="title">Ready to use UI transitions</h1>
-      <p class="subtitle">
-        Collection of the most essential UI transitions for web apps. Copy
-        and paste them, or use them with <a class="subtitle-skill" href="skill.html">skill</a>
-        directly in your project.
-      </p>
-      <div class="skill-cta-row">
-        <a class="skill-btn skill-btn--primary" href="#components">Browse</a>
-        <a class="skill-btn skill-btn--secondary" href="/pro.html">Get Pro</a>
-      </div>
-    </header>
+    </div>
 
     <section class="cards" id="components" aria-label="Transition prototypes" style="scroll-margin-top: 24px;">
 
@@ -6004,7 +6794,28 @@
         </button>
       </article>
 
-      <!-- 5. Menu dropdown -->
+      <!-- 5. Confetti burst (Pro) -->
+      <article class="card" data-proto-card data-pro="true" data-pro-id="confetti-burst">
+        <div class="card-stage" id="pro1-stage">
+          <canvas class="pro1-canvas" id="pro1-canvas" aria-hidden="true"></canvas>
+          <button type="button" class="btn-animate" id="pro1-btn" data-proto="pro1">Animate</button>
+        </div>
+        <div class="card-meta">
+          <div class="card-title">Confetti burst</div>
+          <div class="card-subtitle">Physics confetti that lands on the button</div>
+        </div>
+        <button type="button" class="card-copy" aria-label="Copy Confetti burst CSS" data-pro-copy="confetti-burst">
+          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </article>
+
+      <!-- 6. Menu dropdown -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p2-stage-inner">
@@ -6021,27 +6832,6 @@
           <div class="card-subtitle">Origin-aware open / close transition</div>
         </div>
         <button type="button" class="card-copy" aria-label="Copy Menu dropdown CSS" data-copy-key="p2">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
-      </article>
-
-      <!-- 6. Confetti burst (Pro) -->
-      <article class="card" data-proto-card data-pro="true" data-pro-id="confetti-burst">
-        <div class="card-stage" id="pro1-stage">
-          <canvas class="pro1-canvas" id="pro1-canvas" aria-hidden="true"></canvas>
-          <button type="button" class="btn-animate" id="pro1-btn" data-proto="pro1">Animate</button>
-        </div>
-        <div class="card-meta">
-          <div class="card-title">Confetti burst</div>
-          <div class="card-subtitle">Physics confetti lands on the button</div>
-        </div>
-        <button type="button" class="card-copy" aria-label="Copy Confetti burst CSS" data-pro-copy="confetti-burst">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -6190,7 +6980,36 @@
         </button>
       </article>
 
-      <!-- 10. Icon swap -->
+      <!-- 10. Card stack hover (Pro) -->
+      <article class="card" data-proto-card data-pro="true" data-pro-id="card-stack-hover">
+        <div class="card-stage">
+          <div class="stage-inner stage-inner--no-btn">
+            <div class="pro2-stack" aria-label="Card stack">
+              <button type="button" class="pro2-card" aria-label="Card 1"
+                      style="--cx: 10.87px; --cy: 19.77px; --rot: -8deg; --dx: -34px; --dy: 0px; --drot: -6deg; --card-op: 0.5; z-index: 1;"><img alt="" /></button>
+              <button type="button" class="pro2-card" aria-label="Card 2"
+                      style="--cx: 29.47px; --cy: 18.37px; --rot: 4deg; --dx: 34px; --dy: 0px; --drot: 6deg; --card-op: 0.5; z-index: 0;"><img alt="" /></button>
+              <button type="button" class="pro2-card" aria-label="Card 3"
+                      style="--cx: 21px; --cy: 21px; --rot: 0deg; --dx: 0px; --dy: 0px; --drot: 0deg; z-index: 2;"><img alt="" /></button>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta">
+          <div class="card-title">Card stack hover</div>
+          <div class="card-subtitle">Stack fans out with a spring on hover</div>
+        </div>
+        <button type="button" class="card-copy" aria-label="Copy Card stack hover CSS" data-pro-copy="card-stack-hover">
+          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </article>
+
+      <!-- 11. Icon swap -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p5-stage-inner">
@@ -6227,7 +7046,7 @@
         </button>
       </article>
 
-      <!-- 11. Success check -->
+      <!-- 12. Success check -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p10-stage-inner">
@@ -6261,7 +7080,7 @@
         </button>
       </article>
 
-      <!-- 12. Avatar group hover spring -->
+      <!-- 13. Avatar group hover spring -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p11-stage-inner">
@@ -6303,35 +7122,6 @@
         </button>
       </article>
 
-      <!-- 13. Card stack hover (Pro) -->
-      <article class="card" data-proto-card data-pro="true" data-pro-id="card-stack-hover">
-        <div class="card-stage">
-          <div class="stage-inner stage-inner--no-btn">
-            <div class="pro2-stack" aria-label="Card stack">
-              <button type="button" class="pro2-card" aria-label="Card 1"
-                      style="--cx: 10.87px; --cy: 19.77px; --rot: -8deg; --dx: -34px; --dy: 0px; --drot: -6deg; --card-op: 0.5; z-index: 1;"><img alt="" /></button>
-              <button type="button" class="pro2-card" aria-label="Card 2"
-                      style="--cx: 29.47px; --cy: 18.37px; --rot: 4deg; --dx: 34px; --dy: 0px; --drot: 6deg; --card-op: 0.5; z-index: 0;"><img alt="" /></button>
-              <button type="button" class="pro2-card" aria-label="Card 3"
-                      style="--cx: 21px; --cy: 21px; --rot: 0deg; --dx: 0px; --dy: 0px; --drot: 0deg; z-index: 2;"><img alt="" /></button>
-            </div>
-          </div>
-        </div>
-        <div class="card-meta">
-          <div class="card-title">Card stack hover</div>
-          <div class="card-subtitle">Stack fans out with a spring on hover</div>
-        </div>
-        <button type="button" class="card-copy" aria-label="Copy Card stack hover CSS" data-pro-copy="card-stack-hover">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
-      </article>
-
       <!-- 14. Input shake on error -->
       <article class="card" data-proto-card>
         <div class="card-stage">
@@ -6363,7 +7153,47 @@
         </button>
       </article>
 
-      <!-- 15. Input clear with dissolve -->
+      <!-- 15. Organic shimmer (Pro) -->
+      <article class="card" data-proto-card data-pro="true" data-pro-id="organic-shimmer">
+        <div class="card-stage">
+          <div class="stage-inner">
+            <div class="pro3-square" data-playing="true" aria-hidden="true">
+              <span class="pro3-shimmer"><span class="pro3-shimmer-band"></span></span>
+              <span class="pro3-edge">
+                <span class="pro3-edge-bloom"></span>
+                <span class="pro3-edge-glow"></span>
+                <span class="pro3-edge-ring"></span>
+              </span>
+            </div>
+            <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+              <filter id="pro3-warp" x="-30%" y="-30%" width="160%" height="160%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.012 0.03" numOctaves="2" seed="7" result="n" />
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G" />
+              </filter>
+              <filter id="pro3-warp-band" x="-40%" y="-40%" width="180%" height="180%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.009 0.015" numOctaves="2" seed="7" result="n" />
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="46" xChannelSelector="R" yChannelSelector="G" />
+              </filter>
+            </svg>
+            <button type="button" class="btn-animate" id="pro3-toggle" aria-pressed="true">Stop</button>
+          </div>
+        </div>
+        <div class="card-meta">
+          <div class="card-title">Organic shimmer</div>
+          <div class="card-subtitle">Wavy shimmer with phase-locked edge glow</div>
+        </div>
+        <button type="button" class="card-copy" aria-label="Copy Organic shimmer CSS" data-pro-copy="organic-shimmer">
+          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </article>
+
+      <!-- 16. Input clear with dissolve -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p13-stage-inner">
@@ -6408,7 +7238,7 @@
         </button>
       </article>
 
-      <!-- 16. Skeleton loader and reveal -->
+      <!-- 17. Skeleton loader and reveal -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p14-stage-inner">
@@ -6449,7 +7279,7 @@
         </button>
       </article>
 
-      <!-- 17. Texts reveal -->
+      <!-- 18. Texts reveal -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p18-stage-inner">
@@ -6475,7 +7305,7 @@
         </button>
       </article>
 
-      <!-- 18. Tabs sliding -->
+      <!-- 19. Tabs sliding -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p16-stage-inner">
@@ -6502,7 +7332,44 @@
         </button>
       </article>
 
-      <!-- 19. Shimmer text -->
+      <!-- 20. Image open tilt (Pro) -->
+      <article class="card" data-proto-card data-pro="true" data-pro-id="image-open-tilt">
+        <div class="card-stage">
+          <div class="stage-inner stage-inner--no-btn pro4-stage">
+            <button type="button" class="pro4-card" id="pro4-card" aria-expanded="false" aria-label="Open image">
+              <img class="pro4-img" id="pro4-photo" alt="" src="assets/proto-images/Untitled4.jpg" />
+            </button>
+            <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+              <filter id="pro4-bend" x="-25%" y="-45%" width="150%" height="190%" color-interpolation-filters="sRGB">
+                <feImage id="pro4-bend-map" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='320'%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='rgb(128,0,128)'/%3E%3Cstop offset='0.125' stop-color='rgb(128,56,128)'/%3E%3Cstop offset='0.25' stop-color='rgb(128,96,128)'/%3E%3Cstop offset='0.375' stop-color='rgb(128,120,128)'/%3E%3Cstop offset='0.5' stop-color='rgb(128,128,128)'/%3E%3Cstop offset='0.625' stop-color='rgb(128,120,128)'/%3E%3Cstop offset='0.75' stop-color='rgb(128,96,128)'/%3E%3Cstop offset='0.875' stop-color='rgb(128,56,128)'/%3E%3Cstop offset='1' stop-color='rgb(128,0,128)'/%3E%3C/linearGradient%3E%3Crect width='360' height='320' fill='url(%23g)'/%3E%3C/svg%3E"
+                  x="-44" y="-80" width="308" height="320" preserveAspectRatio="none" result="para" />
+                <feGaussianBlur in="para" stdDeviation="12" result="paraSoft" />
+                <feTurbulence type="fractalNoise" baseFrequency="0.009 0.014" numOctaves="2" seed="11" result="noiseRaw" />
+                <feComponentTransfer in="noiseRaw" result="noise">
+                  <feFuncA type="table" tableValues="1 1" />
+                </feComponentTransfer>
+                <feComposite in="paraSoft" in2="noise" operator="arithmetic" k1="0" k2="0.82" k3="0.18" k4="0" result="pro4map" />
+                <feDisplacementMap id="pro4-bend-disp" in="SourceGraphic" in2="pro4map" scale="0" xChannelSelector="R" yChannelSelector="G" />
+              </filter>
+            </svg>
+          </div>
+        </div>
+        <div class="card-meta">
+          <div class="card-title">Image open tilt</div>
+          <div class="card-subtitle">iPadOS-style zoom with 3D tilt and bend</div>
+        </div>
+        <button type="button" class="card-copy" aria-label="Copy Image open tilt CSS" data-pro-copy="image-open-tilt">
+          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+      </article>
+
+      <!-- 21. Shimmer text -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p15-stage-inner">
@@ -6525,47 +7392,7 @@
         </button>
       </article>
 
-      <!-- 20. Organic shimmer (Pro) -->
-      <article class="card" data-proto-card data-pro="true" data-pro-id="organic-shimmer">
-        <div class="card-stage">
-          <div class="stage-inner">
-            <div class="pro3-square" data-playing="false" aria-hidden="true">
-              <span class="pro3-shimmer"><span class="pro3-shimmer-band"></span></span>
-              <span class="pro3-edge">
-                <span class="pro3-edge-bloom"></span>
-                <span class="pro3-edge-glow"></span>
-                <span class="pro3-edge-ring"></span>
-              </span>
-            </div>
-            <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
-              <filter id="pro3-warp" x="-30%" y="-30%" width="160%" height="160%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.012 0.03" numOctaves="2" seed="7" result="n" />
-                <feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G" />
-              </filter>
-              <filter id="pro3-warp-band" x="-40%" y="-40%" width="180%" height="180%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.009 0.015" numOctaves="2" seed="7" result="n" />
-                <feDisplacementMap in="SourceGraphic" in2="n" scale="46" xChannelSelector="R" yChannelSelector="G" />
-              </filter>
-            </svg>
-            <button type="button" class="btn-animate" id="pro3-toggle" aria-pressed="false">Play</button>
-          </div>
-        </div>
-        <div class="card-meta">
-          <div class="card-title">Organic shimmer</div>
-          <div class="card-subtitle">Wavy shimmer with edge glow</div>
-        </div>
-        <button type="button" class="card-copy" aria-label="Copy Organic shimmer CSS" data-pro-copy="organic-shimmer">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
-      </article>
-
-      <!-- 21. Tooltip open/close -->
+      <!-- 22. Tooltip open/close -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p17-stage-inner">
@@ -6590,7 +7417,7 @@
         </button>
       </article>
 
-      <!-- 22. Tilt card -->
+      <!-- 23. Tilt card -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p19-stage-inner">
@@ -6622,7 +7449,7 @@
         </button>
       </article>
 
-      <!-- 23. Plus → menu morph -->
+      <!-- 24. Plus → menu morph -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p20-stage-inner">
@@ -6658,7 +7485,7 @@
         </button>
       </article>
 
-      <!-- 24. Accordion expand/collapse -->
+      <!-- 25. Accordion expand/collapse -->
       <article class="card" data-proto-card>
         <div class="card-stage">
           <div class="stage-inner p21-stage-inner">
@@ -6748,43 +7575,6 @@
           <div class="card-subtitle">Heart fills and bursts particles</div>
         </div>
         <button type="button" class="card-copy" aria-label="Copy Like button CSS" data-copy-key="p23">
-          <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-          <svg class="icon-check" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </button>
-      </article>
-
-      <!-- 27. Image open tilt (Pro) -->
-      <article class="card" data-proto-card data-pro="true" data-pro-id="image-open-tilt">
-        <div class="card-stage">
-          <div class="stage-inner stage-inner--no-btn pro4-stage">
-            <button type="button" class="pro4-card" id="pro4-card" aria-expanded="false" aria-label="Open image">
-              <img class="pro4-img" id="pro4-photo" alt="" src="assets/proto-images/Untitled4.jpg" />
-            </button>
-            <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
-              <filter id="pro4-bend" x="-25%" y="-45%" width="150%" height="190%" color-interpolation-filters="sRGB">
-                <feImage id="pro4-bend-map" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='320'%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='rgb(128,0,128)'/%3E%3Cstop offset='0.125' stop-color='rgb(128,56,128)'/%3E%3Cstop offset='0.25' stop-color='rgb(128,96,128)'/%3E%3Cstop offset='0.375' stop-color='rgb(128,120,128)'/%3E%3Cstop offset='0.5' stop-color='rgb(128,128,128)'/%3E%3Cstop offset='0.625' stop-color='rgb(128,120,128)'/%3E%3Cstop offset='0.75' stop-color='rgb(128,96,128)'/%3E%3Cstop offset='0.875' stop-color='rgb(128,56,128)'/%3E%3Cstop offset='1' stop-color='rgb(128,0,128)'/%3E%3C/linearGradient%3E%3Crect width='360' height='320' fill='url(%23g)'/%3E%3C/svg%3E"
-                  x="-44" y="-80" width="308" height="320" preserveAspectRatio="none" result="para" />
-                <feGaussianBlur in="para" stdDeviation="12" result="paraSoft" />
-                <feTurbulence type="fractalNoise" baseFrequency="0.009 0.014" numOctaves="2" seed="11" result="noiseRaw" />
-                <feComponentTransfer in="noiseRaw" result="noise">
-                  <feFuncA type="table" tableValues="1 1" />
-                </feComponentTransfer>
-                <feComposite in="paraSoft" in2="noise" operator="arithmetic" k1="0" k2="0.82" k3="0.18" k4="0" result="pro4map" />
-                <feDisplacementMap id="pro4-bend-disp" in="SourceGraphic" in2="pro4map" scale="0" xChannelSelector="R" yChannelSelector="G" />
-              </filter>
-            </svg>
-          </div>
-        </div>
-        <div class="card-meta">
-          <div class="card-title">Image open tilt</div>
-          <div class="card-subtitle">Zoom with 3D tilt and bend</div>
-        </div>
-        <button type="button" class="card-copy" aria-label="Copy Image open tilt CSS" data-pro-copy="image-open-tilt">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -6909,7 +7699,7 @@
         </div>
         <div class="card-meta">
           <div class="card-title">Pro gradient text</div>
-          <div class="card-subtitle">Colour washes orbit the letters</div>
+          <div class="card-subtitle">Colour washes orbit the letters on a loop</div>
         </div>
         <button type="button" class="card-copy" aria-label="Copy Pro gradient text CSS" data-pro-copy="pro-gradient-text">
           <svg class="icon-copy" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -6959,44 +7749,45 @@
 
     </section>
 
-    <!-- ─── Sponsors (Figma 2332:82735) — homepage only. Card 1 keeps
-         the existing "Take the course" pill (external-link icon with a
-         static frame + arrow group that leans up-right on hover). -->
-    <section class="sponsors" aria-label="Sponsors">
-      <h2 class="sponsors-title">Sponsors</h2>
-      <div class="sponsors-row">
-        <div class="sponsor-card sponsor-card--course">
-          <div class="sponsor-card-text">
-            <p class="sponsor-card-headline">
-              If you want to learn more about crafting UI animations, I highly recommend <a href="https://animations.dev/" target="_blank">Emil Kowalski&rsquo;s course</a>.
-            </p>
-            <p class="sponsor-card-byline">Jakub Antalik, creator of Transitions.dev</p>
-          </div>
-          <a
-            class="course-cta-button"
-            href="https://animations.dev/"
-            target="_blank"
-          >
-            <span>Take the course</span>
-            <span class="course-cta-icon" aria-hidden="true">
-              <!-- "link-external-01" traced from Figma node 356:346 at
-                   native 16×16 (matches the asset pixel-for-pixel). The
-                   box stays anchored; the arrow group (chevron + line)
-                   translates 1.5px diagonally on hover. -->
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M7.5 2.5H4.5C3.39543 2.5 2.5 3.39543 2.5 4.5V11.5C2.5 12.6046 3.39543 13.5 4.5 13.5H11.5C12.6046 13.5 13.5 12.6046 13.5 11.5V8.5"/>
-                <g class="course-cta-arrow">
-                  <path d="M8.5 7.5L13.5 2.5M10 2.5H13.5V6"/>
-                </g>
-              </svg>
-            </span>
-          </a>
+    <!-- ─── Recommended course CTA (Figma 356:350) ───────────────
+         Vertical accent bar + two-line copy + pill button. The pill's
+         external-link icon has a static frame and a separate arrow
+         group that translates 1.5px diagonally up-right on hover. -->
+    <aside class="course-cta" aria-label="Recommended course">
+      <span class="course-cta-divider" aria-hidden="true"></span>
+      <!-- .course-cta-inner exists so the divider can stay anchored on
+           the left while the copy + pill collapse vertically on mobile. -->
+      <div class="course-cta-inner">
+        <div class="course-cta-text">
+          <p class="course-cta-headline">
+            If you want to learn more about crafting UI animations, I highly recommend <a href="https://animations.dev/" target="_blank">Emil Kowalski&rsquo;s course</a>.
+          </p>
+          <p class="course-cta-byline">
+            <span class="course-cta-name">Jakub Antalik</span>
+            <span class="course-cta-role">Creator of Transitions.dev</span>
+          </p>
         </div>
-        <a class="sponsor-card sponsor-card--empty" href="mailto:jakubja@gmail.com">
-          <span class="sponsor-card-empty-label">Become a sponsor</span>
+        <a
+          class="course-cta-button"
+          href="https://animations.dev/"
+          target="_blank"
+        >
+          <span>Take the course</span>
+          <span class="course-cta-icon" aria-hidden="true">
+            <!-- "link-external-01" traced from Figma node 356:346 at
+                 native 16×16 (matches the asset pixel-for-pixel). The
+                 box stays anchored; the arrow group (chevron + line)
+                 translates 1.5px diagonally on hover. -->
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7.5 2.5H4.5C3.39543 2.5 2.5 3.39543 2.5 4.5V11.5C2.5 12.6046 3.39543 13.5 4.5 13.5H11.5C12.6046 13.5 13.5 12.6046 13.5 11.5V8.5"/>
+              <g class="course-cta-arrow">
+                <path d="M8.5 7.5L13.5 2.5M10 2.5H13.5V6"/>
+              </g>
+            </svg>
+          </span>
         </a>
       </div>
-    </section>
+    </aside>
 
     <footer class="footer">
       <div class="footer-top">
@@ -8100,6 +8891,238 @@ export function Accordion({ title, children }) {
         <div className="t-acc-panel-inner">{children}</div>
       </div>
     </div>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="p22">import { useState } from "react";
+
+// Pair with the CSS from the CSS tab. Toggle `.is-open` on the toast —
+// opening uses the slower clock, the resting (closed) transition uses the
+// faster one, so a single class gives the open/close asymmetry.
+export function Toast({ children }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button type="button" onClick={() => setOpen((v) => !v)}>Animate</button>
+      <div
+        className={"t-toast" + (open ? " is-open" : "")}
+        role="status"
+        aria-hidden={!open}
+      >
+        {children}
+      </div>
+    </>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="p23">import { useRef, useState } from "react";
+
+// Pair with the CSS from the CSS tab. Liking fills the heart, springs a
+// pop, and fires an 8-dot burst whose per-particle vectors / velocity /
+// delay / size are re-randomised each time so the spray never repeats.
+const DIST = 20; // px — matches --like-particle-dist
+
+export function LikeButton() {
+  const [liked, setLiked] = useState(false);
+  const ref = useRef(null);
+
+  function seedParticles() {
+    const dots = ref.current.querySelectorAll(".t-like-particles i");
+    dots.forEach((dot, i) => {
+      const angle = (360 / dots.length) * i + (Math.random() * 2 - 1) * 16;
+      const mag = DIST * (0.68 + Math.random() * 0.5);
+      const rad = (angle * Math.PI) / 180;
+      const s = dot.style;
+      s.setProperty("--px", `${(Math.cos(rad) * mag).toFixed(2)}px`);
+      s.setProperty("--py", `${(Math.sin(rad) * mag).toFixed(2)}px`);
+      s.setProperty("--pdur", `calc(var(--like-particle-dur) * ${(0.78 + Math.random() * 0.44).toFixed(3)})`);
+      s.setProperty("--pdelay", `${Math.round(Math.random() * 70)}ms`);
+      s.setProperty("--p-end-scale", (0.35 + Math.random() * 0.4).toFixed(2));
+      s.setProperty("--psize", (0.6 + Math.random() * 0.8).toFixed(2));
+    });
+  }
+
+  function toggle() {
+    const el = ref.current;
+    if (liked) {
+      setLiked(false);
+      el.classList.remove("is-bursting");
+      return;
+    }
+    setLiked(true);
+    el.classList.remove("is-bursting");
+    seedParticles();
+    void el.offsetWidth; // reflow so the burst replays
+    el.classList.add("is-bursting");
+  }
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      className="t-like"
+      data-liked={liked ? "true" : "false"}
+      aria-pressed={liked}
+      onClick={toggle}
+    >
+      <span className="t-like-icon">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path
+            d="M7.99511 3.42388C6.66221 1.8656 4.4395 1.44643 2.76947 2.87334C1.09944 4.30026 0.86432 6.68598 2.17581 8.3736C3.26622 9.77674 6.56619 12.7361 7.64774 13.6939C7.76874 13.801 7.82925 13.8546 7.89982 13.8757C7.96141 13.8941 8.02881 13.8941 8.0904 13.8757C8.16097 13.8546 8.22147 13.801 8.34248 13.6939C9.42403 12.7361 12.724 9.77674 13.8144 8.3736C15.1259 6.68598 14.9195 4.28525 13.2207 2.87334C11.522 1.46144 9.32801 1.8656 7.99511 3.42388Z"
+            className="t-like-heart-path"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+      <span className="t-like-particles" aria-hidden="true">
+        {Array.from({ length: 8 }, (_, i) => <i key={i} />)}
+      </span>
+      Like
+    </button>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="p24">// Pair with the CSS from the CSS tab. Pure CSS — the hover shifts the
+// chevron right and rotates its two arms apart about the apex; no JS.
+export function LearnMore() {
+  return (
+    <button type="button" className="t-learn">
+      Learn more
+      <span className="t-learn-chevron" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path className="t-learn-arm t-learn-arm-top" d="M6 4L10 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path className="t-learn-arm t-learn-arm-bot" d="M10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    </button>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="p25">import { useEffect, useRef, useState } from "react";
+
+// Pair with the CSS from the CSS tab. Toggle `aria-checked`; the box fills
+// then the check stroke-draws. Measure the path length into --check-len on
+// mount so the dasharray/dashoffset pair never over/under-draws.
+export function Checkbox({ label }) {
+  const [checked, setChecked] = useState(false);
+  const boxRef = useRef(null);
+  const pathRef = useRef(null);
+
+  useEffect(() => {
+    const len = pathRef.current.getTotalLength();
+    boxRef.current.style.setProperty("--check-len", String(Math.ceil(len) + 1));
+  }, []);
+
+  return (
+    <label className="t-field" onClick={() => setChecked((v) => !v)}>
+      <button ref={boxRef} type="button" className="t-check" role="checkbox" aria-checked={checked}>
+        <svg width="10" height="10" viewBox="0 0 10.1668 10.1668" fill="none">
+          <path ref={pathRef} d="M1 5.52L3.92 9.17L9.17 1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {label}
+    </label>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="p26">import { useEffect, useRef } from "react";
+
+// Pair with the CSS from the CSS tab. Each digit is a clipped reel of
+// 0-9 cells; the strip translates up (spins*10 + digit) cells to spin then
+// land, with a per-column delay for a left-to-right cascade. (The vertical
+// SVG motion-blur driver is omitted here for brevity — see the demo.)
+const SPINS = 3, CELL = 30, DUR = 1400, STAGGER = 90;
+const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
+
+export function Counter({ target = 100 }) {
+  const ref = useRef(null);
+
+  function build(str) {
+    ref.current.innerHTML = "";
+    const strips = [];
+    [...str].forEach((ch) => {
+      if (ch < "0" || ch > "9") {
+        const sep = document.createElement("span");
+        sep.className = "t-reel-sep";
+        sep.textContent = ch;
+        ref.current.appendChild(sep);
+        return;
+      }
+      const col = document.createElement("span");
+      col.className = "t-reel-col";
+      const strip = document.createElement("span");
+      strip.className = "t-reel-strip";
+      for (let k = 0; k < (SPINS + 1) * 10 + 1; k++) {
+        const cell = document.createElement("span");
+        cell.className = "t-reel-digit";
+        cell.textContent = String(k % 10);
+        strip.appendChild(cell);
+      }
+      col.appendChild(strip);
+      ref.current.appendChild(col);
+      strips.push({ strip, digit: +ch });
+    });
+    return strips;
+  }
+
+  useEffect(() => {
+    // Rest at 0.
+    build("0").forEach(({ strip, digit }) => {
+      strip.style.transform = `translateY(-${digit * CELL}px)`;
+    });
+  }, []);
+
+  function spin() {
+    const strips = build(Math.round(target).toLocaleString("en-US"));
+    strips.forEach(({ strip }) => {
+      strip.style.transition = "none";
+      strip.style.transform = "translateY(0)";
+    });
+    void ref.current.offsetWidth;
+    strips.forEach(({ strip, digit }, i) => {
+      strip.style.transition = `transform ${DUR}ms ${EASE} ${i * STAGGER}ms`;
+      strip.style.transform = `translateY(-${(SPINS * 10 + digit) * CELL}px)`;
+    });
+  }
+
+  return (
+    <>
+      <div ref={ref} className="t-reel" aria-label={String(target)} />
+      <button type="button" onClick={spin}>Animate</button>
+    </>
+  );
+}
+</script>
+
+  <script type="text/plain" data-react-key="p27">import { useState } from "react";
+
+// Pair with the CSS from the CSS tab. `.is-init` gates the keyframes so the
+// "off" animation doesn't play on mount; flipping `data-on` swaps the
+// animation, which restarts the double-bounce thumb travel.
+export function Toggle() {
+  const [on, setOn] = useState(false);
+  const [init, setInit] = useState(false);
+
+  return (
+    <button
+      type="button"
+      className={"t-toggle" + (init ? " is-init" : "")}
+      role="switch"
+      aria-checked={on}
+      data-on={on ? "true" : "false"}
+      onClick={() => { setInit(true); setOn((v) => !v); }}
+    >
+      <span className="t-toggle-thumb" aria-hidden="true" />
+    </button>
   );
 }
 </script>
@@ -10613,26 +11636,19 @@ export function Surface({ open, children }) {
           }
         });
 
-        // Card click → open the transition's detail page. Ignore clicks on
-        // interactive children so Animate / token / copy buttons keep their
-        // own behaviour.
-        function detailUrlFor(card) {
-          var titleNode = card.querySelector(".card-title");
-          var keyNode = card.querySelector("[data-copy-key]");
-          var slug = titleNode
-            ? titleNode.textContent.trim().toLowerCase()
-                .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
-            : "";
-          return "detail.html" + (slug ? "?t=" + slug : "");
-        }
+        // Card click → open modal. Ignore clicks on interactive children so
+        // Animate / token / copy buttons keep their own behaviour.
         document.addEventListener("click", function (e) {
+          // On the detail page the card lives inside the preview panel;
+          // clicking it must not open the code modal.
+          if (document.body.classList.contains("is-detail")) return;
           if (isInsideModal(e.target)) return;
           var card = e.target.closest(".card[data-proto-card]");
           if (!card) return;
           if (e.target.closest("button, a, input, textarea, select, label")) {
             return;
           }
-          window.location.href = detailUrlFor(card);
+          openModal(card);
         });
 
         // Escape closes the modal whenever it is visible.
@@ -10647,19 +11663,460 @@ export function Surface({ open, children }) {
         // focusable but DO NOT set role="button" — the card already contains
         // real buttons (Animate / token rows / …) and nesting button roles
         // would confuse screen readers and automated clients.
-        Array.prototype.forEach.call(
-          document.querySelectorAll(".card[data-proto-card]"),
-          function (card) {
-            if (!card.hasAttribute("tabindex")) card.setAttribute("tabindex", "0");
-            card.addEventListener("keydown", function (e) {
-              if (e.target !== card) return;
-              if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
-                e.preventDefault();
-                window.location.href = detailUrlFor(card);
-              }
+        if (!document.body.classList.contains("is-detail")) {
+          Array.prototype.forEach.call(
+            document.querySelectorAll(".card[data-proto-card]"),
+            function (card) {
+              if (!card.hasAttribute("tabindex")) card.setAttribute("tabindex", "0");
+              card.addEventListener("keydown", function (e) {
+                if (e.target !== card) return;
+                if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+                  e.preventDefault();
+                  openModal(card);
+                }
+              });
+            }
+          );
+        }
+
+        /* ── Transition detail (docs) page controller ─────────────
+           Runs only on detail.html (body.is-detail). Reuses the same
+           card DOM (moved live into #detail-stage so its prototype JS
+           keeps working) and the existing buildSnippet / buildReactSnippet
+           helpers for the CSS + React tabs. */
+        (function initDetailPage() {
+          if (!document.body.classList.contains("is-detail")) return;
+
+          var stage = document.getElementById("detail-stage");
+          var listEl = document.getElementById("docs-list");
+          var titleEl = document.getElementById("detail-title");
+          var subEl = document.getElementById("detail-sub");
+          var cssEl = document.getElementById("detail-css");
+          var reactEl = document.getElementById("detail-react");
+          var prevBtn = document.getElementById("detail-prev");
+          var nextBtn = document.getElementById("detail-next");
+          var docsMain = document.querySelector(".docs-main");
+          var tabsRoot = document.querySelector(".detail-tabs");
+          var tabIndicator = tabsRoot ? tabsRoot.querySelector(".proto-modal-tabs-indicator") : null;
+          var tabs = Array.prototype.slice.call(document.querySelectorAll(".detail-tabs [data-detail-tab]"));
+          var panels = Array.prototype.slice.call(document.querySelectorAll(".detail-panel"));
+          var docWrap = document.getElementById("detail-doc");
+          var docArticles = Array.prototype.slice.call(document.querySelectorAll(".doc-article"));
+          var docLinks = Array.prototype.slice.call(document.querySelectorAll(".docs-link[data-doc]"));
+          if (!stage || !listEl) return;
+
+          var store = document.querySelector(".cards");
+
+          function slugify(s) {
+            return (s || "").toLowerCase().trim()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-+|-+$/g, "");
+          }
+
+          // Collect transitions from the hidden card store (DOM order).
+          var cards = Array.prototype.slice.call(
+            (store || document).querySelectorAll(".card[data-proto-card]")
+          ).filter(function (card) {
+            return card.getAttribute("data-wip") !== "true";
+          });
+
+          var items = [];
+          cards.forEach(function (card) {
+            var keyEl = card.querySelector("[data-copy-key]");
+            var key = keyEl ? keyEl.getAttribute("data-copy-key") : null;
+            var proId = card.getAttribute("data-pro-id");
+            // Free cards need a public template; Pro cards carry data-pro-id
+            // instead — their source is fetched from the API when entitled.
+            if ((!key || !PROTO_TEMPLATES[key]) && !proId) return;
+            var hasTemplate = !!(key && PROTO_TEMPLATES[key]);
+            var t = card.querySelector(".card-title");
+            var s = card.querySelector(".card-subtitle");
+            var title = t ? t.textContent.trim()
+              : (hasTemplate ? (PROTO_TEMPLATES[key].name || key) : proId);
+            items.push({
+              card: card,
+              key: hasTemplate ? key : null,
+              proId: proId || null,
+              title: title,
+              subtitle: s ? s.textContent.trim() : "",
+              slug: slugify(title),
+              pro: card.getAttribute("data-pro") === "true"
+            });
+          });
+          if (!items.length) return;
+
+          // Build the sidebar list.
+          var linkBySlug = {};
+          items.forEach(function (it) {
+            var a = document.createElement("a");
+            a.className = "docs-link";
+            a.href = "?t=" + it.slug;
+            // Title in its own label span so a long name truncates with an
+            // ellipsis instead of wrapping or clipping the trailing Pro pill.
+            var label = document.createElement("span");
+            label.className = "docs-link-label";
+            label.textContent = it.title;
+            a.appendChild(label);
+            if (it.pro) {
+              // Inline "Pro" pill after the name (Figma 2330:2845).
+              var pill = document.createElement("span");
+              pill.className = "docs-pro-pill";
+              pill.textContent = "Pro";
+              a.appendChild(pill);
+            }
+            a.setAttribute("data-slug", it.slug);
+            a.addEventListener("click", function (e) {
+              e.preventDefault();
+              setTab("preview");
+              selectSlug(it.slug, true);
+            });
+            listEl.appendChild(a);
+            linkBySlug[it.slug] = a;
+          });
+
+          var currentIndex = -1;
+          var currentTab = "preview";
+
+          function indexForSlug(slug) {
+            for (var i = 0; i < items.length; i++) {
+              if (items[i].slug === slug) return i;
+            }
+            return -1;
+          }
+
+          // Sliding pill indicator — mirrors the code modal's setTabIndicator.
+          function positionIndicator(animate) {
+            if (!tabIndicator || !tabsRoot) return;
+            var active = tabsRoot.querySelector('[data-detail-tab][aria-selected="true"]');
+            if (!active || !active.offsetWidth) return;
+            var left = active.offsetLeft, width = active.offsetWidth;
+            if (!animate) {
+              var prev = tabIndicator.style.transition;
+              tabIndicator.style.transition = "none";
+              tabIndicator.style.transform = "translateX(" + left + "px)";
+              tabIndicator.style.width = width + "px";
+              void tabIndicator.offsetWidth;
+              tabIndicator.style.transition = prev;
+            } else {
+              tabIndicator.style.transform = "translateX(" + left + "px)";
+              tabIndicator.style.width = width + "px";
+            }
+          }
+
+          function setTab(tab) {
+            currentTab = tab;
+            tabs.forEach(function (t) {
+              t.setAttribute("aria-selected",
+                t.getAttribute("data-detail-tab") === tab ? "true" : "false");
+            });
+            panels.forEach(function (p) {
+              p.hidden = p.getAttribute("data-detail-panel") !== tab;
+            });
+            positionIndicator(true);
+          }
+
+          function setMode(mode) {
+            if (docsMain) docsMain.classList.toggle("is-doc", mode === "doc");
+          }
+
+          function clearActiveLinks() {
+            Object.keys(linkBySlug).forEach(function (sl) {
+              linkBySlug[sl].classList.remove("is-active");
+              linkBySlug[sl].removeAttribute("aria-current");
+            });
+            docLinks.forEach(function (l) {
+              l.classList.remove("is-active");
+              l.removeAttribute("aria-current");
             });
           }
-        );
+
+          function selectDoc(name, push) {
+            var art = null;
+            docArticles.forEach(function (a) {
+              var on = a.getAttribute("data-doc") === name;
+              a.hidden = !on;
+              if (on) art = a;
+            });
+            if (!art) return;
+            currentIndex = -1;
+            setMode("doc");
+            if (docWrap) docWrap.hidden = false;
+            titleEl.textContent = art.getAttribute("data-title") || name;
+            subEl.textContent = art.getAttribute("data-subtitle") || "";
+            clearActiveLinks();
+            docLinks.forEach(function (l) {
+              if (l.getAttribute("data-doc") === name) {
+                l.classList.add("is-active");
+                l.setAttribute("aria-current", "page");
+              }
+            });
+            document.title = (art.getAttribute("data-title") || name) + " — Transitions.dev";
+            try {
+              var url = "?doc=" + name;
+              if (push) history.pushState({ doc: name }, "", url);
+              else history.replaceState({ doc: name }, "", url);
+            } catch (e) {}
+            window.scrollTo(0, 0);
+          }
+
+          // ── Pro paywall ──────────────────────────────────────────
+          // Blur the CSS/React code and overlay a "Get access" button when the
+          // selected transition is Pro and the viewer has no active entitlement.
+          // NOTE: visual gate only — the snippet source still lives in the page.
+          // Real protection lands in Phase 5 when Pro source moves server-side.
+          var codeBlocks = Array.prototype.slice.call(
+            document.querySelectorAll(".detail-body .detail-code")
+          );
+          function isEntitled() {
+            return !!(window.TransitionsPro && window.TransitionsPro.state &&
+                      window.TransitionsPro.state.pro);
+          }
+          function ensurePaywall(block) {
+            var pw = block.querySelector(".detail-paywall");
+            if (pw) return pw;
+            pw = document.createElement("div");
+            pw.className = "detail-paywall";
+            pw.innerHTML =
+              '<div>' +
+                '<h2 class="detail-paywall-title">Get Transitions.dev<span class="paywall-pro">Pro</span></h2>' +
+                '<p class="detail-paywall-sub" style="margin-top:6px">' +
+                  '30+ production-ready transitions for modern web apps.<br>' +
+                  'Copy the CSS straight in, or let your agent apply them<br>' +
+                  'with the Pro skill, right inside your project.' +
+                '</p>' +
+              '</div>' +
+              '<div class="detail-paywall-actions">' +
+                '<a class="detail-paywall-btn detail-paywall-btn--primary" href="pro.html">Get Pro</a>' +
+                '<button type="button" class="detail-paywall-btn detail-paywall-btn--secondary" data-paywall-signin>Sign in</button>' +
+              '</div>';
+            pw.querySelector("[data-paywall-signin]").addEventListener("click", function () {
+              if (window.TransitionsPro) window.TransitionsPro.openSignIn();
+            });
+            block.appendChild(pw);
+            return pw;
+          }
+          function applyPaywall(isPro) {
+            var lock = !!isPro && !isEntitled();
+            codeBlocks.forEach(function (block) {
+              block.classList.toggle("is-locked", lock);
+              var pw = lock ? ensurePaywall(block) : block.querySelector(".detail-paywall");
+              if (pw) pw.hidden = !lock;
+            });
+          }
+          // Behind the blur, Pro panels show plausible placeholder lines —
+          // the real source is never in the page payload.
+          var PRO_CODE_PLACEHOLDER = (function () {
+            var lines = [
+              ":root {",
+              "  --t-dur: 410ms;",
+              "  --t-ease: cubic-bezier(0.31, 2.34, 0.64, 1);",
+              "  --t-scale: 1.04;",
+              "}",
+              "",
+              ".t-pro {",
+              "  translate: var(--cx) var(--cy);",
+              "  rotate: var(--rot);",
+              "  transition:",
+              "    translate var(--t-dur) var(--t-ease),",
+              "    rotate var(--t-dur) var(--t-ease);",
+              "}",
+              ""
+            ];
+            var out = [];
+            for (var i = 0; i < 4; i++) out = out.concat(lines);
+            return out.join("\n");
+          })();
+
+          // Entitled viewers get the real recipe from the API; the fetch is
+          // re-checked server-side, so this is convenience, not authority.
+          function loadProCode(it) {
+            var TP = window.TransitionsPro;
+            if (!it.proId || !TP || !TP.state.pro || !TP.fetchContent) return;
+            var idx = currentIndex;
+            ["css", "react"].forEach(function (variant) {
+              TP.fetchContent(it.proId, variant)
+                .then(function (text) {
+                  if (currentIndex !== idx) return; // stale selection
+                  (variant === "css" ? cssEl : reactEl).textContent = text;
+                })
+                .catch(function () { /* stays on placeholder behind the paywall */ });
+            });
+          }
+
+          // Re-evaluate once auth state resolves (pro-client.js dispatches pro:me).
+          document.addEventListener("pro:me", function () {
+            if (currentIndex >= 0) {
+              applyPaywall(items[currentIndex].pro);
+              loadProCode(items[currentIndex]);
+            }
+          });
+
+          function moveActiveCard(it) {
+            var existing = stage.querySelector(".card[data-proto-card]");
+            if (existing && existing !== it.card && store) store.appendChild(existing);
+            if (it.card.parentNode !== stage) stage.appendChild(it.card);
+
+            // Several prototypes (e.g. P16's sliding tab indicator) measure
+            // offsetLeft/offsetWidth once on load and only re-snap on a
+            // window "resize" event. While a card sits in the hidden
+            // `.cards` store those measurements are 0 (display: none), so
+            // once it's moved into the visible stage we replay a synthetic
+            // resize so every such component re-measures against its real,
+            // laid-out size instead of staying collapsed.
+            window.requestAnimationFrame(function () {
+              window.dispatchEvent(new Event("resize"));
+            });
+          }
+
+          function selectIndex(i, push) {
+            if (i < 0 || i >= items.length) return;
+            var it = items[i];
+            currentIndex = i;
+
+            setMode("transition");
+            if (docWrap) docWrap.hidden = true;
+
+            moveActiveCard(it);
+            titleEl.textContent = it.title;
+            subEl.textContent = it.subtitle;
+            if (it.key) {
+              try { cssEl.textContent = buildSnippet(it.key); } catch (e) { cssEl.textContent = ""; }
+              try { reactEl.textContent = buildReactSnippet(it.key); } catch (e) { reactEl.textContent = ""; }
+            } else {
+              // Pro item: placeholder behind the blur; real source only via API.
+              cssEl.textContent = PRO_CODE_PLACEHOLDER;
+              reactEl.textContent = PRO_CODE_PLACEHOLDER;
+              loadProCode(it);
+            }
+            applyPaywall(it.pro);
+            // Flag the stage so the dedicated corner Pro badge shows only
+            // for Pro transitions.
+            if (stage) stage.setAttribute("data-pro", it.pro ? "true" : "false");
+
+            clearActiveLinks();
+            var active = linkBySlug[it.slug];
+            if (active) {
+              active.classList.add("is-active");
+              active.setAttribute("aria-current", "page");
+              if (active.scrollIntoView) {
+                try { active.scrollIntoView({ block: "nearest" }); } catch (e) {}
+              }
+            }
+
+            if (prevBtn) prevBtn.disabled = i <= 0;
+            if (nextBtn) nextBtn.disabled = i >= items.length - 1;
+
+            document.title = it.title + " — Transitions.dev";
+            var url = "?t=" + it.slug;
+            try {
+              if (push) history.pushState({ slug: it.slug }, "", url);
+              else history.replaceState({ slug: it.slug }, "", url);
+            } catch (e) {}
+
+            // Tabs are visible again in transition mode; re-sync the pill.
+            positionIndicator(false);
+          }
+
+          function selectSlug(slug, push) {
+            var i = indexForSlug(slug);
+            if (i < 0) i = 0;
+            selectIndex(i, push);
+          }
+
+          tabs.forEach(function (t) {
+            t.addEventListener("click", function () {
+              setTab(t.getAttribute("data-detail-tab"));
+            });
+          });
+          if (prevBtn) prevBtn.addEventListener("click", function () { selectIndex(currentIndex - 1, true); });
+          if (nextBtn) nextBtn.addEventListener("click", function () { selectIndex(currentIndex + 1, true); });
+
+          // Getting-started doc links (sidebar) + any inline links that
+          // point at a doc via data-doc.
+          docLinks.forEach(function (l) {
+            l.addEventListener("click", function (e) {
+              e.preventDefault();
+              selectDoc(l.getAttribute("data-doc"), true);
+            });
+          });
+          if (docWrap) {
+            docWrap.addEventListener("click", function (e) {
+              var link = e.target.closest("a[data-doc]");
+              if (!link) return;
+              e.preventDefault();
+              selectDoc(link.getAttribute("data-doc"), true);
+            });
+          }
+
+          window.addEventListener("resize", function () {
+            if (docsMain && !docsMain.classList.contains("is-doc")) positionIndicator(false);
+          });
+
+          Array.prototype.forEach.call(
+            document.querySelectorAll(".detail-code-copy"),
+            function (btn) {
+              btn.addEventListener("click", function () {
+                var target = btn.getAttribute("data-copy-target");
+                var text = target === "react" ? reactEl.textContent : cssEl.textContent;
+                var done = function () {
+                  btn.setAttribute("data-copied", "true");
+                  window.setTimeout(function () { btn.removeAttribute("data-copied"); }, 1600);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(text).then(done).catch(done);
+                } else {
+                  done();
+                }
+              });
+            }
+          );
+
+          // Install-command copy buttons (Installation doc page) — target
+          // is a selector (e.g. "#install-cmd") pointing at the <code> to copy.
+          Array.prototype.forEach.call(
+            document.querySelectorAll(".skill-code-copy[data-copy-target]"),
+            function (btn) {
+              btn.addEventListener("click", function () {
+                var targetEl = document.querySelector(btn.getAttribute("data-copy-target"));
+                if (!targetEl) return;
+                var text = targetEl.textContent;
+                var done = function () {
+                  btn.setAttribute("data-copied", "true");
+                  window.setTimeout(function () { btn.removeAttribute("data-copied"); }, 1600);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(text).then(done).catch(done);
+                } else {
+                  done();
+                }
+              });
+            }
+          );
+
+          function hasDoc(name) {
+            return docArticles.some(function (a) { return a.getAttribute("data-doc") === name; });
+          }
+
+          function route(params) {
+            var doc = params.get("doc");
+            if (doc && hasDoc(doc)) { selectDoc(doc, false); return; }
+            setTab("preview");
+            selectSlug(params.get("t") || items[0].slug, false);
+          }
+
+          window.addEventListener("popstate", function () {
+            route(new URLSearchParams(location.search));
+          });
+
+          // Initial render — deferred a frame so every prototype
+          // initializer downstream has run before we move a card.
+          var params = new URLSearchParams(location.search);
+          setTab("preview");
+          window.requestAnimationFrame(function () {
+            route(params);
+            positionIndicator(false);
+          });
+        })();
       })();
 
       // ── Prototype 6 message cycle ────────────────────────────
@@ -10938,6 +12395,7 @@ export function Surface({ open, children }) {
           }
           return;
         }
+
 
         /* --- Prototype 23: Like button (fill + pop + particle burst) --- */
         var likeBtn = e.target.closest("[data-proto-like]");
@@ -12045,9 +13503,6 @@ export function Surface({ open, children }) {
         { group: "Actions", label: "Contact support", href: "mailto:jakubja@gmail.com", ic: "mail" },
         { group: "Actions", label: "Toggle dark mode", action: "theme", ic: "moon" }
       ]);
-      /* Untitled-UI-style glyphs (Figma node 2312:72639) — layers-three-01,
-         star-05, magic-wand-01, star-01, mail-01, cube-01. Same 16×16 /
-         stroke-1.5 convention as the nav search icon. */
       var CMD_IC = {
         grid: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.33333 8L7.76149 11.2141C7.84894 11.2578 7.89267 11.2797 7.93853 11.2883C7.97916 11.2959 8.02084 11.2959 8.06147 11.2883C8.10733 11.2797 8.15106 11.2578 8.23851 11.2141L14.6667 8M1.33333 11.3333L7.76149 14.5474C7.84894 14.5911 7.89267 14.613 7.93853 14.6216C7.97916 14.6292 8.02084 14.6292 8.06147 14.6216C8.10733 14.613 8.15106 14.5911 8.23851 14.5474L14.6667 11.3333M7.76149 7.88074L2.76442 5.38221C2.30381 5.1519 2.07351 5.03675 1.9996 4.88093C1.93529 4.74533 1.93529 4.58801 1.9996 4.4524C2.07351 4.29658 2.30381 4.18143 2.76442 3.95112L7.76149 1.45259C7.84894 1.40886 7.89267 1.387 7.93853 1.37839C7.97916 1.37077 8.02084 1.37077 8.06147 1.37839C8.10733 1.387 8.15106 1.40886 8.23851 1.45259L13.2356 3.95112C13.6962 4.18143 13.9265 4.29658 14.0004 4.4524C14.0647 4.58801 14.0647 4.74533 14.0004 4.88093C13.9265 5.03675 13.6962 5.1519 13.2356 5.38221L8.23851 7.88074C8.15106 7.92447 8.10733 7.94633 8.06147 7.95494C8.02084 7.96256 7.97916 7.96256 7.93853 7.95494C7.89267 7.94633 7.84894 7.92447 7.76149 7.88074Z"/></svg>',
         spark: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11.196 8.86766L11.5622 8.77611C12.4742 8.54812 12.9302 8.43412 13.0364 8.25291C13.128 8.09674 13.128 7.90326 13.0364 7.74709C12.9302 7.56588 12.4742 7.45188 11.5622 7.22389L11.196 7.13233C10.5188 6.96302 10.1801 6.87837 9.90461 6.70206C9.66088 6.5461 9.4539 6.33912 9.29794 6.09539C9.12163 5.81985 9.03697 5.48123 8.86766 4.80399L8.77611 4.43779C8.54812 3.52581 8.43412 3.06982 8.25291 2.96357C8.09674 2.87199 7.90326 2.87199 7.74709 2.96357C7.56588 3.06982 7.45188 3.52581 7.22389 4.43779L7.13233 4.80399C6.96302 5.48123 6.87837 5.81985 6.70206 6.09539C6.5461 6.33912 6.33912 6.5461 6.09539 6.70206C5.81985 6.87837 5.48123 6.96303 4.80399 7.13233L4.43779 7.22389C3.52581 7.45188 3.06982 7.56588 2.96357 7.74709C2.87199 7.90326 2.87199 8.09674 2.96357 8.25291C3.06982 8.43412 3.52581 8.54812 4.43779 8.77611L4.80399 8.86766C5.48123 9.03697 5.81985 9.12163 6.09539 9.29794C6.33912 9.4539 6.5461 9.66088 6.70206 9.90461C6.87837 10.1801 6.96303 10.5188 7.13233 11.196L7.22389 11.5622C7.45188 12.4742 7.56588 12.9302 7.74709 13.0364C7.90326 13.128 8.09674 13.128 8.25291 13.0364C8.43412 12.9302 8.54812 12.4742 8.77611 11.5622L8.86766 11.196C9.03697 10.5188 9.12163 10.1801 9.29794 9.90461C9.4539 9.66088 9.66088 9.4539 9.90461 9.29794C10.1801 9.12163 10.5188 9.03697 11.196 8.86766Z"/></svg>',
@@ -12498,8 +13953,6 @@ export function Surface({ open, children }) {
           if (durMs <= 0) return;
           var strength = readNum("--pro4-bend", 0);
           var ease = makeBendEase(readStr("--pro4-bend-ease"));
-          // Re-fit the parabola map to the card's current layout box so
-          // the bow stays centered whatever the open size.
           var bendMap = document.getElementById("pro4-bend-map");
           if (bendMap) {
             var w = card.offsetWidth, h = card.offsetHeight;
@@ -12998,7 +14451,7 @@ export function Surface({ open, children }) {
       })();
     })();
   </script>
-  <!-- Pro platform client: mounts Pro badges on data-pro cards, reads auth state. -->
+  <!-- Pro platform client: unlocks Pro code for entitled viewers (fires pro:me). -->
   <script src="assets/pro-client.js?v=10" defer></script>
 </body>
 </html>

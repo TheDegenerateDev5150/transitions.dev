@@ -1462,20 +1462,80 @@
       transform: translate(1.5px, -1.5px);
     }
 
-    /* ─── Footer ──────────────────────────────────────────────── */
+    /* ─── Footer (Figma 2332:3466) ────────────────────────────── */
     .footer {
+      /* Matches the homepage card grid's rendered width (320px × 3 +
+         24px × 2 gaps = 1008px) so the footer's edges line up with the
+         content above it, site-wide. */
       width: 100%;
-      text-align: center;
-      /* Figma 450:484 sits ~172px below the content block. The
-         Skill page has no .course-cta in between (unlike the home
-         page) so the footer needs its own top margin to provide
-         that breathing room. */
-      margin-top: 112px;
-      padding: 0 0 24px;
+      max-width: 1008px;
+      margin: 112px auto 0;
+      padding: 0 0 40px;
       font-family: var(--font-sans);
       font-size: 13px;
-      line-height: 14px;
+      line-height: 18.2px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
     }
+    .footer-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+    .footer-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 260px;
+    }
+    .footer-brand-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.7;
+      text-decoration: none;
+      color: var(--text);
+      /* Same hover as the top-bar brand link: mark spins, whole
+         lockup gets a touch of scale (transitions live on the
+         shared .brand-mark rule; only the trigger + scale live here). */
+      transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease;
+      transform-origin: center;
+    }
+    .footer-brand-logo:hover { opacity: 1; transform: scale(1.02); }
+    .footer-brand-logo:hover .brand-mark { transform: rotate(60deg); }
+    @media (prefers-reduced-motion: reduce) {
+      .footer-brand-logo { transition: opacity 150ms ease; }
+      .footer-brand-logo:hover { transform: none; }
+      .footer-brand-logo:hover .brand-mark { transform: none; }
+    }
+    .footer-tagline {
+      margin: 0;
+      color: var(--text-muted);
+    }
+    .footer-cols {
+      display: flex;
+      gap: 56px;
+    }
+    .footer-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .footer-col-title {
+      margin: 0 0 2px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    .footer-col a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 150ms var(--ease-smooth-out);
+    }
+    .footer-col a:hover { color: var(--text); }
+    .footer-credit { margin: 0; }
     .footer-muted { color: var(--text-faint); }
     .footer-name {
       color: var(--text-footer-name);
@@ -1489,6 +1549,10 @@
     html[data-theme="dark"] .footer-name:hover {
       color: #ffffff;
       text-decoration: none;
+    }
+    @media (max-width: 720px) {
+      .footer-top { flex-direction: column; gap: 32px; }
+      .footer-cols { gap: 40px; flex-wrap: wrap; row-gap: 32px; }
     }
 
     /* ============================================================ */
@@ -3523,7 +3587,7 @@
             <span class="brand-word"><span class="brand-word-strong">Transitions</span><span class="brand-word-dim">.dev</span></span>
           </a>
           <nav class="site-nav-menu" aria-label="Primary">
-            <a class="nav-pill" href="/">Transitions</a>
+            <a class="nav-pill" href="detail.html?t=card-resize">Transitions</a>
             <a class="nav-pill nav-pill--active" href="/skill.html" aria-current="page">Skill</a>
             <a class="nav-pill" href="/refine.html">Refine tool</a>
           </nav>
@@ -3608,7 +3672,7 @@
       <div class="mobile-menu-backdrop" id="mobile-menu-backdrop"></div>
       <nav class="mobile-menu" id="mobile-menu" aria-label="Mobile">
         <ul class="mobile-menu-list">
-          <li><a class="mobile-menu-link mobile-menu-link--1" href="/">Transitions</a></li>
+          <li><a class="mobile-menu-link mobile-menu-link--1" href="detail.html?t=card-resize">Transitions</a></li>
           <li><a class="mobile-menu-link mobile-menu-link--2" href="/skill.html">Skill</a></li>
           <li><a class="mobile-menu-link mobile-menu-link--3" href="/refine.html">Refine tool</a></li>
         </ul>
@@ -3947,18 +4011,44 @@
     </section>
 
     <footer class="footer">
-      <span class="footer-muted">Created by</span>
-      <a
-        class="footer-name"
-        href="https://x.com/jakubantalik"
-        target="_blank"
-        rel="noopener noreferrer"
-      >Jakub Antalik</a>
-      <span class="footer-muted">&middot;</span>
-      <a
-        class="footer-name"
-        href="terms.html"
-      >Terms &amp; License</a>
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a class="footer-brand-logo" href="/" aria-label="Transitions.dev home">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 18 20.2947" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M9 0L12.5409 1.99176L11.5604 3.73491L10 2.8572V5.14735H8V2.8572L6.43962 3.73491L5.45909 1.99176L9 0ZM14.3613 3.01571L18 5.0625V9.14735H16V7.3794L14.0359 8.51337L13.0359 6.78132L14.9804 5.65867L13.3807 4.75886L14.3613 3.01571ZM4.61925 4.75887L3.01961 5.65867L4.9641 6.78132L3.9641 8.51337L2 7.3794L2 9.14735H0L1.54972e-06 5.0625L3.63873 3.01572L4.61925 4.75887ZM2 11.1473V12.9153L3.9641 11.7813L4.9641 13.5134L3.01961 14.636L4.61925 15.5358L3.63873 17.279L3.57628e-07 15.2322V11.1473H2ZM18 11.1473V15.2322L14.3613 17.279L13.3807 15.5358L14.9804 14.636L13.0359 13.5134L14.0359 11.7813L16 12.9153V11.1473H18ZM10 15.1473V17.4375L11.5604 16.5598L12.5409 18.3029L9 20.2947L5.45908 18.3029L6.43961 16.5598L8 17.4375V15.1473H10Z" fill="currentColor"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M12.0981 9.51337L10 10.7247V13.1474H8V10.7247L5.90192 9.51337L6.90192 7.78132L9 8.99265L11.0981 7.78132L12.0981 9.51337Z" fill="currentColor"/>
+              </svg>
+            </span>
+            <span class="brand-word"><span class="brand-word-strong">Transitions</span><span class="brand-word-dim">.dev</span></span>
+          </a>
+          <p class="footer-tagline">Collection of the most essential UI transitions for web apps</p>
+        </div>
+        <nav class="footer-cols" aria-label="Footer">
+          <div class="footer-col">
+            <p class="footer-col-title">Site</p>
+            <a href="/">Home</a>
+            <a href="detail.html?t=card-resize">Transitions</a>
+            <a href="/skill.html">Skill</a>
+            <a href="/refine.html">Refine tool</a>
+            <a href="/pro.html">Get Pro</a>
+          </div>
+          <div class="footer-col">
+            <p class="footer-col-title">Docs</p>
+            <a href="/skill.html">Introduction</a>
+            <a href="/skill.html#installation">Installation</a>
+            <a href="/skill.html">Accessibility</a>
+          </div>
+          <div class="footer-col">
+            <p class="footer-col-title">Legal &amp; Account</p>
+            <a href="/pro.html" id="footer-signin">Sign in</a>
+            <a href="/terms.html">Terms</a>
+            <a href="/privacy.html">Privacy</a>
+            <a href="mailto:jakubja@gmail.com">Contact</a>
+          </div>
+        </nav>
+      </div>
+      <p class="footer-credit"><span class="footer-muted">Created by</span><a class="footer-name" href="https://x.com/jakubantalik" target="_blank" rel="noopener noreferrer">Jakub Antalik</a></p>
     </footer>
   </main>
 

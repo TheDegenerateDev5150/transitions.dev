@@ -401,6 +401,81 @@
       --p21-collapse-dur:    250ms;
       --p21-chevron-dur:     250ms;
       --p21-ease:            var(--ease-smooth-out);
+
+      /* P22 — Toast open / close. Motion tokens: open = panel open
+         (--duration-slow 400ms), close = toast close
+         (--duration-medium 350ms), smooth out. The toast rises from
+         below with fade + cross-blur + slight scale. */
+      --p22-open-dur:        350ms;
+      --p22-close-dur:       250ms;
+      --p22-distance:        16px;
+      --p22-blur:            2px;
+      --p22-scale:           0.97;
+      --p22-ease:            cubic-bezier(0.22, 1, 0.36, 1);
+
+      /* P23 — Like button. Heart fills + color pops with a spring
+         scale while tiny particles burst from the icon centre
+         (particle style borrowed from the Refine tool's
+         Refine-button sparks: 0% scale .4 / 20% opacity 1 /
+         100% fade at full distance, ease-out).
+         Heart red = Figma heart asset fill #F40051. */
+      --p23-color:           #f40051;
+      --p23-fill-dur:        150ms;
+      --p23-pop-dur:         350ms;
+      --p23-pop-bounce:      1.96;
+      --p23-pop-ease:        cubic-bezier(0.34, 1.96, 0.64, 1);
+      --p23-particle-dur:    600ms;
+      --p23-particle-dist:   20px;
+      --p23-particle-size:   2.5px;
+      --p23-ease:            cubic-bezier(0.22, 1, 0.36, 1);
+
+      /* P24 — "Learn more" hover. The chevron shifts right while its
+         two arms rotate apart (angle opens); hover-out returns with
+         the slower duration. */
+      --p24-shift:           2px;
+      --p24-spread:          8deg;
+      --p24-in-dur:          350ms;
+      --p24-out-dur:         350ms;
+      --p24-ease:            var(--ease-smooth-out);
+
+      /* P25 — Checkbox check draw. Box fills quick; the check
+         stroke-draws like the Refine tool's Apply-button check
+         (dasharray/dashoffset, 500ms smooth out after an 80ms
+         micro delay). Uncheck reverses fast with no delay. */
+      --p25-box-dur:         150ms;
+      --p25-draw-dur:        350ms;
+      --p25-draw-delay:      0ms;
+      --p25-uncheck-dur:     150ms;
+      --p25-ease:            cubic-bezier(0.22, 1, 0.36, 1);
+
+      /* P26 — Spinning reel counter (slot-machine / odometer). Each
+         digit is a vertical strip of 0-9 that spins --p26-spins full
+         revolutions and decelerates onto the target digit; a motion
+         blur fades out as each reel settles, and columns land in a
+         left-to-right cascade (--p26-stagger). Pure CSS transitions
+         on each strip; JS only builds the strips + kicks the tween. */
+      --p26-dur:             1400ms;
+      --p26-target:          100;
+      --p26-spins:           3;      /* full 0-9 loops before landing */
+      --p26-cell:            30px;   /* height of one digit row */
+      --p26-rows:            1;      /* visible rows (odd; target centred).
+                                        1 = only the target shows at rest;
+                                        raise to reveal faded neighbours. */
+      --p26-spin-blur:       3px;    /* motion blur at full speed */
+      --p26-stagger:         90ms;   /* per-column landing offset */
+      --p26-ease:            cubic-bezier(0.16, 1, 0.3, 1);
+
+      /* P27 — Toggle on/off (Figma 2316:72706): 44×22 track,
+         22×14.67 pill thumb inset 3.67px, travel 14.66px. The thumb
+         travels with a double bounce: overshoot past the end
+         (--p27-ov1), swing back through (--p27-ov2), settle. Track
+         color cross-fades on its own clock (--p27-track-dur). */
+      --p27-dur:             350ms;
+      --p27-travel:          14.66px;
+      --p27-ov1:             1px;
+      --p27-ov2:             0px;
+      --p27-track-dur:       0ms;
+      --p27-ease:            cubic-bezier(0.34, 1.35, 0.64, 1);
     }
 
     * {
@@ -2704,6 +2779,393 @@
     .p21-row:nth-child(3) .p21-bar:nth-child(2) { width: 32px; }
 
     /* ============================================================ */
+    /* Prototype 22 — Toast open / close                             */
+    /* ============================================================ */
+    /* Rest state = hidden below its landing spot, blurred and
+       slightly scaled down. Opening runs the slower open clock;
+       the base (closed) transition uses the faster close clock so
+       toggling the single .is-open class gives the open/close
+       asymmetry for free. */
+    /* Figma 2316:72668 "Dropdown": 261×46 white pill, radius 52,
+       --shadow, skeleton content (20px circle + 178×14 bar). */
+    .p22-toast {
+      position: absolute;
+      left: 50%;
+      bottom: 84px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 261px;
+      height: 46px;
+      padding: 0 16px;
+      background: var(--modal-bg);
+      border-radius: 52px;
+      box-shadow: var(--shadow);
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, var(--p22-distance)) scale(var(--p22-scale));
+      filter: blur(var(--p22-blur));
+      will-change: transform, opacity, filter;
+      transition:
+        opacity var(--p22-close-dur) var(--p22-ease),
+        transform var(--p22-close-dur) var(--p22-ease),
+        filter var(--p22-close-dur) var(--p22-ease);
+    }
+    .p22-toast.is-open {
+      opacity: 1;
+      transform: translate(-50%, 0) scale(1);
+      filter: blur(0);
+      transition:
+        opacity var(--p22-open-dur) var(--p22-ease),
+        transform var(--p22-open-dur) var(--p22-ease),
+        filter var(--p22-open-dur) var(--p22-ease);
+    }
+    .p22-avatar {
+      flex: 0 0 auto;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--skeleton);
+    }
+    .p22-bar {
+      width: 178px;
+      height: 14px;
+      border-radius: 4px;
+      background: var(--skeleton);
+    }
+
+    /* ============================================================ */
+    /* Prototype 23 — Like button: fill + pop + particle burst       */
+    /* ============================================================ */
+    /* Shared white pill button (Figma "Tooltip" component): white
+       fill, radius 50, soft drop shadow + layered inset ring. Used
+       by the Like button (P23) and Learn more (P24). */
+    .p-pill {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 0;
+      cursor: pointer;
+      background: #fff;
+      border-radius: 50px;
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 13px;
+      line-height: 1.4;
+      color: #0f0f0f;
+      white-space: nowrap;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow:
+        0 1px 3px 0 rgba(0, 0, 0, 0.04),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.06),
+        inset 0 -1px 0 0 rgba(0, 0, 0, 0.1),
+        inset 0 0 0 1px rgba(196, 196, 196, 0.1);
+    }
+    /* Figma 2316:72682: 36px tall, 12px side padding, 16px heart. */
+    .p23-like {
+      height: 36px;
+      padding: 8px 12px;
+    }
+    .p23-heart {
+      position: relative;
+      flex: 0 0 auto;
+      display: inline-flex;
+      width: 16px;
+      height: 16px;
+      color: #0f0f0f;
+      transition: color var(--p23-fill-dur) var(--p23-ease);
+    }
+    /* Pop scale lives on this HTML wrapper, never on the <svg> itself:
+       a transform applied directly to an inline SVG makes Chromium
+       rasterise it into a compositor layer at 1× (ignoring devicePixel
+       Ratio), which reads as a pixelated heart on hi-DPI screens.
+       Animating the wrapper span rasterises at full device resolution
+       and keeps the vector crisp. */
+    .p23-heart-icon {
+      display: inline-flex;
+      transform-origin: center;
+    }
+    .p23-heart svg { display: block; overflow: visible; }
+    .p23-heart svg path {
+      fill: transparent;
+      stroke: currentColor;
+      transition:
+        fill var(--p23-fill-dur) var(--p23-ease),
+        stroke var(--p23-fill-dur) var(--p23-ease);
+    }
+    .p23-like[data-liked="true"] .p23-heart { color: var(--p23-color); }
+    .p23-like[data-liked="true"] .p23-heart svg path { fill: currentColor; }
+    /* Spring pop on like: dip then release; the overshoot lives in
+       the easing (subtle spring), not the keyframes. */
+    .p23-like[data-liked="true"] .p23-heart-icon {
+      animation: p23-pop var(--p23-pop-dur) var(--p23-pop-ease);
+    }
+    @keyframes p23-pop {
+      0%   { transform: scale(1); }
+      30%  { transform: scale(0.82); }
+      100% { transform: scale(1); }
+    }
+    /* Particle burst — same recipe as the Refine tool's
+       .tl-refine-sparks: tiny currentColor dots, opacity 0 → 1 at
+       20% → fade at full radial distance, ease-out. One-shot
+       (forwards) instead of infinite. */
+    .p23-particles {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+      color: var(--p23-color);
+    }
+    /* --psize (per-particle size multiplier, randomised in JS) scales
+       the base --p23-particle-size; left/top keep the dot centred at
+       its own size so the burst origin stays put. */
+    .p23-particles i {
+      position: absolute;
+      left: calc(var(--p23-particle-size) * var(--psize, 1) / -2);
+      top: calc(var(--p23-particle-size) * var(--psize, 1) / -2);
+      width: calc(var(--p23-particle-size) * var(--psize, 1));
+      height: calc(var(--p23-particle-size) * var(--psize, 1));
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0;
+    }
+    @keyframes p23-burst {
+      0%   { opacity: 0; transform: translate(0, 0) scale(0.4); }
+      20%  { opacity: 1; transform: translate(calc(var(--px) * 0.25), calc(var(--py) * 0.25)) scale(1); }
+      100% { opacity: 0; transform: translate(var(--px), var(--py)) scale(var(--p-end-scale, 0.6)); }
+    }
+    /* 8 rays around the icon. Per-particle --px/--py (target vector),
+       --pdur (velocity — shorter = faster), --pdelay and --p-end-scale
+       are randomised in JS on each burst so no two dots move alike;
+       the nth-child rules below are a static fallback if JS is off. */
+    .p23-like.is-bursting .p23-particles i {
+      animation: p23-burst var(--pdur, var(--p23-particle-dur)) ease-out var(--pdelay, 0ms) forwards;
+    }
+    .p23-particles i:nth-child(1) { --px: var(--p23-particle-dist); --py: 0px; }
+    .p23-particles i:nth-child(2) { --px: calc(var(--p23-particle-dist) *  0.57); --py: calc(var(--p23-particle-dist) *  0.57); }
+    .p23-particles i:nth-child(3) { --px: 0px; --py: var(--p23-particle-dist); }
+    .p23-particles i:nth-child(4) { --px: calc(var(--p23-particle-dist) * -0.57); --py: calc(var(--p23-particle-dist) *  0.57); }
+    .p23-particles i:nth-child(5) { --px: calc(var(--p23-particle-dist) * -1); --py: 0px; }
+    .p23-particles i:nth-child(6) { --px: calc(var(--p23-particle-dist) * -0.57); --py: calc(var(--p23-particle-dist) * -0.57); }
+    .p23-particles i:nth-child(7) { --px: 0px; --py: calc(var(--p23-particle-dist) * -1); }
+    .p23-particles i:nth-child(8) { --px: calc(var(--p23-particle-dist) *  0.57); --py: calc(var(--p23-particle-dist) * -0.57); }
+
+    /* ============================================================ */
+    /* Prototype 24 — Learn more hover: chevron shift + spread       */
+    /* ============================================================ */
+    /* Figma 2316:72693: 40px pill, 16px left / 10px right padding,
+       16px chevron in #909090 (chevron asset stroke). Base
+       transition = hover-out (slower); the :hover rules override
+       transition-duration for the faster hover-in. Arms rotate
+       about the apex (10, 8 in viewBox units — the Figma
+       chevron-up "M12 10L8 6L4 10" rotated to point right) so the
+       chevron angle opens without the joint drifting. */
+    .p24-btn {
+      height: 40px;
+      padding: 8px 10px 8px 16px;
+    }
+    .p24-chevron {
+      flex: 0 0 auto;
+      display: inline-flex;
+      width: 16px;
+      height: 16px;
+      color: #909090;
+      transform: translateX(0);
+      transition: transform var(--p24-out-dur) var(--p24-ease);
+    }
+    .p24-chevron svg { display: block; overflow: visible; }
+    .p24-arm {
+      transform-box: view-box;
+      transform-origin: 10px 8px;
+      vector-effect: non-scaling-stroke;
+      transition: transform var(--p24-out-dur) var(--p24-ease);
+    }
+    .p24-btn:hover .p24-chevron {
+      transform: translateX(var(--p24-shift));
+      transition-duration: var(--p24-in-dur);
+    }
+    .p24-btn:hover .p24-arm { transition-duration: var(--p24-in-dur); }
+    .p24-btn:hover .p24-arm-top { transform: rotate(var(--p24-spread)); }
+    .p24-btn:hover .p24-arm-bot { transform: rotate(calc(var(--p24-spread) * -1)); }
+
+    /* ============================================================ */
+    /* Prototype 25 — Checkbox with check path draw                  */
+    /* ============================================================ */
+    /* Figma 2316:72698: 18px box radius 6, checked fill #0f0f0f,
+       unchecked white + inset ring rgba(0,0,0,0.11), 9px gap to a
+       13px medium label. */
+    .p25-field {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.4;
+      color: #0f0f0f;
+    }
+    .p25-box {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      border-radius: 6px;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.11);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        background var(--p25-box-dur) var(--p25-ease),
+        box-shadow var(--p25-box-dur) var(--p25-ease);
+    }
+    .p25-box[aria-checked="true"] {
+      background: #0f0f0f;
+      box-shadow: inset 0 0 0 1px #0f0f0f;
+    }
+    .p25-box svg { display: block; overflow: visible; }
+    /* --p25-len = the check path's getTotalLength() (Figma vector
+       "M1 5.52 L3.92 9.17 L9.17 1", ~14.4 user units; JS measures
+       the exact value on init). Transitioning dashoffset (rather
+       than animating) lets a mid-draw uncheck reverse gracefully. */
+    .p25-box svg path {
+      stroke-dasharray: var(--p25-len, 15);
+      stroke-dashoffset: var(--p25-len, 15);
+      transition: stroke-dashoffset var(--p25-uncheck-dur) var(--p25-ease);
+    }
+    .p25-box[aria-checked="true"] svg path {
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset var(--p25-draw-dur) var(--p25-ease) var(--p25-draw-delay);
+    }
+
+    /* ============================================================ */
+    /* Prototype 26 — Spinning reel counter                          */
+    /* ============================================================ */
+    /* .p26-value is a flex row of per-digit reels (.p26-col) built by
+       JS. Each reel clips a tall vertical strip (.p26-col-strip) of
+       0-9 cells; JS translates the strip up by
+       (spins*10 + targetDigit) cells so it visibly spins several full
+       turns and lands on the final digit. Each strip carries a
+       directional (motion) blur — an SVG <feGaussianBlur
+       stdDeviation="0 Y"> that blurs ONLY along the vertical travel
+       axis, unlike CSS filter:blur() which is isotropic and would
+       also smear the digits sideways. JS decays the blur to 0 as each
+       reel settles (SVG attributes aren't CSS-transitionable, so a
+       rAF loop drives it — see p26Spin). Columns land left-to-right
+       via a per-strip transition-delay. Type: Figma 2316:72692 —
+       Inter semibold 23px, #0f0f0f. */
+    .p26-value {
+      display: inline-flex;
+      align-items: center;
+      height: calc(var(--p26-cell) * var(--p26-rows));
+      font-weight: 600;
+      font-size: 23px;
+      line-height: var(--p26-cell);
+      color: #0f0f0f;
+      font-variant-numeric: tabular-nums;
+    }
+    /* Reel window. With --p26-rows: 1 only the target digit is inside the
+       window at rest (neighbours sit outside it, unseen). The vertical
+       mask gradient fades the window's top/bottom edges so digits
+       entering/leaving during the spin dissolve instead of hard-cropping;
+       the opaque band (22%–78%) still covers the settled digit so it
+       stays crisp. Raising --p26-rows reveals faded neighbour digits. */
+    .p26-col {
+      position: relative;
+      height: calc(var(--p26-cell) * var(--p26-rows));
+      overflow: hidden;
+      -webkit-mask-image: linear-gradient(
+        to bottom, transparent 0%, #000 22%, #000 78%, transparent 100%);
+      mask-image: linear-gradient(
+        to bottom, transparent 0%, #000 22%, #000 78%, transparent 100%);
+    }
+    .p26-col-strip {
+      display: flex;
+      flex-direction: column;
+      will-change: transform, filter;
+    }
+    .p26-digit {
+      height: var(--p26-cell);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-variant-numeric: tabular-nums;
+    }
+    /* Group separators (comma / decimal point) sit outside the reels
+       as static glyphs so only the digits spin. Centred in the middle
+       row of the reel window. */
+    .p26-sep {
+      display: flex;
+      align-items: center;
+      height: calc(var(--p26-cell) * var(--p26-rows));
+    }
+
+    /* ============================================================ */
+    /* Prototype 27 — Toggle with double-bounce thumb                */
+    /* ============================================================ */
+    /* Figma 2316:72706/72708: 44×22 track (off rgba(0,0,0,0.12),
+       on rgba(0,60,255,0.8)), 22×14.67 white pill thumb inset
+       3.67px with the soft two-layer drop shadow. */
+    .p27-switch {
+      position: relative;
+      width: 44px;
+      height: 22px;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      border-radius: 122px;
+      background: rgba(0, 0, 0, 0.12);
+      -webkit-tap-highlight-color: transparent;
+      transition: background var(--p27-track-dur) var(--p27-ease);
+    }
+    .p27-switch[data-on="true"] { background: rgba(0, 60, 255, 0.8); }
+    .p27-thumb {
+      position: absolute;
+      left: 3.67px;
+      top: 3.67px;
+      width: 22px;
+      height: 14.67px;
+      border-radius: 122px;
+      background: #fff;
+      box-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.05),
+        0 4px 42px rgba(0, 0, 0, 0.06);
+      translate: 0 0;
+      will-change: translate;
+    }
+    .p27-switch[data-on="true"] .p27-thumb { translate: var(--p27-travel) 0; }
+    /* Double bounce: overshoot past the target (55%), swing back
+       through it (80%), settle. .is-init is added by JS on first
+       interaction so the "off" keyframes don't play on page load.
+       Toggling data-on swaps the animation name, which restarts it. */
+    .p27-switch.is-init[data-on="true"] .p27-thumb {
+      animation: p27-on var(--p27-dur) var(--p27-ease) both;
+    }
+    .p27-switch.is-init[data-on="false"] .p27-thumb {
+      animation: p27-off var(--p27-dur) var(--p27-ease) both;
+    }
+    @keyframes p27-on {
+      0%   { translate: 0 0; }
+      55%  { translate: calc(var(--p27-travel) + var(--p27-ov1)) 0; }
+      80%  { translate: calc(var(--p27-travel) - var(--p27-ov2)) 0; }
+      100% { translate: var(--p27-travel) 0; }
+    }
+    @keyframes p27-off {
+      0%   { translate: var(--p27-travel) 0; }
+      55%  { translate: calc(0px - var(--p27-ov1)) 0; }
+      80%  { translate: var(--p27-ov2) 0; }
+      100% { translate: 0 0; }
+    }
+
+    /* ============================================================ */
     /* Reduced motion                                                */
     /* ============================================================ */
     @media (prefers-reduced-motion: reduce) {
@@ -2728,9 +3190,19 @@
       .p18-line,
       .p19-card,
       .p20-morph .p20-plus,
-      .p20-morph .p20-menu {
+      .p20-morph .p20-menu,
+      .p24-chevron,
+      .p24-arm,
+      .p26-value,
+      .p26-col-strip {
         transform: none !important;
         filter: none !important;
+      }
+      .p23-particles i {
+        animation: none !important;
+      }
+      .p27-thumb {
+        animation: none !important;
       }
       .p10-check svg path {
         stroke-dashoffset: 0 !important;
@@ -3218,6 +3690,97 @@
         </div>
       </div>
     </section>
+
+    <!-- ================================================== -->
+    <!-- 22. Toast open / close                              -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">22.pototype</p>
+      <div class="stage">
+        <div class="p22-toast" id="p22-toast" role="status" aria-hidden="true">
+          <span class="p22-avatar" aria-hidden="true"></span>
+          <span class="p22-bar" aria-hidden="true"></span>
+        </div>
+        <button class="btn" data-proto="22">Animate</button>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- 23. Like button: fill + pop + particle burst        -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">23.pototype</p>
+      <div class="stage">
+        <button type="button" class="p-pill p23-like" id="p23-like" data-liked="false" aria-pressed="false">
+          <span class="p23-heart" aria-hidden="true">
+            <span class="p23-heart-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M7.99511 3.42388C6.66221 1.8656 4.4395 1.44643 2.76947 2.87334C1.09944 4.30026 0.86432 6.68598 2.17581 8.3736C3.26622 9.77674 6.56619 12.7361 7.64774 13.6939C7.76874 13.801 7.82925 13.8546 7.89982 13.8757C7.96141 13.8941 8.02881 13.8941 8.0904 13.8757C8.16097 13.8546 8.22147 13.801 8.34248 13.6939C9.42403 12.7361 12.724 9.77674 13.8144 8.3736C15.1259 6.68598 14.9195 4.28525 13.2207 2.87334C11.522 1.46144 9.32801 1.8656 7.99511 3.42388Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="p23-particles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          </span>
+          Like
+        </button>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- 24. Learn more hover: chevron shift + spread        -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">24.pototype</p>
+      <div class="stage">
+        <button type="button" class="p-pill p24-btn">Learn more
+          <span class="p24-chevron" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path class="p24-arm p24-arm-top" d="M6 4L10 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path class="p24-arm p24-arm-bot" d="M10 8L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- 25. Checkbox with check path draw                   -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">25.pototype</p>
+      <div class="stage">
+        <div class="p25-field">
+          <button type="button" class="p25-box" id="p25-box" role="checkbox" aria-checked="false" aria-labelledby="p25-label">
+            <svg width="10" height="10" viewBox="0 0 10.1668 10.1668" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1.00004 5.52096L3.9167 9.16679L9.1667 1.00012" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <span class="p25-label" id="p25-label">Notify me</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- 26. Count up                                        -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">26.pototype</p>
+      <div class="stage">
+        <div class="p26-value" id="p26-value" aria-label="Count"></div>
+        <button class="btn" data-proto="26">Animate</button>
+      </div>
+    </section>
+
+    <!-- ================================================== -->
+    <!-- 27. Toggle with double-bounce thumb                 -->
+    <!-- ================================================== -->
+    <section class="proto-card">
+      <p class="proto-label">27.pototype</p>
+      <div class="stage">
+        <button type="button" class="p27-switch" id="p27-switch" role="switch" aria-checked="false" data-on="false" aria-label="Toggle">
+          <span class="p27-thumb" aria-hidden="true"></span>
+        </button>
+      </div>
+    </section>
   </main>
 
   <!-- ================================================== -->
@@ -3599,6 +4162,90 @@
         <div class="cp-row"><span class="cp-label">Chevron (ms)</span><input type="number" data-var="--p21-chevron-dur" data-unit="ms" min="0" max="2000" step="10" value="250"></div>
         <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p21-ease"></select></div>
         <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p21-ease" spellcheck="false" aria-label="Ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">22. Toast</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Open (ms)</span><input type="number" data-var="--p22-open-dur" data-unit="ms" min="0" max="2000" step="10" value="350"></div>
+        <div class="cp-row"><span class="cp-label">Close (ms)</span><input type="number" data-var="--p22-close-dur" data-unit="ms" min="0" max="2000" step="10" value="250"></div>
+        <div class="cp-row"><span class="cp-label">Distance (px)</span><input type="number" data-var="--p22-distance" data-unit="px" min="0" max="80" step="1" value="16"></div>
+        <div class="cp-row"><span class="cp-label">Blur (px)</span><input type="number" data-var="--p22-blur" data-unit="px" min="0" max="20" step="0.5" value="2"></div>
+        <div class="cp-row"><span class="cp-label">Scale</span><input type="number" data-var="--p22-scale" data-unit="" min="0.5" max="1" step="0.01" value="0.97"></div>
+        <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p22-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p22-ease" spellcheck="false" aria-label="Ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">23. Like button</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Fill (ms)</span><input type="number" data-var="--p23-fill-dur" data-unit="ms" min="0" max="2000" step="10" value="150"></div>
+        <div class="cp-row"><span class="cp-label">Pop (ms)</span><input type="number" data-var="--p23-pop-dur" data-unit="ms" min="0" max="2000" step="10" value="350"></div>
+        <div class="cp-row"><span class="cp-label">Pop bounce</span><input type="number" data-var="--p23-pop-bounce" data-unit="" data-ease-template="--p23-pop-ease:cubic-bezier(0.34, {v}, 0.64, 1)" min="0" max="2.5" step="0.02" value="1.96"></div>
+        <div class="cp-row"><span class="cp-label">Particles (ms)</span><input type="number" data-var="--p23-particle-dur" data-unit="ms" min="0" max="2000" step="10" value="600"></div>
+        <div class="cp-row"><span class="cp-label">Particle dist (px)</span><input type="number" data-var="--p23-particle-dist" data-unit="px" min="0" max="80" step="1" value="20"></div>
+        <div class="cp-row"><span class="cp-label">Particle size (px)</span><input type="number" data-var="--p23-particle-size" data-unit="px" min="1" max="8" step="0.5" value="2.5"></div>
+        <div class="cp-row"><span class="cp-label">Fill ease</span><select class="cp-ease" data-var="--p23-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p23-ease" spellcheck="false" aria-label="Fill ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">24. Learn more hover</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Shift (px)</span><input type="number" data-var="--p24-shift" data-unit="px" min="0" max="20" step="0.5" value="2"></div>
+        <div class="cp-row"><span class="cp-label">Spread (deg)</span><input type="number" data-var="--p24-spread" data-unit="deg" min="0" max="30" step="1" value="8"></div>
+        <div class="cp-row"><span class="cp-label">Hover in (ms)</span><input type="number" data-var="--p24-in-dur" data-unit="ms" min="0" max="2000" step="10" value="350"></div>
+        <div class="cp-row"><span class="cp-label">Hover out (ms)</span><input type="number" data-var="--p24-out-dur" data-unit="ms" min="0" max="2000" step="10" value="350"></div>
+        <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p24-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p24-ease" spellcheck="false" aria-label="Ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">25. Checkbox check</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Box fill (ms)</span><input type="number" data-var="--p25-box-dur" data-unit="ms" min="0" max="2000" step="10" value="150"></div>
+        <div class="cp-row"><span class="cp-label">Draw (ms)</span><input type="number" data-var="--p25-draw-dur" data-unit="ms" min="0" max="2000" step="10" value="350"></div>
+        <div class="cp-row"><span class="cp-label">Draw delay (ms)</span><input type="number" data-var="--p25-draw-delay" data-unit="ms" min="0" max="1000" step="10" value="0"></div>
+        <div class="cp-row"><span class="cp-label">Uncheck (ms)</span><input type="number" data-var="--p25-uncheck-dur" data-unit="ms" min="0" max="2000" step="10" value="150"></div>
+        <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p25-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p25-ease" spellcheck="false" aria-label="Ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">26. Spinning reel</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Duration (ms)</span><input type="number" data-var="--p26-dur" data-unit="ms" min="0" max="5000" step="50" value="1400"></div>
+        <div class="cp-row"><span class="cp-label">Target</span><input type="number" data-var="--p26-target" data-unit="" min="0" max="10000000" step="1" value="100"></div>
+        <div class="cp-row"><span class="cp-label">Spins (loops)</span><input type="number" data-var="--p26-spins" data-unit="" min="1" max="12" step="1" value="3"></div>
+        <div class="cp-row"><span class="cp-label">Cell (px)</span><input type="number" data-var="--p26-cell" data-unit="px" min="16" max="60" step="1" value="30"></div>
+        <div class="cp-row"><span class="cp-label">Rows (fade)</span><input type="number" data-var="--p26-rows" data-unit="" min="1" max="7" step="2" value="1"></div>
+        <div class="cp-row"><span class="cp-label">Motion blur (px)</span><input type="number" data-var="--p26-spin-blur" data-unit="px" min="0" max="20" step="0.5" value="3"></div>
+        <div class="cp-row"><span class="cp-label">Stagger (ms)</span><input type="number" data-var="--p26-stagger" data-unit="ms" min="0" max="500" step="10" value="90"></div>
+        <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p26-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p26-ease" spellcheck="false" aria-label="Ease value"></div>
+      </section>
+
+      <section class="cp-section">
+        <header class="cp-section-head">
+          <span class="cp-section-title">27. Toggle</span>
+          <button type="button" class="cp-export">Export</button>
+        </header>
+        <div class="cp-row"><span class="cp-label">Duration (ms)</span><input type="number" data-var="--p27-dur" data-unit="ms" min="0" max="2000" step="10" value="350"></div>
+        <div class="cp-row"><span class="cp-label">Overshoot 1 (px)</span><input type="number" data-var="--p27-ov1" data-unit="px" min="0" max="12" step="0.5" value="1"></div>
+        <div class="cp-row"><span class="cp-label">Overshoot 2 (px)</span><input type="number" data-var="--p27-ov2" data-unit="px" min="0" max="12" step="0.5" value="0"></div>
+        <div class="cp-row"><span class="cp-label">Track (ms)</span><input type="number" data-var="--p27-track-dur" data-unit="ms" min="0" max="2000" step="10" value="0"></div>
+        <div class="cp-row"><span class="cp-label">Ease</span><select class="cp-ease" data-var="--p27-ease"></select></div>
+        <div class="cp-row-ease-raw"><input type="text" class="cp-ease-text" data-var="--p27-ease" spellcheck="false" aria-label="Ease value"></div>
       </section>
 
     </div>
@@ -4290,6 +4937,274 @@
         });
       })();
 
+      // --- Prototype 23: Like button fill + particle burst ------
+      // Liking re-triggers the one-shot burst via class remove →
+      // reflow → re-add; a timer strips .is-bursting after the
+      // particle duration so the next like replays cleanly.
+      // Unliking just unfills — no burst.
+      (function initP23() {
+        const like = document.getElementById("p23-like");
+        if (!like) return;
+        const dots = Array.prototype.slice.call(
+          like.querySelectorAll(".p23-particles i")
+        );
+        const N = dots.length;
+        // Randomise each dot's trajectory per burst so the spray reads
+        // organic: jitter the ray angle, the distance (magnitude), the
+        // velocity (a shorter duration flies faster), the launch delay,
+        // and the final fade-out scale. Values are re-rolled every like.
+        function seedParticles() {
+          const dist = readMs("--p23-particle-dist", 22); // px, unit-agnostic read
+          for (let i = 0; i < N; i++) {
+            const baseAngle = (360 / N) * i;               // even 8-way spread
+            const angle = baseAngle + (Math.random() * 2 - 1) * 16; // ±16° jitter
+            const mag = dist * (0.68 + Math.random() * 0.5);        // 0.68–1.18×
+            const rad = angle * Math.PI / 180;
+            const px = Math.cos(rad) * mag;
+            const py = Math.sin(rad) * mag;
+            const dur = 0.78 + Math.random() * 0.44;        // 0.78–1.22× velocity
+            const delay = Math.random() * 70;               // 0–70ms stagger
+            const endScale = 0.35 + Math.random() * 0.4;    // 0.35–0.75
+            const size = 0.6 + Math.random() * 0.8;         // 0.6–1.4× size
+            const s = dots[i].style;
+            s.setProperty("--px", px.toFixed(2) + "px");
+            s.setProperty("--py", py.toFixed(2) + "px");
+            s.setProperty("--pdur", "calc(var(--p23-particle-dur) * " + dur.toFixed(3) + ")");
+            s.setProperty("--pdelay", delay.toFixed(0) + "ms");
+            s.setProperty("--p-end-scale", endScale.toFixed(2));
+            s.setProperty("--psize", size.toFixed(2));
+          }
+        }
+        like.addEventListener("click", function () {
+          const liked = like.getAttribute("data-liked") === "true";
+          if (liked) {
+            like.setAttribute("data-liked", "false");
+            like.setAttribute("aria-pressed", "false");
+            like.classList.remove("is-bursting");
+            return;
+          }
+          like.setAttribute("data-liked", "true");
+          like.setAttribute("aria-pressed", "true");
+          like.classList.remove("is-bursting");
+          seedParticles();
+          // eslint-disable-next-line no-unused-expressions
+          like.offsetWidth;
+          like.classList.add("is-bursting");
+          if (like._burstT) window.clearTimeout(like._burstT);
+          // Cleanup after the slowest possible dot (1.22× + 70ms delay).
+          like._burstT = window.setTimeout(function () {
+            like.classList.remove("is-bursting");
+          }, readMs("--p23-particle-dur", 600) * 1.25 + 120);
+        });
+      })();
+
+      // --- Prototype 25: Checkbox check draw --------------------
+      // The draw/undraw is a pure dashoffset transition; JS only
+      // flips aria-checked (box or label click) and measures the
+      // check path's exact length into --p25-len on init so the
+      // dasharray/dashoffset pair never pre-reveals or over-draws.
+      (function initP25() {
+        const box = document.getElementById("p25-box");
+        if (!box) return;
+        const path = box.querySelector("svg path");
+        if (path && path.getTotalLength) {
+          box.style.setProperty("--p25-len", Math.ceil(path.getTotalLength()) + 1);
+        }
+        function toggle() {
+          const on = box.getAttribute("aria-checked") === "true";
+          box.setAttribute("aria-checked", on ? "false" : "true");
+        }
+        box.addEventListener("click", toggle);
+        const label = document.getElementById("p25-label");
+        if (label) label.addEventListener("click", toggle);
+      })();
+
+      // --- Prototype 26: Spinning reel counter ------------------
+      // Builds one clipped reel (.p26-col) per digit of the target,
+      // each holding a strip of (spins+1)·10 cells (0-9 repeated).
+      // p26Spin() resets every strip to the top with full DIRECTIONAL
+      // blur (vertical-only, via SVG feGaussianBlur — see p26EnsureDefs),
+      // then transitions each up by (spins·10 + digit) cells so it
+      // spins several turns and lands on its digit; the blur decays to
+      // 0 as it settles, and a per-column transition-delay makes the
+      // reels land left-to-right. Non-digit chars (comma) render as
+      // static separators so only digits spin. Resting state always
+      // shows 0 — Animate spins up to --p26-target.
+      const P26_BLUR_MAX = 10; // enough reels for any target up to 10,000,000
+      function p26ReadNum(name, fallback) {
+        const v = parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue(name)
+        );
+        return isNaN(v) ? fallback : v;
+      }
+      // One-time hidden <svg><defs> holding P26_BLUR_MAX independent
+      // <feGaussianBlur> filters — one per reel column, so each column's
+      // blur can decay on its own staggered timeline. stdDeviation="0 Y"
+      // blurs only the Y axis (the direction the strip actually moves),
+      // which reads as a real motion streak instead of a uniform frosted
+      // blur that would also smear the glyph sideways.
+      function p26EnsureDefs() {
+        if (document.getElementById("p26-blur-defs")) return;
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("id", "p26-blur-defs");
+        svg.setAttribute("aria-hidden", "true");
+        svg.style.position = "absolute";
+        svg.style.width = "0";
+        svg.style.height = "0";
+        svg.style.overflow = "hidden";
+        const defs = document.createElementNS(svgNS, "defs");
+        for (let i = 0; i < P26_BLUR_MAX; i++) {
+          const filter = document.createElementNS(svgNS, "filter");
+          filter.setAttribute("id", "p26-blur-" + i);
+          // Generous vertical filter region so a large stdDeviation
+          // isn't clipped; tight horizontally since there's no X blur.
+          filter.setAttribute("x", "-20%");
+          filter.setAttribute("y", "-150%");
+          filter.setAttribute("width", "140%");
+          filter.setAttribute("height", "400%");
+          const fe = document.createElementNS(svgNS, "feGaussianBlur");
+          fe.setAttribute("id", "p26-blur-fe-" + i);
+          fe.setAttribute("stdDeviation", "0 0");
+          filter.appendChild(fe);
+          defs.appendChild(filter);
+        }
+        svg.appendChild(defs);
+        document.body.appendChild(svg);
+      }
+      function p26Build(el, str, spins, rows) {
+        el.innerHTML = "";
+        const cols = [];
+        // Extra trailing cells (= rows) so the rows BELOW the landing
+        // digit always have real content to show inside the window.
+        const total = (spins + 1) * 10 + rows;
+        for (let c = 0; c < str.length; c++) {
+          const ch = str[c];
+          if (ch >= "0" && ch <= "9") {
+            const col = document.createElement("span");
+            col.className = "p26-col";
+            const strip = document.createElement("span");
+            strip.className = "p26-col-strip";
+            for (let k = 0; k < total; k++) {
+              const cell = document.createElement("span");
+              cell.className = "p26-digit";
+              cell.textContent = String(k % 10);
+              strip.appendChild(cell);
+            }
+            col.appendChild(strip);
+            el.appendChild(col);
+            const idx = cols.length % P26_BLUR_MAX;
+            strip.style.filter = "url(#p26-blur-" + idx + ")";
+            cols.push({ strip: strip, digit: +ch, blurIndex: idx });
+          } else {
+            const sep = document.createElement("span");
+            sep.className = "p26-sep";
+            sep.textContent = ch;
+            el.appendChild(sep);
+          }
+        }
+        return cols;
+      }
+      // translateY that centres cell `index` in a `rows`-tall window.
+      function p26CenterY(index, cell, rows) {
+        return -((index - Math.floor(rows / 2)) * cell);
+      }
+      function p26SetBlur(blurIndex, y) {
+        const fe = document.getElementById("p26-blur-fe-" + blurIndex);
+        if (fe) fe.setAttribute("stdDeviation", "0 " + y);
+      }
+      function p26Spin(el) {
+        p26EnsureDefs();
+        const target = Math.round(p26ReadNum("--p26-target", 100));
+        const str = target.toLocaleString("en-US");
+        const spins = Math.max(1, Math.round(p26ReadNum("--p26-spins", 3)));
+        const cell = p26ReadNum("--p26-cell", 30);
+        const rows = Math.max(1, Math.round(p26ReadNum("--p26-rows", 3)));
+        const blurAmt = p26ReadNum("--p26-spin-blur", 3);
+        const dur = readMs("--p26-dur", 1400);
+        const stagger = readMs("--p26-stagger", 90);
+        const ease = getComputedStyle(document.documentElement)
+          .getPropertyValue("--p26-ease").trim() || "cubic-bezier(0.16, 1, 0.3, 1)";
+        const reduceMotion = window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches;
+        el.setAttribute("aria-label", str);
+        const cols = p26Build(el, str, spins, rows);
+        // Prime: start centred near the top of the strip, full blur set
+        // directly on each column's <feGaussianBlur> (SVG attributes
+        // aren't CSS-transitionable, so the decay runs via rAF below).
+        const startY = p26CenterY(Math.floor(rows / 2), cell, rows); // = 0
+        cols.forEach(function (c) {
+          c.strip.style.transition = "none";
+          c.strip.style.transform = "translateY(" + startY + "px)";
+          p26SetBlur(c.blurIndex, reduceMotion ? 0 : blurAmt);
+        });
+        // eslint-disable-next-line no-unused-expressions
+        el.offsetWidth; // commit the primed state
+        // Spin: land each reel with its digit centred, cascading L→R
+        // via transition-delay (the transform tween is plain CSS).
+        cols.forEach(function (c, i) {
+          const landIndex = spins * 10 + c.digit;
+          const delay = i * stagger;
+          c.strip.style.transition = "transform " + dur + "ms " + ease + " " + delay + "ms";
+          c.strip.style.transform = "translateY(" + p26CenterY(landIndex, cell, rows) + "px)";
+        });
+        if (el._p26RafId) window.cancelAnimationFrame(el._p26RafId);
+        if (reduceMotion) return; // transform is ~instant under the
+                                    // global reduced-motion rule; blur
+                                    // is already 0 from the prime step.
+        // Directional-blur decay: linear fade blurAmt → 0 across each
+        // column's own [delay, delay+dur] window, matching the
+        // transform's per-column cascade so the streak clears exactly
+        // as that digit lands.
+        const t0 = performance.now();
+        const maxEnd = (cols.length - 1) * stagger + dur;
+        (function tick() {
+          const t = performance.now() - t0;
+          cols.forEach(function (c, i) {
+            const delay = i * stagger;
+            const local = Math.min(1, Math.max(0, (t - delay) / dur));
+            p26SetBlur(c.blurIndex, (blurAmt * (1 - local)).toFixed(2));
+          });
+          if (t < maxEnd + 40) {
+            el._p26RafId = window.requestAnimationFrame(tick);
+          } else {
+            cols.forEach(function (c) { p26SetBlur(c.blurIndex, 0); });
+            el._p26RafId = null;
+          }
+        })();
+      }
+      (function initP26() {
+        const el = document.getElementById("p26-value");
+        if (!el) return;
+        p26EnsureDefs();
+        // Resting state always shows 0 — Animate spins up to
+        // --p26-target. Single static digit, no blur, no spin.
+        const rows = Math.max(1, Math.round(p26ReadNum("--p26-rows", 1)));
+        const cell = p26ReadNum("--p26-cell", 30);
+        el.setAttribute("aria-label", "0");
+        const cols = p26Build(el, "0", 1, rows);
+        cols.forEach(function (c) {
+          c.strip.style.transform = "translateY(" + p26CenterY(c.digit, cell, rows) + "px)";
+          p26SetBlur(c.blurIndex, 0);
+        });
+      })();
+
+      // --- Prototype 27: Toggle with double-bounce thumb --------
+      // .is-init gates the keyframes so the "off" animation never
+      // plays on page load; after that, flipping data-on swaps the
+      // animation name which restarts it automatically.
+      (function initP27() {
+        const sw = document.getElementById("p27-switch");
+        if (!sw) return;
+        sw.addEventListener("click", function () {
+          sw.classList.add("is-init");
+          const on = sw.getAttribute("data-on") === "true";
+          sw.setAttribute("data-on", on ? "false" : "true");
+          sw.setAttribute("aria-checked", on ? "false" : "true");
+        });
+      })();
+
       document.addEventListener("click", function (e) {
         const btn = e.target.closest("button[data-proto]");
         if (!btn) return;
@@ -4524,6 +5439,20 @@
             // eslint-disable-next-line no-unused-expressions
             p18Text.offsetHeight;
             p18Text.classList.add("is-shown");
+            break;
+          }
+          case "22": {
+            const toast = document.getElementById("p22-toast");
+            if (!toast) break;
+            const open = toast.classList.toggle("is-open");
+            toast.setAttribute("aria-hidden", open ? "false" : "true");
+            break;
+          }
+          case "26": {
+            const el = document.getElementById("p26-value");
+            if (!el) break;
+            // Rebuild the reels and spin them from 0 up to the target.
+            p26Spin(el);
             break;
           }
         }
