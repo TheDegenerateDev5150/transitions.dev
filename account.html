@@ -4462,6 +4462,9 @@
       font-family: var(--font-sans); font-weight: 400; font-size: 13px; line-height: 16px;
       color: var(--text); text-align: left;
     }
+    /* The base `display: flex` outranks the [hidden] UA rule, so hide explicitly
+       (e.g. Members is hidden for solo plans). */
+    .account-nav-item[hidden] { display: none; }
     .account-nav-item:hover { background: rgba(0, 0, 0, 0.03); }
     .account-nav-item.is-active { background: rgba(0, 0, 0, 0.03); }
     html[data-theme="dark"] .account-nav-item:hover,
