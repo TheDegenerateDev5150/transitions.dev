@@ -103,5 +103,35 @@
     "slug": "accordion",
     "name": "Accordion expand",
     "tier": "free"
+  },
+  {
+    "slug": "toast",
+    "name": "Toast open/close",
+    "tier": "free"
+  },
+  {
+    "slug": "like-button",
+    "name": "Like button",
+    "tier": "free"
+  },
+  {
+    "slug": "learn-more-hover",
+    "name": "Learn more hover",
+    "tier": "free"
+  },
+  {
+    "slug": "checkbox-check",
+    "name": "Checkbox check",
+    "tier": "free"
+  },
+  {
+    "slug": "spinning-counter",
+    "name": "Spinning counter",
+    "tier": "free"
+  },
+  {
+    "slug": "toggle",
+    "name": "Toggle",
+    "tier": "free"
   }
 ]
