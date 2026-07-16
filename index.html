@@ -5157,631 +5157,11 @@
   <script data-goatcounter="https://jakub.goatcounter.com/count"
           async src="//gc.zgo.at/count.js"></script>
   <style id="pro-preview-css">
-    /* ═══ Pro transition previews (cards 22–25) ═══════════════════════
-       Preview-only styles — the copyable source lives in the private
-       repo and is served by the API after an entitlement check. Class
-       names keep the pro1–pro4 namespace from the prototype sandbox. */
-    :root {
-      /* PRO1 — Confetti burst (JS reads these live per burst/frame). */
-      --pro1-count:   120;
-      --pro1-gravity: 1300;
-      --pro1-size:    4px;
-      --pro1-sway:    16;
-      --pro1-bounce:  0.6;
-      --pro1-hold:    600ms;
-      --pro1-fade:    300ms;
-      --pro1-life:    1500ms;
-
-      /* PRO2 — Card stack hover. */
-      --pro2-open-dur:     410ms;
-      --pro2-open-bounce:  1.84;
-      --pro2-open-ease:    cubic-bezier(0.31, 1.84, 0.64, 1);
-      --pro2-close-dur:    360ms;
-      --pro2-close-bounce: 1.5;
-      --pro2-close-ease:   cubic-bezier(0.34, 1.5, 0.64, 1);
-      --pro2-scale-dur:    610ms;
-      --pro2-scale-ease:   cubic-bezier(0.22, 1, 0.36, 1);
-      --pro2-scale:        1.04;
-      --pro2-spread:       1.42;
-      --pro2-rotation:     1;
-
-      /* PRO3 — Organic shimmer (colourful border-beam edge; synced
-         from the transitions-pro source of truth). */
-      --pro3-shimmer-dur:      3000ms;
-      --pro3-sweep-ease:       ease-out;
-      --pro3-band-span:        26%;
-      --pro3-shimmer-opacity:  1;
-      --pro3-glow-blur:        20px;
-      --pro3-glow-strength:    0.7;
-      --pro3-ring-strength:    1;
-
-      /* PRO4 — Image open tilt (synced from the transitions-pro
-         source of truth). */
-      --pro4-open-dur:     450ms;
-      --pro4-close-dur:    350ms;
-      --pro4-open-ease:    cubic-bezier(0.22, 1, 0.36, 1);
-      --pro4-close-ease:   cubic-bezier(0.34, 1.25, 0.64, 1);
-      --pro4-closed-scale: 0.3;
-      --pro4-tilt-x:       0deg;
-      --pro4-tilt-y:       0deg;
-      --pro4-lift:         70px;
-      --pro4-tilt-open-dur:   0ms;
-      --pro4-tilt-close-dur:  0ms;
-      --pro4-tilt-open-ease:  cubic-bezier(0.22, 1, 0.36, 1);
-      --pro4-tilt-close-ease: cubic-bezier(0.34, 1.35, 0.64, 1);
-      --pro4-perspective:  900px;
-      --pro4-open-w:       220px;
-      --pro4-open-h:       160px;
-      --pro4-bend:         50;
-      --pro4-bend-dur:     350ms;
-      --pro4-bend-ease:    cubic-bezier(0.22, 1, 0.36, 1);
-
-      /* PRO5 — "Pro" gradient text. */
-      --pro5-hue-dur:   4000ms;
-      --pro5-drift-dur: 5000ms;
-
-      /* PRO6 — Delete image with smoky dissolve (synced from the
-         transitions-pro source of truth). */
-      --pro6-size:    120px;
-      --pro6-dur:     550ms;
-      --pro6-gravity: 150;
-      --pro6-warp:    30;
-      --pro6-blur:    12px;
-      --pro6-sway:    0px;
-      --pro6-spin:    3deg;
-      --pro6-respawn: 800ms;
-      --pro6-warp-ease:    cubic-bezier(0.22, 1, 0.36, 1);
-      --pro6-warp-dur:     2000ms;
-      --pro6-blur-ease:    ease-in;
-      --pro6-gravity-ease: ease-in;
-      --pro6-dissolve-ease: ease-out;
-      --pro6-churn:   30;
-      --pro6-spread:  0;
-
-      /* Shared surface shadow for the pro previews (sandbox --shadow). */
-      --pro-surface-shadow:
-        0 0 0 1px rgba(0, 0, 0, 0.06),
-        0 2px 6px rgba(0, 0, 0, 0.05),
-        0 4px 42px rgba(0, 0, 0, 0.06);
-    }
-
-    /* ── PRO1 Confetti ─────────────────────────────────────────── */
-    /* No content above/below to balance against (canvas is full-bleed),
-       so the trigger sits centered in the stage instead of the usual
-       bottom-anchored position. The burst origin reads the button's
-       live rect, so recentring it doesn't need any JS change. */
-    #pro1-stage .btn-animate { top: 50%; bottom: auto; transform: translate(-50%, -50%); z-index: 1; }
-    .pro1-canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    /* ── PRO2 Card stack ───────────────────────────────────────── */
-    .pro2-stack {
-      position: relative;
-      width: 120px;
-      height: 120px;
-      flex-shrink: 0;
-    }
-    .pro2-card {
-      appearance: none;
-      border: 0;
-      padding: 0;
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 78px;
-      height: 78px;
-      border-radius: 12px;
-      background: var(--card-bg, #fff);
-      box-shadow: var(--pro-surface-shadow);
-      overflow: hidden;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      translate: var(--cx) var(--cy);
-      rotate: var(--rot);
-      scale: 1;
-      /* Back cards carry --card-op (0.5) inline so they read as faded
-         behind the front card when collapsed; hover fades them to 1. */
-      opacity: var(--card-op, 1);
-      transition:
-        translate var(--pro2-close-dur) var(--pro2-close-ease),
-        rotate var(--pro2-close-dur) var(--pro2-close-ease),
-        scale var(--pro2-scale-dur) var(--pro2-scale-ease),
-        opacity var(--pro2-close-dur) var(--pro2-close-ease);
-      will-change: translate, rotate, scale, opacity;
-    }
-    .pro2-card img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      pointer-events: none;
-    }
-    @media (hover: hover) {
-      .pro2-stack:hover .pro2-card {
-        translate:
-          calc(var(--cx) + var(--dx) * var(--pro2-spread))
-          calc(var(--cy) + var(--dy));
-        rotate: calc(var(--rot) + var(--drot) * var(--pro2-rotation));
-        opacity: 1;
-        transition:
-          translate var(--pro2-open-dur) var(--pro2-open-ease),
-          rotate var(--pro2-open-dur) var(--pro2-open-ease),
-          scale var(--pro2-scale-dur) var(--pro2-scale-ease),
-          opacity var(--pro2-open-dur) var(--pro2-open-ease);
-      }
-      .pro2-card:hover {
-        scale: var(--pro2-scale);
-        z-index: 30;
-      }
-    }
-    /* Touch devices have no hover, so the fan is tap-toggled: JS
-       flips .is-open (gated to (hover: none)); the transforms mirror
-       the hover rules exactly. */
-    .pro2-stack.is-open .pro2-card {
-      translate:
-        calc(var(--cx) + var(--dx) * var(--pro2-spread))
-        calc(var(--cy) + var(--dy));
-      rotate: calc(var(--rot) + var(--drot) * var(--pro2-rotation));
-      opacity: 1;
-      transition:
-        translate var(--pro2-open-dur) var(--pro2-open-ease),
-        rotate var(--pro2-open-dur) var(--pro2-open-ease),
-        scale var(--pro2-scale-dur) var(--pro2-scale-ease),
-        opacity var(--pro2-open-dur) var(--pro2-open-ease);
-    }
-
-    /* ── PRO3 Organic shimmer ──────────────────────────────────── */
-    .pro3-square {
-      position: relative;
-      width: 142px;
-      height: 142px;
-      border-radius: 12px;
-      background: #eeeeee;
-      overflow: hidden;
-      isolation: isolate;
-      flex-shrink: 0;
-    }
-    html[data-theme="dark"] .pro3-square { background: #222226; }
-    /* Play/Stop toggle: both layers share the pro3-sweep-mask clock,
-       so pausing/resuming the container's data attribute freezes or
-       resumes them in lockstep. */
-    .pro3-square[data-playing="false"] .pro3-shimmer-band,
-    .pro3-square[data-playing="false"] .pro3-edge {
-      animation-play-state: paused;
-    }
-    /* Shimmer split into wrapper + inner band: the inner band carries
-       the colourful blobs + traveling mask; the wrapper warps + blurs
-       the already-masked result so the band boundary undulates (filter
-       applies before mask on a single element, hence the split). */
-    .pro3-shimmer {
-      position: absolute;
-      inset: -20px;
-      filter: url(#pro3-warp-band) blur(5px);
-      opacity: var(--pro3-shimmer-opacity);
-      pointer-events: none;
-    }
-    .pro3-shimmer-band {
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 90px 70px at 20% 15%, rgba(40, 140, 255, 0.14), transparent),
-        radial-gradient(ellipse 80px 60px at 65% 25%, rgba(255, 50, 100, 0.13), transparent),
-        radial-gradient(ellipse 70px 80px at 30% 55%, rgba(50, 200, 80, 0.12), transparent),
-        radial-gradient(ellipse 90px 70px at 75% 65%, rgba(180, 40, 240, 0.13), transparent),
-        radial-gradient(ellipse 70px 60px at 45% 85%, rgba(255, 120, 40, 0.12), transparent),
-        radial-gradient(ellipse 60px 60px at 10% 85%, rgba(30, 185, 170, 0.11), transparent),
-        linear-gradient(rgba(90, 90, 100, 0.05), rgba(90, 90, 100, 0.05));
-      -webkit-mask-image: linear-gradient(
-        135deg,
-        transparent 0%,
-        transparent calc(50% - var(--pro3-band-span) * 0.8),
-        rgba(255, 255, 255, 0.25) calc(50% - var(--pro3-band-span) * 0.45),
-        rgba(255, 255, 255, 0.7) calc(50% - var(--pro3-band-span) * 0.18),
-        white 50%,
-        rgba(255, 255, 255, 0.7) calc(50% + var(--pro3-band-span) * 0.18),
-        rgba(255, 255, 255, 0.25) calc(50% + var(--pro3-band-span) * 0.45),
-        transparent calc(50% + var(--pro3-band-span) * 0.8),
-        transparent 100%
-      );
-      -webkit-mask-size: 280% 280%;
-      -webkit-mask-repeat: no-repeat;
-      -webkit-mask-position: 100% 100%;
-      mask-image: linear-gradient(
-        135deg,
-        transparent 0%,
-        transparent calc(50% - var(--pro3-band-span) * 0.8),
-        rgba(255, 255, 255, 0.25) calc(50% - var(--pro3-band-span) * 0.45),
-        rgba(255, 255, 255, 0.7) calc(50% - var(--pro3-band-span) * 0.18),
-        white 50%,
-        rgba(255, 255, 255, 0.7) calc(50% + var(--pro3-band-span) * 0.18),
-        rgba(255, 255, 255, 0.25) calc(50% + var(--pro3-band-span) * 0.45),
-        transparent calc(50% + var(--pro3-band-span) * 0.8),
-        transparent 100%
-      );
-      mask-size: 280% 280%;
-      mask-repeat: no-repeat;
-      mask-position: 100% 100%;
-      animation: pro3-sweep-mask var(--pro3-shimmer-dur) var(--pro3-sweep-ease) infinite;
-      pointer-events: none;
-    }
-    /* Edge beam: a uniform ink ring + glow + bloom underneath, shaped
-       only by a comet-profiled 135° mask window phase-locked to the
-       shimmer's clock — the lit segment brightens and fades smoothly as
-       it glides along the border. */
-    .pro3-edge {
-      position: absolute;
-      inset: -20px;
-      z-index: 1;
-      opacity: var(--pro3-glow-strength);
-      pointer-events: none;
-      -webkit-mask-image: linear-gradient(
-        135deg,
-        transparent 0%,
-        transparent calc(50% - var(--pro3-band-span) * 1.4),
-        rgba(255, 255, 255, 0.06) calc(50% - var(--pro3-band-span) * 1),
-        rgba(255, 255, 255, 0.18) calc(50% - var(--pro3-band-span) * 0.6),
-        rgba(255, 255, 255, 0.45) calc(50% - var(--pro3-band-span) * 0.25),
-        white 50%,
-        rgba(255, 255, 255, 0.5) calc(50% + var(--pro3-band-span) * 0.18),
-        transparent calc(50% + var(--pro3-band-span) * 0.35),
-        transparent 100%
-      );
-      -webkit-mask-size: 280% 280%;
-      -webkit-mask-repeat: no-repeat;
-      -webkit-mask-position: 100% 100%;
-      mask-image: linear-gradient(
-        135deg,
-        transparent 0%,
-        transparent calc(50% - var(--pro3-band-span) * 1.4),
-        rgba(255, 255, 255, 0.06) calc(50% - var(--pro3-band-span) * 1),
-        rgba(255, 255, 255, 0.18) calc(50% - var(--pro3-band-span) * 0.6),
-        rgba(255, 255, 255, 0.45) calc(50% - var(--pro3-band-span) * 0.25),
-        white 50%,
-        rgba(255, 255, 255, 0.5) calc(50% + var(--pro3-band-span) * 0.18),
-        transparent calc(50% + var(--pro3-band-span) * 0.35),
-        transparent 100%
-      );
-      mask-size: 280% 280%;
-      mask-repeat: no-repeat;
-      mask-position: 100% 100%;
-      animation: pro3-sweep-mask var(--pro3-shimmer-dur) var(--pro3-sweep-ease) infinite;
-    }
-    @keyframes pro3-sweep-mask {
-      0%   { -webkit-mask-position: 100% 100%; mask-position: 100% 100%; }
-      100% { -webkit-mask-position: 0% 0%;     mask-position: 0% 0%; }
-    }
-    .pro3-edge-ring,
-    .pro3-edge-glow,
-    .pro3-edge-bloom {
-      position: absolute;
-      inset: 20px;
-      border-radius: 12px;
-      pointer-events: none;
-    }
-    /* Ring stroke: the border-beam library's 9 border-palette blobs
-       (colorPalettes.colorful, positions/sizes ×0.6) painted into a
-       1px ring over a faint neutral base that keeps the stroke from
-       vanishing between blobs as the comet window travels. */
-    .pro3-edge-ring {
-      padding: 1px;
-      opacity: var(--pro3-ring-strength);
-      background:
-        radial-gradient(ellipse 42px 24px at 33% -7.4%, rgba(255, 50, 100, 0.62), transparent),
-        radial-gradient(ellipse 36px 21px at 12% -5%, rgba(40, 140, 255, 0.48), transparent),
-        radial-gradient(ellipse 24px 42px at 2.1% 68.3%, rgba(50, 200, 80, 0.55), transparent),
-        radial-gradient(ellipse 12px 21px at 2.1% 68.3%, rgba(30, 185, 170, 0.44), transparent),
-        radial-gradient(ellipse 108px 19px at 74.4% 100%, rgba(100, 70, 255, 0.58), transparent),
-        radial-gradient(ellipse 51px 16px at 55% 100%, rgba(40, 140, 255, 0.51), transparent),
-        radial-gradient(ellipse 44px 19px at 93.9% 0%, rgba(255, 120, 40, 0.65), transparent),
-        radial-gradient(ellipse 16px 25px at 100% 27.1%, rgba(240, 50, 180, 0.5), transparent),
-        radial-gradient(ellipse 31px 29px at 100% 27.1%, rgba(180, 40, 240, 0.56), transparent),
-        linear-gradient(rgba(90, 90, 100, 0.22), rgba(90, 90, 100, 0.22));
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      mask-composite: exclude;
-    }
-    /* Inner glow: the library's PULSE_INNER blob set (×0.6) in real
-       colors + four neutral corner accents, belt-masked with a 44px
-       fade and softened 2px so the coloured lumps melt together. */
-    .pro3-edge-glow {
-      background:
-        radial-gradient(ellipse 39px 21px at 33% -7.4%, rgba(255, 50, 100, 0.34), transparent),
-        radial-gradient(ellipse 33px 18px at 12% -5%, rgba(40, 140, 255, 0.28), transparent),
-        radial-gradient(ellipse 21px 39px at 2.1% 68.3%, rgba(50, 200, 80, 0.3), transparent),
-        radial-gradient(ellipse 9px 18px at 2.1% 68.3%, rgba(30, 185, 170, 0.25), transparent),
-        radial-gradient(ellipse 104px 17px at 74.4% 100%, rgba(100, 70, 255, 0.32), transparent),
-        radial-gradient(ellipse 48px 13px at 55% 100%, rgba(40, 140, 255, 0.28), transparent),
-        radial-gradient(ellipse 41px 17px at 93.9% 0%, rgba(255, 120, 40, 0.35), transparent),
-        radial-gradient(ellipse 13px 23px at 100% 27.1%, rgba(240, 50, 180, 0.28), transparent),
-        radial-gradient(ellipse 28px 26px at 100% 27.1%, rgba(180, 40, 240, 0.3), transparent),
-        radial-gradient(ellipse 36px 36px at 0% 0%, rgba(90, 90, 100, 0.14), transparent 70%),
-        radial-gradient(ellipse 36px 36px at 100% 0%, rgba(90, 90, 100, 0.14), transparent 70%),
-        radial-gradient(ellipse 36px 36px at 0% 100%, rgba(90, 90, 100, 0.14), transparent 70%),
-        radial-gradient(ellipse 36px 36px at 100% 100%, rgba(90, 90, 100, 0.14), transparent 70%);
-      box-shadow: inset 0 0 14px 1px rgba(90, 90, 100, 0.12);
-      filter: blur(2px);
-      -webkit-mask-image:
-        linear-gradient(white, transparent 44px, transparent calc(100% - 44px), white),
-        linear-gradient(to right, white, transparent 44px, transparent calc(100% - 44px), white);
-      -webkit-mask-composite: source-over;
-      mask-image:
-        linear-gradient(white, transparent 44px, transparent calc(100% - 44px), white),
-        linear-gradient(to right, white, transparent 44px, transparent calc(100% - 44px), white);
-      mask-composite: add;
-    }
-    /* Bloom: the library's PULSE_INNER_BLOOM table — 7 expanded blobs
-       (×0.65) in real colors, heavily blurred over a faint neutral
-       wash, in a soft edge belt (not ring-clipped, so the blur can
-       radiate). The big organic coloured glow pouring off the stroke. */
-    .pro3-edge-bloom {
-      background:
-        radial-gradient(ellipse 55px 31px at 33% -7.4%, rgba(255, 50, 100, 0.4), transparent),
-        radial-gradient(ellipse 47px 27px at 12% -5%, rgba(40, 140, 255, 0.34), transparent),
-        radial-gradient(ellipse 31px 55px at 2.1% 68.3%, rgba(50, 200, 80, 0.38), transparent),
-        radial-gradient(ellipse 140px 25px at 74.4% 100%, rgba(100, 70, 255, 0.4), transparent),
-        radial-gradient(ellipse 66px 20px at 55% 100%, rgba(40, 140, 255, 0.35), transparent),
-        radial-gradient(ellipse 58px 25px at 93.9% 0%, rgba(255, 120, 40, 0.44), transparent),
-        radial-gradient(ellipse 40px 38px at 100% 27.1%, rgba(180, 40, 240, 0.38), transparent);
-      box-shadow:
-        inset 0 0 calc(var(--pro3-glow-blur) * 3) calc(var(--pro3-glow-blur) / 2)
-          rgba(90, 90, 100, 0.1);
-      filter: blur(var(--pro3-glow-blur));
-      -webkit-mask-image:
-        linear-gradient(white, transparent 26px, transparent calc(100% - 26px), white),
-        linear-gradient(to right, white, transparent 26px, transparent calc(100% - 26px), white);
-      -webkit-mask-composite: source-over;
-      mask-image:
-        linear-gradient(white, transparent 26px, transparent calc(100% - 26px), white),
-        linear-gradient(to right, white, transparent 26px, transparent calc(100% - 26px), white);
-      mask-composite: add;
-    }
-
-    /* ── PRO4 Image open tilt ──────────────────────────────────── */
-    .pro4-stage {
-      perspective: var(--pro4-perspective);
-    }
-    .pro4-card {
-      appearance: none;
-      border: 0;
-      padding: 0;
-      position: relative;
-      width: var(--pro4-open-w);
-      height: var(--pro4-open-h);
-      border-radius: 32px;
-      /* overflow stays VISIBLE (the rounded clip lives on the img via
-         border-radius: inherit) so the bend canvas can bow past the
-         box — and, critically, so overflow never toggles mid-flight:
-         in Safari that would kick the card off its compositor layer
-         and jank the scale/tilt spring. */
-      overflow: visible;
-      cursor: pointer;
-      background: var(--stage-bg, #eeeeef);
-      box-shadow: var(--pro-surface-shadow);
-      -webkit-tap-highlight-color: transparent;
-      transform-origin: center;
-      scale: var(--pro4-closed-scale);
-      transform: rotateX(0deg) rotateY(0deg) translateZ(0);
-      will-change: scale, transform;
-      transition:
-        scale var(--pro4-close-dur) var(--pro4-close-ease),
-        border-radius var(--pro4-close-dur) var(--pro4-close-ease);
-    }
-    /* Bend render layer: JS draws the warped photo here during the
-       flight (see initPro4). Oversized via an inline inset so the
-       bow can travel outside the card box, like the old filter's
-       output region did. It inherits the card's scale/tilt, so the
-       3D flight applies to the bent image for free. */
-    .pro4-canvas {
-      position: absolute;
-      display: none;
-      pointer-events: none;
-    }
-    /* While bending, the canvas IS the card's visual: hide the flat
-       photo + background so no straight-edged fill peeks out behind
-       the bowed edges (the rounded clip is baked into the warp).
-       The box-shadow stays — soft enough that not bending it is
-       imperceptible, and it never flickers on/off this way. */
-    .pro4-card.is-bending {
-      background: transparent;
-    }
-    .pro4-card.is-bending .pro4-img { visibility: hidden; }
-    .pro4-card.is-bending .pro4-canvas { display: block; }
-    .pro4-card.is-open {
-      border-radius: 16px;
-      scale: 1;
-      transition:
-        scale var(--pro4-open-dur) var(--pro4-open-ease),
-        border-radius var(--pro4-open-dur) var(--pro4-open-ease);
-      animation: pro4-open var(--pro4-open-dur) var(--pro4-open-ease) both;
-    }
-    .pro4-card.is-closing {
-      animation: pro4-close var(--pro4-close-dur) var(--pro4-close-ease) both;
-    }
-    /* Lift is MONOTONIC: the card rises FROM depth (−lift, pushed back
-       and smaller) up to the rest plane (0), never in front of it, so
-       the zoom lands with no scale-up bounce. The tilt still peaks
-       mid-flight for the pitch. */
-    @keyframes pro4-open {
-      0% {
-        transform: rotateX(0deg) rotateY(0deg) translateZ(calc(var(--pro4-lift) * -1));
-      }
-      45% {
-        transform:
-          rotateX(var(--pro4-tilt-x))
-          rotateY(var(--pro4-tilt-y))
-          translateZ(calc(var(--pro4-lift) * -0.4));
-      }
-      100% {
-        transform: rotateX(0deg) rotateY(0deg) translateZ(0);
-      }
-    }
-    @keyframes pro4-close {
-      0% {
-        transform: rotateX(0deg) rotateY(0deg) translateZ(0);
-      }
-      45% {
-        transform:
-          rotateX(calc(var(--pro4-tilt-x) * -0.45))
-          rotateY(calc(var(--pro4-tilt-y) * -0.45))
-          translateZ(calc(var(--pro4-lift) * -0.4));
-      }
-      100% {
-        transform: rotateX(0deg) rotateY(0deg) translateZ(0);
-      }
-    }
-    .pro4-card .pro4-img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      pointer-events: none;
-      /* The rounded clip (tracks the card's animating radius). */
-      border-radius: inherit;
-    }
-
-    /* ── PRO5 "Pro" gradient text ──────────────────────────────── */
-    .pro5-heading {
-      margin: 0;
-      font-family: "Saans", var(--font-sans);
-      font-size: 44px;
-      font-weight: 500;
-      line-height: 1;
-      color: var(--text);
-      letter-spacing: -0.01em;
-    }
-    .pro5-gradient-text {
-      background-image:
-        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.88'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(0.34726 -1.3118e-7 8.6482e-7 0.89585 33.5 21)'><stop stop-color='rgba(0,110,245,1)' offset='0'/><stop stop-color='rgba(0,110,245,0)' offset='1'/></radialGradient></defs></svg>"),
-        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.5'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-1.3 0.25 -1.2633 -2.7471 33.5 21)'><stop stop-color='rgba(0,110,245,1)' offset='0'/><stop stop-color='rgba(0,110,245,0)' offset='1'/></radialGradient></defs></svg>"),
-        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.4'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(1.05 -0.8 0.46018 3.6184 33.5 21)'><stop stop-color='rgba(204,0,167,1)' offset='0'/><stop stop-color='rgba(170,0,204,0)' offset='0.71709'/></radialGradient></defs></svg>"),
-        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.51067 -3.3275e-16 -4.3352e-14 -1.1396 33.5 21)'><stop stop-color='rgba(204,0,167,1)' offset='0'/><stop stop-color='rgba(170,0,204,0)' offset='1'/></radialGradient></defs></svg>"),
-        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.45 -0.75 1.9052 -0.7091 33.5 21)'><stop stop-color='rgba(255,173,85,1)' offset='0'/><stop stop-color='rgba(255,173,85,0)' offset='1'/></radialGradient></defs></svg>"),
-        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(1.25 -0.35 -0.4013 3.5959 33.5 21)'><stop stop-color='rgba(0,204,68,1)' offset='0'/><stop stop-color='rgba(0,196,102,0.75)' offset='0.25'/><stop stop-color='rgba(0,187,136,0.5)' offset='0.5'/><stop stop-color='rgba(0,170,204,0)' offset='1'/></radialGradient></defs></svg>"),
-        url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.87391 0.73043 -4.1482 -1.9503 33.5 21)'><stop stop-color='rgba(0,170,204,1)' offset='0'/><stop stop-color='rgba(0,170,204,0)' offset='1'/></radialGradient></defs></svg>"),
-        linear-gradient(rgb(108, 108, 108) 0%, rgb(216, 216, 216) 100%);
-      background-size: 180% 180%, 180% 180%, 180% 180%, 180% 180%,
-                       180% 180%, 180% 180%, 180% 180%, 100% 100%;
-      background-repeat: no-repeat;
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      animation:
-        pro5-hue var(--pro5-hue-dur) linear infinite,
-        pro5-drift var(--pro5-drift-dur) ease-in-out infinite;
-    }
-    @keyframes pro5-hue {
-      from { filter: hue-rotate(0deg) saturate(1.3); }
-      to   { filter: hue-rotate(-360deg) saturate(1.3); }
-    }
-    @keyframes pro5-drift {
-      0%, 100% {
-        background-position:
-          100% 0%, 0% 50%, 100% 50%, 0% 100%,
-          0% 0%, 50% 0%, 50% 100%, 0 0;
-      }
-      25% {
-        background-position:
-          100% 100%, 50% 0%, 50% 100%, 0% 0%,
-          100% 0%, 100% 50%, 0% 50%, 0 0;
-      }
-      50% {
-        background-position:
-          0% 100%, 100% 50%, 0% 50%, 100% 0%,
-          100% 100%, 50% 100%, 50% 0%, 0 0;
-      }
-      75% {
-        background-position:
-          0% 0%, 50% 100%, 50% 0%, 100% 100%,
-          0% 100%, 0% 50%, 100% 50%, 0 0;
-      }
-    }
-
-    /* ── PRO6 Delete image with smoky dissolve ─────────────────── */
-    .pro6-card {
-      position: relative;
-      width: var(--pro6-size);
-      height: var(--pro6-size);
-      border-radius: 16px;
-      overflow: hidden;
-      background: var(--stage-bg, #eeeeef);
-      box-shadow: var(--pro-surface-shadow);
-      /* No SVG/CSS filter here: WebKit renders SVG filters on the CPU
-         (and doesn't reliably repaint animated filter primitives), so
-         the dissolve draws on the .pro6-canvas overlay instead. */
-      will-change: transform, opacity;
-    }
-    /* Dissolve render target — JS sizes and positions it over the
-       card (+ padding for the shreds' spill) at dissolve start, and
-       drives the fall/sway/spin/fade with CSS transform/opacity on
-       the element so the motion runs on the compositor (GPU) even
-       while a texture frame is still being drawn. Transparent and
-       inert outside a run. */
-    .pro6-canvas {
-      position: absolute;
-      z-index: 3;
-      pointer-events: none;
-      will-change: transform, opacity;
-    }
-    .pro6-card img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      pointer-events: none;
-    }
-    .pro6-card.is-respawning {
-      animation: pro6-respawn 250ms cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    @keyframes pro6-respawn {
-      from { opacity: 0; transform: scale(0.96); }
-      to   { opacity: 1; transform: scale(1); }
-    }
-    .pro6-delete {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      z-index: 2;
-      width: 24px;
-      height: 24px;
-      padding: 0;
-      border: 0;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.92);
-      color: #17181c;
-      display: grid;
-      place-items: center;
-      cursor: pointer;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-      -webkit-tap-highlight-color: transparent;
-      transition: background-color 120ms ease;
-    }
-    .pro6-delete:hover { background: #ffffff; }
-    .pro6-delete:focus-visible { outline: 2px solid #17181c; outline-offset: 2px; }
-    .pro6-delete svg { display: block; }
-
-    @media (prefers-reduced-motion: reduce) {
-      .pro2-card,
-      .pro4-card { transition: none; }
-      .pro3-shimmer,
-      .pro3-edge,
-      .pro5-gradient-text { animation: none; }
-      .pro4-card.is-open,
-      .pro4-card.is-closing { animation: none; }
-    }
-  </style>
+/* Pro preview (generated) — obfuscated demo build. The documented recipes
+   with tokens, React + TypeScript variants live in Transitions Pro:
+   https://transitions.dev/pro.html */
+:root{--pv1o:120;--pv15:1300;--pv22:4px;--pv23:16;--pv1b:0.6;--pv20:600ms;--pv1z:300ms;--pv21:1500ms;--pv10:410ms;--pvd:1.84;--pvn:cubic-bezier(0.31,1.84,0.64,1);--pvm:360ms;--pv9:1.5;--pvg:cubic-bezier(0.34,1.5,0.64,1);--pvo:610ms;--pvh:cubic-bezier(0.22,1,0.36,1);--pv1q:1.04;--pv1d:1.42;--pv11:1;--pve:3000ms;--pvj:ease-out;--pvp:26%;--pv0:1;--pvs:20px;--pv4:0.7;--pv5:1;--pv13:450ms;--pvv:350ms;--pvw:cubic-bezier(0.22,1,0.36,1);--pvl:cubic-bezier(0.34,1.25,0.64,1);--pvb:0.3;--pv1j:0deg;--pv1k:0deg;--pv29:70px;--pv6:0ms;--pv2:0ms;--pv3:cubic-bezier(0.22,1,0.36,1);--pv1:cubic-bezier(0.34,1.35,0.64,1);--pvf:900px;--pv1i:220px;--pv1h:160px;--pv27:50;--pv12:350ms;--pvu:cubic-bezier(0.22,1,0.36,1);--pv18:4000ms;--pvx:5000ms;--pv2d:120px;--pv2k:550ms;--pv19:150;--pv2g:30;--pv2b:12px;--pv2f:0px;--pv2e:3deg;--pv1a:800ms;--pvz:cubic-bezier(0.22,1,0.36,1);--pv14:2000ms;--pvy:ease-in;--pvc:ease-in;--pv8:ease-out;--pv1x:30;--pv1n:0;--pro-surface-shadow:0 0 0 1px rgba(0,0,0,0.06),0 2px 6px rgba(0,0,0,0.05),0 4px 42px rgba(0,0,0,0.06);}#pv1p .btn-animate{top:50%;bottom:auto;transform:translate(-50%,-50%);z-index:1;}.pv1c{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;}.pv1r{position:relative;width:120px;height:120px;flex-shrink:0;}.pv24{appearance:none;border:0;padding:0;position:absolute;top:0;left:0;width:78px;height:78px;border-radius:12px;background:var(--card-bg,#fff);box-shadow:var(--pro-surface-shadow);overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;translate:var(--cx) var(--cy);rotate:var(--rot);scale:1;opacity:var(--card-op,1);transition:translate var(--pvm) var(--pvg),rotate var(--pvm) var(--pvg),scale var(--pvo) var(--pvh),opacity var(--pvm) var(--pvg);will-change:translate,rotate,scale,opacity;}.pv24 img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}@media (hover:hover){.pv1r:hover .pv24{translate:calc(var(--cx) + var(--dx) * var(--pv1d)) calc(var(--cy) + var(--dy));rotate:calc(var(--rot) + var(--drot) * var(--pv11));opacity:1;transition:translate var(--pv10) var(--pvn),rotate var(--pv10) var(--pvn),scale var(--pvo) var(--pvh),opacity var(--pv10) var(--pvn);}.pv24:hover{scale:var(--pv1q);z-index:30;}}.pv1r.is-open .pv24{translate:calc(var(--cx) + var(--dx) * var(--pv1d)) calc(var(--cy) + var(--dy));rotate:calc(var(--rot) + var(--drot) * var(--pv11));opacity:1;transition:translate var(--pv10) var(--pvn),rotate var(--pv10) var(--pvn),scale var(--pvo) var(--pvh),opacity var(--pv10) var(--pvn);}.pv1e{position:relative;width:142px;height:142px;border-radius:12px;background:#eeeeee;overflow:hidden;isolation:isolate;flex-shrink:0;}html[data-theme="dark"] .pv1e{background:#222226;}.pv1e[data-playing="false"] .pva,.pv1e[data-playing="false"] .pv25{animation-play-state:paused;}.pv16{position:absolute;inset:-20px;filter:url(#pvt) blur(5px);opacity:var(--pv0);pointer-events:none;}.pva{position:absolute;inset:0;background:radial-gradient(ellipse 90px 70px at 20% 15%,rgba(40,140,255,0.14),transparent),radial-gradient(ellipse 80px 60px at 65% 25%,rgba(255,50,100,0.13),transparent),radial-gradient(ellipse 70px 80px at 30% 55%,rgba(50,200,80,0.12),transparent),radial-gradient(ellipse 90px 70px at 75% 65%,rgba(180,40,240,0.13),transparent),radial-gradient(ellipse 70px 60px at 45% 85%,rgba(255,120,40,0.12),transparent),radial-gradient(ellipse 60px 60px at 10% 85%,rgba(30,185,170,0.11),transparent),linear-gradient(rgba(90,90,100,0.05),rgba(90,90,100,0.05));-webkit-mask-image:linear-gradient( 135deg,transparent 0%,transparent calc(50% - var(--pvp) * 0.8),rgba(255,255,255,0.25) calc(50% - var(--pvp) * 0.45),rgba(255,255,255,0.7) calc(50% - var(--pvp) * 0.18),white 50%,rgba(255,255,255,0.7) calc(50% + var(--pvp) * 0.18),rgba(255,255,255,0.25) calc(50% + var(--pvp) * 0.45),transparent calc(50% + var(--pvp) * 0.8),transparent 100% );-webkit-mask-size:280% 280%;-webkit-mask-repeat:no-repeat;-webkit-mask-position:100% 100%;mask-image:linear-gradient( 135deg,transparent 0%,transparent calc(50% - var(--pvp) * 0.8),rgba(255,255,255,0.25) calc(50% - var(--pvp) * 0.45),rgba(255,255,255,0.7) calc(50% - var(--pvp) * 0.18),white 50%,rgba(255,255,255,0.7) calc(50% + var(--pvp) * 0.18),rgba(255,255,255,0.25) calc(50% + var(--pvp) * 0.45),transparent calc(50% + var(--pvp) * 0.8),transparent 100% );mask-size:280% 280%;mask-repeat:no-repeat;mask-position:100% 100%;animation:pvk var(--pve) var(--pvj) infinite;pointer-events:none;}.pv25{position:absolute;inset:-20px;z-index:1;opacity:var(--pv4);pointer-events:none;-webkit-mask-image:linear-gradient( 135deg,transparent 0%,transparent calc(50% - var(--pvp) * 1.4),rgba(255,255,255,0.06) calc(50% - var(--pvp) * 1),rgba(255,255,255,0.18) calc(50% - var(--pvp) * 0.6),rgba(255,255,255,0.45) calc(50% - var(--pvp) * 0.25),white 50%,rgba(255,255,255,0.5) calc(50% + var(--pvp) * 0.18),transparent calc(50% + var(--pvp) * 0.35),transparent 100% );-webkit-mask-size:280% 280%;-webkit-mask-repeat:no-repeat;-webkit-mask-position:100% 100%;mask-image:linear-gradient( 135deg,transparent 0%,transparent calc(50% - var(--pvp) * 1.4),rgba(255,255,255,0.06) calc(50% - var(--pvp) * 1),rgba(255,255,255,0.18) calc(50% - var(--pvp) * 0.6),rgba(255,255,255,0.45) calc(50% - var(--pvp) * 0.25),white 50%,rgba(255,255,255,0.5) calc(50% + var(--pvp) * 0.18),transparent calc(50% + var(--pvp) * 0.35),transparent 100% );mask-size:280% 280%;mask-repeat:no-repeat;mask-position:100% 100%;animation:pvk var(--pve) var(--pvj) infinite;}@keyframes pvk{0%{-webkit-mask-position:100% 100%;mask-position:100% 100%;}100%{-webkit-mask-position:0% 0%;mask-position:0% 0%;}}.pvr,.pvq,.pvi{position:absolute;inset:20px;border-radius:12px;pointer-events:none;}.pvr{padding:1px;opacity:var(--pv5);background:radial-gradient(ellipse 42px 24px at 33% -7.4%,rgba(255,50,100,0.62),transparent),radial-gradient(ellipse 36px 21px at 12% -5%,rgba(40,140,255,0.48),transparent),radial-gradient(ellipse 24px 42px at 2.1% 68.3%,rgba(50,200,80,0.55),transparent),radial-gradient(ellipse 12px 21px at 2.1% 68.3%,rgba(30,185,170,0.44),transparent),radial-gradient(ellipse 108px 19px at 74.4% 100%,rgba(100,70,255,0.58),transparent),radial-gradient(ellipse 51px 16px at 55% 100%,rgba(40,140,255,0.51),transparent),radial-gradient(ellipse 44px 19px at 93.9% 0%,rgba(255,120,40,0.65),transparent),radial-gradient(ellipse 16px 25px at 100% 27.1%,rgba(240,50,180,0.5),transparent),radial-gradient(ellipse 31px 29px at 100% 27.1%,rgba(180,40,240,0.56),transparent),linear-gradient(rgba(90,90,100,0.22),rgba(90,90,100,0.22));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;}.pvq{background:radial-gradient(ellipse 39px 21px at 33% -7.4%,rgba(255,50,100,0.34),transparent),radial-gradient(ellipse 33px 18px at 12% -5%,rgba(40,140,255,0.28),transparent),radial-gradient(ellipse 21px 39px at 2.1% 68.3%,rgba(50,200,80,0.3),transparent),radial-gradient(ellipse 9px 18px at 2.1% 68.3%,rgba(30,185,170,0.25),transparent),radial-gradient(ellipse 104px 17px at 74.4% 100%,rgba(100,70,255,0.32),transparent),radial-gradient(ellipse 48px 13px at 55% 100%,rgba(40,140,255,0.28),transparent),radial-gradient(ellipse 41px 17px at 93.9% 0%,rgba(255,120,40,0.35),transparent),radial-gradient(ellipse 13px 23px at 100% 27.1%,rgba(240,50,180,0.28),transparent),radial-gradient(ellipse 28px 26px at 100% 27.1%,rgba(180,40,240,0.3),transparent),radial-gradient(ellipse 36px 36px at 0% 0%,rgba(90,90,100,0.14),transparent 70%),radial-gradient(ellipse 36px 36px at 100% 0%,rgba(90,90,100,0.14),transparent 70%),radial-gradient(ellipse 36px 36px at 0% 100%,rgba(90,90,100,0.14),transparent 70%),radial-gradient(ellipse 36px 36px at 100% 100%,rgba(90,90,100,0.14),transparent 70%);box-shadow:inset 0 0 14px 1px rgba(90,90,100,0.12);filter:blur(2px);-webkit-mask-image:linear-gradient(white,transparent 44px,transparent calc(100% - 44px),white),linear-gradient(to right,white,transparent 44px,transparent calc(100% - 44px),white);-webkit-mask-composite:source-over;mask-image:linear-gradient(white,transparent 44px,transparent calc(100% - 44px),white),linear-gradient(to right,white,transparent 44px,transparent calc(100% - 44px),white);mask-composite:add;}.pvi{background:radial-gradient(ellipse 55px 31px at 33% -7.4%,rgba(255,50,100,0.4),transparent),radial-gradient(ellipse 47px 27px at 12% -5%,rgba(40,140,255,0.34),transparent),radial-gradient(ellipse 31px 55px at 2.1% 68.3%,rgba(50,200,80,0.38),transparent),radial-gradient(ellipse 140px 25px at 74.4% 100%,rgba(100,70,255,0.4),transparent),radial-gradient(ellipse 66px 20px at 55% 100%,rgba(40,140,255,0.35),transparent),radial-gradient(ellipse 58px 25px at 93.9% 0%,rgba(255,120,40,0.44),transparent),radial-gradient(ellipse 40px 38px at 100% 27.1%,rgba(180,40,240,0.38),transparent);box-shadow:inset 0 0 calc(var(--pvs) * 3) calc(var(--pvs) / 2) rgba(90,90,100,0.1);filter:blur(var(--pvs));-webkit-mask-image:linear-gradient(white,transparent 26px,transparent calc(100% - 26px),white),linear-gradient(to right,white,transparent 26px,transparent calc(100% - 26px),white);-webkit-mask-composite:source-over;mask-image:linear-gradient(white,transparent 26px,transparent calc(100% - 26px),white),linear-gradient(to right,white,transparent 26px,transparent calc(100% - 26px),white);mask-composite:add;}.pv1u{perspective:var(--pvf);}.pv28{appearance:none;border:0;padding:0;position:relative;width:var(--pv1i);height:var(--pv1h);border-radius:32px;overflow:visible;cursor:pointer;background:var(--stage-bg,#eeeeef);box-shadow:var(--pro-surface-shadow);-webkit-tap-highlight-color:transparent;transform-origin:center;scale:var(--pvb);transform:rotateX(0deg) rotateY(0deg) translateZ(0);will-change:scale,transform;transition:scale var(--pvv) var(--pvl),border-radius var(--pvv) var(--pvl);}.pv1g{position:absolute;display:none;pointer-events:none;}.pv28.is-bending{background:transparent;}.pv28.is-bending .pv2i{visibility:hidden;}.pv28.is-bending .pv1g{display:block;}.pv28.is-open{border-radius:16px;scale:1;transition:scale var(--pv13) var(--pvw),border-radius var(--pv13) var(--pvw);animation:pv2a var(--pv13) var(--pvw) both;}.pv28.is-closing{animation:pv1s var(--pvv) var(--pvl) both;}@keyframes pv2a{0%{transform:rotateX(0deg) rotateY(0deg) translateZ(calc(var(--pv29) * -1));}45%{transform:rotateX(var(--pv1j)) rotateY(var(--pv1k)) translateZ(calc(var(--pv29) * -0.4));}100%{transform:rotateX(0deg) rotateY(0deg) translateZ(0);}}@keyframes pv1s{0%{transform:rotateX(0deg) rotateY(0deg) translateZ(0);}45%{transform:rotateX(calc(var(--pv1j) * -0.45)) rotateY(calc(var(--pv1k) * -0.45)) translateZ(calc(var(--pv29) * -0.4));}100%{transform:rotateX(0deg) rotateY(0deg) translateZ(0);}}.pv28 .pv2i{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;border-radius:inherit;}.pv17{margin:0;font-family:"Saans",var(--font-sans);font-size:44px;font-weight:500;line-height:1;color:var(--text);letter-spacing:-0.01em;}.pv7{background-image:url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.88'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(0.34726 -1.3118e-7 8.6482e-7 0.89585 33.5 21)'><stop stop-color='rgba(0,110,245,1)' offset='0'/><stop stop-color='rgba(0,110,245,0)' offset='1'/></radialGradient></defs></svg>"),url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.5'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-1.3 0.25 -1.2633 -2.7471 33.5 21)'><stop stop-color='rgba(0,110,245,1)' offset='0'/><stop stop-color='rgba(0,110,245,0)' offset='1'/></radialGradient></defs></svg>"),url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='0.4'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(1.05 -0.8 0.46018 3.6184 33.5 21)'><stop stop-color='rgba(204,0,167,1)' offset='0'/><stop stop-color='rgba(170,0,204,0)' offset='0.71709'/></radialGradient></defs></svg>"),url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.51067 -3.3275e-16 -4.3352e-14 -1.1396 33.5 21)'><stop stop-color='rgba(204,0,167,1)' offset='0'/><stop stop-color='rgba(170,0,204,0)' offset='1'/></radialGradient></defs></svg>"),url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.45 -0.75 1.9052 -0.7091 33.5 21)'><stop stop-color='rgba(255,173,85,1)' offset='0'/><stop stop-color='rgba(255,173,85,0)' offset='1'/></radialGradient></defs></svg>"),url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(1.25 -0.35 -0.4013 3.5959 33.5 21)'><stop stop-color='rgba(0,204,68,1)' offset='0'/><stop stop-color='rgba(0,196,102,0.75)' offset='0.25'/><stop stop-color='rgba(0,187,136,0.5)' offset='0.5'/><stop stop-color='rgba(0,170,204,0)' offset='1'/></radialGradient></defs></svg>"),url("data:image/svg+xml;utf8,<svg viewBox='0 0 67 42' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-0.87391 0.73043 -4.1482 -1.9503 33.5 21)'><stop stop-color='rgba(0,170,204,1)' offset='0'/><stop stop-color='rgba(0,170,204,0)' offset='1'/></radialGradient></defs></svg>"),linear-gradient(rgb(108,108,108) 0%,rgb(216,216,216) 100%);background-size:180% 180%,180% 180%,180% 180%,180% 180%,180% 180%,180% 180%,180% 180%,100% 100%;background-repeat:no-repeat;-webkit-background-clip:text;background-clip:text;color:transparent;animation:pv2j var(--pv18) linear infinite,pv1v var(--pvx) ease-in-out infinite;}@keyframes pv2j{from{filter:hue-rotate(0deg) saturate(1.3);}to{filter:hue-rotate(-360deg) saturate(1.3);}}@keyframes pv1v{0%,100%{background-position:100% 0%,0% 50%,100% 50%,0% 100%,0% 0%,50% 0%,50% 100%,0 0;}25%{background-position:100% 100%,50% 0%,50% 100%,0% 0%,100% 0%,100% 50%,0% 50%,0 0;}50%{background-position:0% 100%,100% 50%,0% 50%,100% 0%,100% 100%,50% 100%,50% 0%,0 0;}75%{background-position:0% 0%,50% 100%,50% 0%,100% 100%,0% 100%,0% 50%,100% 50%,0 0;}}.pv2c{position:relative;width:var(--pv2d);height:var(--pv2d);border-radius:16px;overflow:hidden;background:var(--stage-bg,#eeeeef);box-shadow:var(--pro-surface-shadow);will-change:transform,opacity;}.pv1l{position:absolute;z-index:3;pointer-events:none;will-change:transform,opacity;}.pv2c img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}.pv2c.is-respawning{animation:pv1a 250ms cubic-bezier(0.22,1,0.36,1);}@keyframes pv1a{from{opacity:0;transform:scale(0.96);}to{opacity:1;transform:scale(1);}}.pv1m{position:absolute;top:8px;right:8px;z-index:2;width:24px;height:24px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,0.92);color:#17181c;display:grid;place-items:center;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.25);-webkit-tap-highlight-color:transparent;transition:background-color 120ms ease;}.pv1m:hover{background:#ffffff;}.pv1m:focus-visible{outline:2px solid #17181c;outline-offset:2px;}.pv1m svg{display:block;}@media (prefers-reduced-motion:reduce){.pv24,.pv28{transition:none;}.pv16,.pv25,.pv7{animation:none;}.pv28.is-open,.pv28.is-closing{animation:none;}}
+</style>
 </head>
 <body>
   <a href="#main" class="skip-link">Skip to content</a>
@@ -6101,9 +5481,9 @@
 
       <!-- 6. Confetti burst (Pro) -->
       <article class="card" data-proto-card data-pro="true" data-pro-id="confetti-burst">
-        <div class="card-stage" id="pro1-stage">
-          <canvas class="pro1-canvas" id="pro1-canvas" aria-hidden="true"></canvas>
-          <button type="button" class="btn-animate" id="pro1-btn" data-proto="pro1">Animate</button>
+        <div class="card-stage" id="pv1p">
+          <canvas class="pv1c" id="pv1c" aria-hidden="true"></canvas>
+          <button type="button" class="btn-animate" id="pv2h" data-proto="pro1">Animate</button>
         </div>
         <div class="card-meta">
           <div class="card-title">Confetti burst</div>
@@ -6375,12 +5755,12 @@
       <article class="card" data-proto-card data-pro="true" data-pro-id="card-stack-hover">
         <div class="card-stage">
           <div class="stage-inner stage-inner--no-btn">
-            <div class="pro2-stack" aria-label="Card stack">
-              <button type="button" class="pro2-card" aria-label="Card 1"
+            <div class="pv1r" aria-label="Card stack">
+              <button type="button" class="pv24" aria-label="Card 1"
                       style="--cx: 10.87px; --cy: 19.77px; --rot: -8deg; --dx: -34px; --dy: 0px; --drot: -6deg; --card-op: 0.5; z-index: 1;"><img alt="" /></button>
-              <button type="button" class="pro2-card" aria-label="Card 2"
+              <button type="button" class="pv24" aria-label="Card 2"
                       style="--cx: 29.47px; --cy: 18.37px; --rot: 4deg; --dx: 34px; --dy: 0px; --drot: 6deg; --card-op: 0.5; z-index: 0;"><img alt="" /></button>
-              <button type="button" class="pro2-card" aria-label="Card 3"
+              <button type="button" class="pv24" aria-label="Card 3"
                       style="--cx: 21px; --cy: 21px; --rot: 0deg; --dx: 0px; --dy: 0px; --drot: 0deg; z-index: 2;"><img alt="" /></button>
             </div>
           </div>
@@ -6597,25 +5977,25 @@
       <article class="card" data-proto-card data-pro="true" data-pro-id="organic-shimmer">
         <div class="card-stage">
           <div class="stage-inner">
-            <div class="pro3-square" data-playing="false" aria-hidden="true">
-              <span class="pro3-shimmer"><span class="pro3-shimmer-band"></span></span>
-              <span class="pro3-edge">
-                <span class="pro3-edge-bloom"></span>
-                <span class="pro3-edge-glow"></span>
-                <span class="pro3-edge-ring"></span>
+            <div class="pv1e" data-playing="false" aria-hidden="true">
+              <span class="pv16"><span class="pva"></span></span>
+              <span class="pv25">
+                <span class="pvi"></span>
+                <span class="pvq"></span>
+                <span class="pvr"></span>
               </span>
             </div>
             <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
-              <filter id="pro3-warp" x="-30%" y="-30%" width="160%" height="160%">
+              <filter id="pv26" x="-30%" y="-30%" width="160%" height="160%">
                 <feTurbulence type="fractalNoise" baseFrequency="0.012 0.03" numOctaves="2" seed="7" result="n" />
                 <feDisplacementMap in="SourceGraphic" in2="n" scale="26" xChannelSelector="R" yChannelSelector="G" />
               </filter>
-              <filter id="pro3-warp-band" x="-40%" y="-40%" width="180%" height="180%">
+              <filter id="pvt" x="-40%" y="-40%" width="180%" height="180%">
                 <feTurbulence type="fractalNoise" baseFrequency="0.009 0.015" numOctaves="2" seed="7" result="n" />
                 <feDisplacementMap in="SourceGraphic" in2="n" scale="46" xChannelSelector="R" yChannelSelector="G" />
               </filter>
             </svg>
-            <button type="button" class="btn-animate" id="pro3-toggle" aria-pressed="false">Play</button>
+            <button type="button" class="btn-animate" id="pv1f" aria-pressed="false">Play</button>
           </div>
         </div>
         <div class="card-meta">
@@ -6829,9 +6209,9 @@
       <!-- 27. Image open tilt (Pro) -->
       <article class="card" data-proto-card data-pro="true" data-pro-id="image-open-tilt">
         <div class="card-stage">
-          <div class="stage-inner stage-inner--no-btn pro4-stage">
-            <button type="button" class="pro4-card" id="pro4-card" aria-expanded="false" aria-label="Open image">
-              <img class="pro4-img" id="pro4-photo" alt="" src="assets/proto-images/Untitled4.jpg" />
+          <div class="stage-inner stage-inner--no-btn pv1u">
+            <button type="button" class="pv28" id="pv28" aria-expanded="false" aria-label="Open image">
+              <img class="pv2i" id="pv1t" alt="" src="assets/proto-images/Untitled4.jpg" />
               <!-- Bend render layer. The old feImage + feDisplacementMap
                    filter never worked in WebKit (feImage data URIs don't
                    load → no bend in Safari, broken repaints on iOS), so
@@ -6839,7 +6219,7 @@
                    using the SAME map — 0.82 · blurred horizontal parabola
                    + 0.18 · organic noise — with the rounded clip applied
                    per pixel in source space so the outline bows too. -->
-              <canvas class="pro4-canvas" aria-hidden="true"></canvas>
+              <canvas class="pv1g" aria-hidden="true"></canvas>
             </button>
           </div>
         </div>
@@ -6966,8 +6346,8 @@
       <!-- 32. Pro gradient text (Pro) -->
       <article class="card" data-proto-card data-pro="true" data-pro-id="pro-gradient-text">
         <div class="card-stage">
-          <div class="stage-inner stage-inner--no-btn pro5-stage">
-            <h2 class="pro5-heading"><span class="pro5-gradient-text">Pro</span></h2>
+          <div class="stage-inner stage-inner--no-btn pv1w">
+            <h2 class="pv17"><span class="pv7">Pro</span></h2>
           </div>
         </div>
         <div class="card-meta">
@@ -6988,10 +6368,10 @@
       <!-- 33. Delete image with smoky dissolve (Pro) -->
       <article class="card" data-proto-card data-pro="true" data-pro-id="smoky-dissolve">
         <div class="card-stage">
-          <div class="stage-inner stage-inner--no-btn pro6-stage">
-            <div class="pro6-card" id="pro6-card">
+          <div class="stage-inner stage-inner--no-btn pv1y">
+            <div class="pv2c" id="pv2c">
               <img alt="" src="assets/proto-images/Untitled4.jpg" />
-              <button type="button" class="pro6-delete" id="pro6-delete" aria-label="Delete image">
+              <button type="button" class="pv1m" id="pv1m" aria-label="Delete image">
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                 </svg>
@@ -7002,7 +6382,7 @@
                  its primitives are animated, so the effect draws here:
                  tile displacement for the shred, a downscale/upscale
                  pass for the blur — all GPU-backed drawImage work. -->
-            <canvas class="pro6-canvas" id="pro6-canvas" aria-hidden="true"></canvas>
+            <canvas class="pv1l" id="pv1l" aria-hidden="true"></canvas>
           </div>
         </div>
         <div class="card-meta">
@@ -12190,1046 +11570,872 @@ export function Surface({ open, children }) {
   </script>
   <!-- Pro transition previews (cards 22 + 25): confetti physics + open-tilt bend. -->
   <script id="pro-preview-js">
-    (function () {
-      "use strict";
-
-      function readNum(name, fallback) {
-        var raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-        if (!raw) return fallback;
-        if (raw.slice(-2) === "ms") return parseFloat(raw);
-        if (raw.slice(-1) === "s" && raw.slice(-2) !== "ms") return parseFloat(raw) * 1000;
-        var n = parseFloat(raw);
-        return isNaN(n) ? fallback : n;
-      }
-      function readStr(name) {
-        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-      }
-      var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      /* Cubic-bezier sampler (Newton's method): turns a CSS easing
-         string (keyword or cubic-bezier(...)) into a 0..1 -> 0..1
-         function, for the JS-driven effects (PRO6 dissolve) that need
-         to sample an easing curve per frame. */
-      function makeEaseSampler(raw) {
-        var kw = {
-          "linear": [0, 0, 1, 1],
-          "ease": [0.25, 0.1, 0.25, 1],
-          "ease-in": [0.42, 0, 1, 1],
-          "ease-out": [0, 0, 0.58, 1],
-          "ease-in-out": [0.42, 0, 0.58, 1]
-        };
-        var c = kw[(raw || "").trim()];
-        if (!c) {
-          var m = (raw || "").match(
-            /cubic-bezier\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/
-          );
-          if (m) c = [+m[1], +m[2], +m[3], +m[4]];
-        }
-        if (!c) c = kw["ease"];
-        var x1 = c[0], y1 = c[1], x2 = c[2], y2 = c[3];
-        var cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
-        var cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
-        function sx(t) { return ((ax * t + bx) * t + cx) * t; }
-        function dx(t) { return (3 * ax * t + 2 * bx) * t + cx; }
-        function sy(t) { return ((ay * t + by) * t + cy) * t; }
-        return function (x) {
-          if (x <= 0) return 0;
-          if (x >= 1) return 1;
-          var t = x;
-          for (var i = 0; i < 6; i++) {
-            var e = sx(t) - x;
-            if (Math.abs(e) < 1e-4) break;
-            var d = dx(t);
-            if (Math.abs(d) < 1e-6) break;
-            t -= e / d;
-          }
-          return sy(t);
-        };
-      }
-
-      /* ── Random photos for the PRO2 card stack ───────────────── */
-      var PROTO_IMAGE_NAMES = [
-        "Screenshot 2026-05-17 at 19.52.25.png",
-        "Screenshot 2026-05-17 at 19.52.55.png",
-        "Screenshot 2026-05-17 at 19.53.15.png",
-        "Screenshot 2026-05-17 at 19.58.27.png",
-        "Screenshot 2026-05-17 at 19.59.07.png",
-        "Screenshot 2026-05-17 at 20.01.38.png",
-        "Untitled.jpg",
-        "Untitled2.jpg",
-        "Untitled4.jpg",
-        "photo-1773236759289-251d9687b6e3.avif"
-      ];
-      function pickRandomImages(count) {
-        var pool = PROTO_IMAGE_NAMES.slice();
-        for (var i = pool.length - 1; i > 0; i--) {
-          var j = Math.floor(Math.random() * (i + 1));
-          var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
-        }
-        return pool.slice(0, count).map(function (name) {
-          return "assets/proto-images/" + encodeURIComponent(name);
-        });
-      }
-      (function initProtoImages() {
-        // Fixed curated set for the Card stack — same three images across
-        // the site (pro.html bento, index, detail) instead of a random
-        // pick per load.
-        var STACK_IMAGES = [
-          "photo-1773236759289-251d9687b6e3.avif",
-          "Screenshot 2026-05-17 at 19.58.27.png",
-          "Screenshot 2026-05-17 at 19.53.15.png"
-        ];
-        var stackImgs = document.querySelectorAll(".pro2-card img");
-        stackImgs.forEach(function (img, i) {
-          img.src = "assets/proto-images/" + encodeURIComponent(STACK_IMAGES[i % STACK_IMAGES.length]);
-        });
-      })();
-
-      /* ── PRO1 Confetti burst ─────────────────────────────────── */
-      (function initPro1() {
-        var stage = document.getElementById("pro1-stage");
-        var canvas = document.getElementById("pro1-canvas");
-        var btn = document.getElementById("pro1-btn");
-        if (!stage || !canvas || !btn || reduced) return;
-        var ctx = canvas.getContext("2d");
-
-        var COLORS = [
-          "#ff4d67", "#ffb020", "#3b82f6", "#22c55e",
-          "#a855f7", "#f97316", "#06b6d4", "#f43f5e"
-        ];
-
-        var particles = [];
-        var running = false;
-        var lastT = 0;
-        var burstEnd = 0;
-        var fadeStart = null;
-        var stageW = 0;
-        var stageH = 0;
-
-        function sizeCanvas() {
-          var r = stage.getBoundingClientRect();
-          var dpr = window.devicePixelRatio || 1;
-          stageW = r.width;
-          stageH = r.height;
-          canvas.width = Math.round(r.width * dpr);
-          canvas.height = Math.round(r.height * dpr);
-          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        }
-
-        function buttonRect() {
-          var s = stage.getBoundingClientRect();
-          var b = btn.getBoundingClientRect();
-          return {
-            left: b.left - s.left,
-            top: b.top - s.top,
-            right: b.right - s.left,
-            bottom: b.bottom - s.top
-          };
-        }
-
-        // Pill surface: flat top between the cap centers, circular caps
-        // at the ends. Returns surface y + local slope at x, or null.
-        function buttonSurface(x, b) {
-          if (x < b.left || x > b.right) return null;
-          var r = (b.bottom - b.top) / 2;
-          var lc = b.left + r;
-          var rc = b.right - r;
-          if (x >= lc && x <= rc) return { y: b.top, slope: 0 };
-          var cx = x < lc ? lc : rc;
-          var dx = x - cx;
-          var root = Math.sqrt(Math.max(r * r - dx * dx, 0));
-          return { y: b.top + (r - root), slope: dx / Math.max(root, 0.001) };
-        }
-
-        function burst() {
-          sizeCanvas();
-          var now = performance.now();
-          var count = Math.round(readNum("--pro1-count", 120));
-          var size = readNum("--pro1-size", 8);
-          var spawnWindow = 500;
-
-          particles = [];
-          fadeStart = null;
-          for (var i = 0; i < count; i++) {
-            particles.push({
-              start: now + Math.random() * spawnWindow,
-              x: Math.random() * stageW,
-              y: -12 - Math.random() * 30,
-              py: -12,
-              vx: (Math.random() - 0.5) * 60,
-              vy: 40 + Math.random() * 120,
-              w: size * (0.7 + Math.random() * 0.6),
-              h: size * (0.5 + Math.random() * 0.5),
-              maxFall: 420 + Math.random() * 280,
-              rot: Math.random() * Math.PI,
-              vr: (Math.random() - 0.5) * 7,
-              tumble: Math.random() * Math.PI * 2,
-              tumbleSpeed: 4 + Math.random() * 8,
-              squish: 1,
-              phase: Math.random() * Math.PI * 2,
-              swayFreq: 2 + Math.random() * 3,
-              swayScale: 0.5 + Math.random(),
-              color: COLORS[Math.floor(Math.random() * COLORS.length)],
-              bounces: 0,
-              resting: false,
-              dead: false
-            });
-          }
-          burstEnd = now + spawnWindow + 100;
-          if (!running) {
-            running = true;
-            lastT = now;
-            requestAnimationFrame(frame);
-          }
-        }
-
-        function step(dt, now) {
-          var g = readNum("--pro1-gravity", 1300);
-          var sway = readNum("--pro1-sway", 16);
-          var restitution = readNum("--pro1-bounce", 0.3);
-          var b = buttonRect();
-
-          for (var i = 0; i < particles.length; i++) {
-            var p = particles[i];
-            if (p.resting || p.dead || now < p.start) continue;
-
-            p.py = p.y;
-            p.vy += g * dt;
-            if (p.vy > p.maxFall) p.vy = p.maxFall;
-            p.phase += p.swayFreq * dt;
-            p.x += (p.vx + Math.cos(p.phase) * sway * p.swayScale) * dt;
-            p.y += p.vy * dt;
-            p.rot += p.vr * dt;
-            p.tumble += p.tumbleSpeed * dt;
-            p.squish = 0.25 + 0.75 * Math.abs(Math.cos(p.tumble));
-
-            var half = p.h / 2;
-
-            if (p.vy > 0) {
-              var s = buttonSurface(p.x, b);
-              if (s && p.y + half >= s.y && p.py + half <= s.y + 2) {
-                if (Math.abs(s.slope) > 0.85) {
-                  var dir = p.x < (b.left + b.right) / 2 ? -1 : 1;
-                  p.vx = dir * Math.max(Math.abs(p.vx), 50 + Math.random() * 50);
-                  p.vy *= 0.35;
-                  p.y = s.y - half;
-                } else if (p.vy > 150 && p.bounces < 2) {
-                  p.bounces++;
-                  p.vy = -p.vy * restitution * (0.6 + Math.random() * 0.5);
-                  p.vx = p.vx * 0.7 + s.slope * 40 + (Math.random() - 0.5) * 40;
-                  p.y = s.y - half;
-                } else {
-                  p.resting = true;
-                  p.y = s.y - half - 0.5;
-                  p.vx = 0;
-                  p.vy = 0;
-                }
-              }
-            }
-
-            if (!p.resting && p.y + half >= stageH - 1) {
-              if (p.vy > 170 && p.bounces < 2) {
-                p.bounces++;
-                p.vy = -p.vy * restitution * (0.5 + Math.random() * 0.4);
-                p.vx *= 0.7;
-                p.y = stageH - 1 - half;
-              } else {
-                p.resting = true;
-                p.y = stageH - 1 - half;
-                p.vx = 0;
-                p.vy = 0;
-              }
-            }
-
-            if (p.x < -30 || p.x > stageW + 30 || p.y > stageH + 30) {
-              p.dead = true;
-            }
-          }
-        }
-
-        function draw(alpha) {
-          ctx.clearRect(0, 0, stageW, stageH);
-          ctx.globalAlpha = alpha;
-          var now = performance.now();
-          for (var i = 0; i < particles.length; i++) {
-            var p = particles[i];
-            if (p.dead || now < p.start) continue;
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            ctx.rotate(p.rot);
-            ctx.scale(1, p.squish);
-            ctx.fillStyle = p.color;
-            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
-            ctx.restore();
-          }
-          ctx.globalAlpha = 1;
-        }
-
-        function frame(now) {
-          if (!running) return;
-          // Substep so physics tracks wall-clock even when rAF throttles.
-          var remaining = Math.min((now - lastT) / 1000, 0.25);
-          lastT = now;
-          while (remaining > 0) {
-            var dt = Math.min(remaining, 1 / 60);
-            step(dt, now);
-            remaining -= dt;
-          }
-
-          var settled = now > burstEnd;
-          if (settled) {
-            for (var i = 0; i < particles.length; i++) {
-              if (!particles[i].resting && !particles[i].dead) { settled = false; break; }
-            }
-          }
-          if (settled && fadeStart === null) {
-            fadeStart = now + readNum("--pro1-hold", 1600);
-          }
-
-          var alpha = 1;
-          if (fadeStart !== null && now >= fadeStart) {
-            var fade = Math.max(readNum("--pro1-fade", 600), 1);
-            alpha = 1 - (now - fadeStart) / fade;
-            if (alpha <= 0) {
-              running = false;
-              particles = [];
-              ctx.clearRect(0, 0, stageW, stageH);
-              return;
-            }
-          }
-
-          draw(alpha);
-          requestAnimationFrame(frame);
-        }
-
-        btn.addEventListener("click", burst);
-        window.addEventListener("resize", function () {
-          if (running) sizeCanvas();
-        });
-      })();
-
-      /* ── PRO4 Image open tilt ────────────────────────────────── */
-      /* ── PRO2 Card stack: tap-to-fan on touch ─────────────────
-         The fan lives on :hover inside @media (hover: hover), so
-         touch devices never see it — tapping toggles .is-open
-         instead (same transforms; see the pro2 CSS). Gated so
-         desktop keeps pure hover behaviour. */
-      (function initPro2Touch() {
-        var stack = document.querySelector(".pro2-stack");
-        if (!stack) return;
-        if (!window.matchMedia || !window.matchMedia("(hover: none)").matches) return;
-        stack.addEventListener("click", function () {
-          stack.classList.toggle("is-open");
-        });
-      })();
-
-      (function initPro4() {
-        var card = document.getElementById("pro4-card");
-        if (!card) return;
-
-        // Bend: a software displacement warp drawn on the .pro4-canvas
-        // layer (the old feImage/feDisplacementMap filter never worked
-        // in WebKit — no bend in Safari at all). The FIELD is the exact
-        // map the filter built (0.82 · parabola + 0.18 · noise, channels
-        // − 0.5), scaled by strength · sign · sin(π·ease(p)) per frame.
-        var img = card.querySelector(".pro4-img");
-        var canvas = card.querySelector(".pro4-canvas");
-        var cctx = canvas ? canvas.getContext("2d") : null;
-        var bendRaf = null;
-
-        var dprB = Math.min(window.devicePixelRatio || 1, 2);
-        // Deterministic 2-octave value noise — stands in for the old
-        // feTurbulence (seed 11; ~110/70px wavelengths match its
-        // 0.009/0.014 base frequency).
-        var NB = 64;
-        var bnR = new Float32Array(NB * NB);
-        var bnG = new Float32Array(NB * NB);
-        (function seedBend() {
-          var s = 11;
-          for (var i = 0; i < NB * NB; i++) {
-            s = (s * 1664525 + 1013904223) >>> 0;
-            bnR[i] = s / 2147483648 - 1;
-            s = (s * 1664525 + 1013904223) >>> 0;
-            bnG[i] = s / 2147483648 - 1;
-          }
-        })();
-        function bGrid(g, x, y) {
-          var xi = Math.floor(x), yi = Math.floor(y);
-          var fx = x - xi, fy = y - yi;
-          fx = fx * fx * (3 - 2 * fx);
-          fy = fy * fy * (3 - 2 * fy);
-          var x0 = ((xi % NB) + NB) % NB, x1 = (x0 + 1) % NB;
-          var y0 = ((yi % NB) + NB) % NB, y1 = (y0 + 1) % NB;
-          var top = g[y0 * NB + x0] + (g[y0 * NB + x1] - g[y0 * NB + x0]) * fx;
-          var bot = g[y1 * NB + x0] + (g[y1 * NB + x1] - g[y1 * NB + x0]) * fx;
-          return top + (bot - top) * fy;
-        }
-        function bNoise(g, px, py) {
-          return (bGrid(g, px / 110, py / 70) +
-                  0.5 * bGrid(g, px / 55 + 37.7, py / 35 + 11.3)) / 1.5;
-        }
-
-        // Per-run state: unclipped photo snapshot + the displacement
-        // field (per unit strength) on a coarse lattice — the field
-        // is ultra-smooth, so 8-device-px cells lose nothing.
-        var LATB = 8;
-        var snapData = null, outData = null;
-        var latFX = null, latFY = null, latWB = 0, latHB = 0;
-        var padB = 0, padDevB = 0, sw = 0, sh = 0;
-
-        function prepareBend(strength) {
-          var cw = card.offsetWidth, chh = card.offsetHeight;
-          sw = Math.max(2, Math.round(cw * dprB));
-          sh = Math.max(2, Math.round(chh * dprB));
-          // Max |displacement| ≈ 0.30 · strength (parabola + noise).
-          padB = Math.ceil(Math.abs(strength) * 0.32) + 4;
-          padDevB = Math.round(padB * dprB);
-          // Canvas is a REPLACED element: absolute + inset does NOT
-          // stretch it (it keeps its intrinsic attribute size), so
-          // the CSS box must be sized explicitly.
-          canvas.style.left = -padB + "px";
-          canvas.style.top = -padB + "px";
-          canvas.style.width = (cw + padB * 2) + "px";
-          canvas.style.height = (chh + padB * 2) + "px";
-          canvas.width = sw + padDevB * 2;
-          canvas.height = sh + padDevB * 2;
-          outData = cctx.createImageData(canvas.width, canvas.height);
-          // Snapshot the cover-cropped photo UNCLIPPED — the rounded
-          // clip is applied per pixel during the warp so it bends.
-          var sc = document.createElement("canvas");
-          sc.width = sw;
-          sc.height = sh;
-          var scx = sc.getContext("2d");
-          if (img && img.naturalWidth) {
-            var k = Math.max(sw / img.naturalWidth, sh / img.naturalHeight);
-            var dw = img.naturalWidth * k, dh = img.naturalHeight * k;
-            scx.drawImage(img, (sw - dw) / 2, (sh - dh) / 2, dw, dh);
-          }
-          snapData = scx.getImageData(0, 0, sw, sh).data;
-          latWB = Math.ceil(canvas.width / LATB) + 2;
-          latHB = Math.ceil(canvas.height / LATB) + 2;
-          latFX = new Float32Array(latWB * latHB);
-          latFY = new Float32Array(latWB * latHB);
-          for (var ly = 0; ly < latHB; ly++) {
-            var py = (ly * LATB - padDevB) / dprB;
-            for (var lx = 0; lx < latWB; lx++) {
-              var px = (lx * LATB - padDevB) / dprB;
-              var q = (2 * px - cw) / (1.4 * cw);
-              var li = ly * latWB + lx;
-              latFX[li] = 0.0016 + 0.09 * bNoise(bnR, px, py);
-              latFY[li] = 0.4116 * (1 - q * q) - 0.41 + 0.09 * bNoise(bnG, px, py);
-            }
-          }
-        }
-
-        function renderBend(s, rCss) {
-          // Radius passed in analytically (see runBend) — reading
-          // getComputedStyle here every frame forces a style recalc
-          // mid-animation, which is cheap in Blink but expensive
-          // enough in Safari to drop the bend to ~30fps.
-          var rr = rCss * dprB;
-          var W = canvas.width, H = canvas.height;
-          var src = snapData, dst = outData.data;
-          var sDev = s * dprB;
-          var invLat = 1 / LATB;
-          var di = 0;
-          for (var y = 0; y < H; y++) {
-            var gy = y * invLat, gy0 = gy | 0, fyL = gy - gy0;
-            var row0 = gy0 * latWB, row1 = row0 + latWB;
-            for (var x = 0; x < W; x++, di += 4) {
-              var gx = x * invLat, gx0 = gx | 0, fxL = gx - gx0;
-              var a = row0 + gx0, b = row1 + gx0;
-              var Fx = (latFX[a] + (latFX[a + 1] - latFX[a]) * fxL) * (1 - fyL) +
-                       (latFX[b] + (latFX[b + 1] - latFX[b]) * fxL) * fyL;
-              var Fy = (latFY[a] + (latFY[a + 1] - latFY[a]) * fxL) * (1 - fyL) +
-                       (latFY[b] + (latFY[b + 1] - latFY[b]) * fxL) * fyL;
-              var sxf = x - padDevB + sDev * Fx;
-              var syf = y - padDevB + sDev * Fy;
-              // Rounded-rect coverage at the SOURCE point (the
-              // outline itself bends), 1px antialiased edge.
-              var dx1 = Math.min(sxf, sw - sxf);
-              var dy1 = Math.min(syf, sh - syf);
-              var d;
-              if (dx1 < rr && dy1 < rr) {
-                var ax = rr - dx1, ay = rr - dy1;
-                d = rr - Math.sqrt(ax * ax + ay * ay);
-              } else {
-                d = Math.min(dx1, dy1);
-              }
-              if (d <= 0) {
-                dst[di + 3] = 0;
-                continue;
-              }
-              // Bilinear photo fetch (clamped — the photo fills the box).
-              var sx0 = Math.floor(sxf), sy0 = Math.floor(syf);
-              if (sx0 < 0) sx0 = 0; else if (sx0 > sw - 2) sx0 = sw - 2;
-              if (sy0 < 0) sy0 = 0; else if (sy0 > sh - 2) sy0 = sh - 2;
-              var u = Math.min(Math.max(sxf - sx0, 0), 1);
-              var v = Math.min(Math.max(syf - sy0, 0), 1);
-              var w00 = (1 - u) * (1 - v), w10 = u * (1 - v);
-              var w01 = (1 - u) * v, w11 = u * v;
-              var i00 = (sy0 * sw + sx0) * 4;
-              var i10 = i00 + 4;
-              var i01 = i00 + sw * 4;
-              var i11 = i01 + 4;
-              dst[di] = src[i00] * w00 + src[i10] * w10 + src[i01] * w01 + src[i11] * w11;
-              dst[di + 1] = src[i00 + 1] * w00 + src[i10 + 1] * w10 + src[i01 + 1] * w01 + src[i11 + 1] * w11;
-              dst[di + 2] = src[i00 + 2] * w00 + src[i10 + 2] * w10 + src[i01 + 2] * w01 + src[i11 + 2] * w11;
-              dst[di + 3] = d >= 1 ? 255 : 255 * d;
-            }
-          }
-          cctx.putImageData(outData, 0, 0);
-        }
-
-        // Cubic-bezier sampler (Newton's method) for the bend envelope.
-        function makeBendEase(raw) {
-          var kw = {
-            "linear": [0, 0, 1, 1],
-            "ease": [0.25, 0.1, 0.25, 1],
-            "ease-in": [0.42, 0, 1, 1],
-            "ease-out": [0, 0, 0.58, 1],
-            "ease-in-out": [0.42, 0, 0.58, 1]
-          };
-          var c = kw[(raw || "").trim()];
-          if (!c) {
-            var m = (raw || "").match(
-              /cubic-bezier\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/
-            );
-            if (m) c = [+m[1], +m[2], +m[3], +m[4]];
-          }
-          if (!c) c = kw["ease"];
-          var x1 = c[0], y1 = c[1], x2 = c[2], y2 = c[3];
-          var cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
-          var cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
-          var sx = function (t) { return ((ax * t + bx) * t + cx) * t; };
-          var dxf = function (t) { return (3 * ax * t + 2 * bx) * t + cx; };
-          var sy = function (t) { return ((ay * t + by) * t + cy) * t; };
-          return function (x) {
-            if (x <= 0) return 0;
-            if (x >= 1) return 1;
-            var t = x;
-            for (var i = 0; i < 6; i++) {
-              var e = sx(t) - x;
-              if (Math.abs(e) < 1e-4) break;
-              var d = dxf(t);
-              if (Math.abs(d) < 1e-6) break;
-              t -= e / d;
-            }
-            return sy(t);
-          };
-        }
-
-        function runBend(sign, flightMs) {
-          if (!canvas || !cctx || reduced) return;
-          var strength = readNum("--pro4-bend", 0);
-          if (!strength) return;
-          var explicit = readNum("--pro4-bend-dur", 0);
-          var durMs = explicit > 0 ? explicit : flightMs;
-          if (durMs <= 0) return;
-          var ease = makeBendEase(readStr("--pro4-bend-ease"));
-          // Radius over the flight, computed analytically with the
-          // same duration + curve as the CSS border-radius transition
-          // (read once here; per-frame getComputedStyle would force a
-          // Safari style recalc every frame). 32px rest ↔ 16px open —
-          // must match the .pro4-card / .is-open CSS.
-          var rFrom = parseFloat(getComputedStyle(card).borderTopLeftRadius) || 0;
-          var rTo = sign > 0 ? 16 : 32;
-          var flightEase = makeBendEase(
-            readStr(sign > 0 ? "--pro4-open-ease" : "--pro4-close-ease")
-          );
-          if (bendRaf) cancelAnimationFrame(bendRaf);
-          prepareBend(strength);
-          card.classList.add("is-bending");
-          var t0 = performance.now();
-          (function tick(now) {
-            var p = Math.min((now - t0) / durMs, 1);
-            var e = Math.min(Math.max(ease(p), 0), 1);
-            var env = Math.sin(Math.PI * e);
-            var p2 = Math.min((now - t0) / Math.max(flightMs, 1), 1);
-            renderBend(strength * sign * env, rFrom + (rTo - rFrom) * flightEase(p2));
-            if (p < 1) {
-              bendRaf = requestAnimationFrame(tick);
-            } else {
-              bendRaf = null;
-              card.classList.remove("is-bending");
-            }
-          })(t0);
-        }
-
-        card.addEventListener("click", function () {
-          var open = card.classList.contains("is-open");
-          if (open) {
-            card.classList.remove("is-open");
-            card.classList.add("is-closing");
-            card.setAttribute("aria-expanded", "false");
-            runBend(-0.6, readNum("--pro4-close-dur", 420));
-          } else {
-            card.classList.remove("is-closing");
-            card.classList.add("is-open");
-            card.setAttribute("aria-expanded", "true");
-            runBend(1, readNum("--pro4-open-dur", 620));
-          }
-        });
-        card.addEventListener("animationend", function (e) {
-          if (e.animationName === "pro4-close") {
-            card.classList.remove("is-closing");
-          }
-        });
-      })();
-
-      /* ── PRO3 Play/Stop toggle ───────────────────────────────── */
-      (function initPro3Toggle() {
-        var square = document.querySelector(".pro3-square");
-        var btn = document.getElementById("pro3-toggle");
-        if (!square || !btn) return;
-        btn.addEventListener("click", function () {
-          var playing = square.getAttribute("data-playing") === "true";
-          var next = !playing;
-          square.setAttribute("data-playing", String(next));
-          btn.textContent = next ? "Stop" : "Play";
-          btn.setAttribute("aria-pressed", String(next));
-        });
-      })();
-
-      /* ── PRO6 Delete image with smoky dissolve ─────────────────
-         Renders on the .pro6-canvas overlay with plain drawImage
-         calls (GPU-backed everywhere): tile displacement through a
-         scrolling value-noise field for the shred, a downscale/
-         upscale pass for the blur. No SVG filter: WebKit runs those
-         on the CPU and doesn't reliably repaint animated filter
-         primitives — the previous version was laggy (and blur-less)
-         in Safari for exactly that reason. */
-      (function initPro6() {
-        var stage = document.querySelector(".pro6-stage");
-        var card = document.getElementById("pro6-card");
-        var btn = document.getElementById("pro6-delete");
-        var canvas = document.getElementById("pro6-canvas");
-        if (!stage || !card || !btn || !canvas) return;
-        var ctx = canvas.getContext("2d");
-        var workHalf = document.createElement("canvas"); // warp+blur at half res (blur hides it)
-        var snap = document.createElement("canvas"); // card snapshot
-        var whctx = workHalf.getContext("2d");
-        var running = false;
-
-        // Displacement state: the card snapshot's pixels
-        // (PREMULTIPLIED, so bilinear sampling and the blur are
-        // fringe-free at torn edges), the work buffer they're warped
-        // into (card + pad on every side, in device px), a blur
-        // scratch buffer, and a coarse lattice the noise is evaluated
-        // on each frame (the field's wavelength is 28px, so
-        // 4-device-px cells lose nothing; per-pixel values are
-        // bilinear lerps).
-        var LAT = 4;
-        var snapPre = null, workData = null, halfData = null, blurTmp = null;
-        var pad = 0, padDev = 0, latW = 0, latH = 0;
-        var workW = 0, workH = 0, wW2 = 0, wH2 = 0;
-        var latDX = null, latDY = null;
-
-        // Separable box-blur passes over premultiplied RGBA.
-        // Sliding-window sums make the cost independent of radius;
-        // two H + two V passes approximate a gaussian. Done in JS
-        // because canvas downscale/upscale blurs render differently
-        // per engine — Safari's resampling shows its lattice as
-        // pixelation. Pixels beyond the buffer count as transparent,
-        // fading the smoke edges like a zero-padded gaussian.
-        function boxH(srcA, dstA, w, h, r) {
-          var inv = 1 / (2 * r + 1);
-          for (var y = 0; y < h; y++) {
-            var base = y * w * 4;
-            var sr = 0, sg = 0, sb = 0, sa = 0;
-            for (var x = 0; x <= r && x < w; x++) {
-              var i = base + x * 4;
-              sr += srcA[i]; sg += srcA[i + 1]; sb += srcA[i + 2]; sa += srcA[i + 3];
-            }
-            for (x = 0; x < w; x++) {
-              var o = base + x * 4;
-              dstA[o] = sr * inv; dstA[o + 1] = sg * inv; dstA[o + 2] = sb * inv; dstA[o + 3] = sa * inv;
-              var xa = x + r + 1;
-              if (xa < w) {
-                var ia = base + xa * 4;
-                sr += srcA[ia]; sg += srcA[ia + 1]; sb += srcA[ia + 2]; sa += srcA[ia + 3];
-              }
-              var xs = x - r;
-              if (xs >= 0) {
-                var is = base + xs * 4;
-                sr -= srcA[is]; sg -= srcA[is + 1]; sb -= srcA[is + 2]; sa -= srcA[is + 3];
-              }
-            }
-          }
-        }
-        // `straight` = un-premultiply inline while writing (used on
-        // the LAST pass so putImageData gets straight alpha without
-        // an extra full-buffer pass).
-        function boxV(srcA, dstA, w, h, r, straight) {
-          var stride = w * 4;
-          var inv = 1 / (2 * r + 1);
-          for (var x = 0; x < w; x++) {
-            var base = x * 4;
-            var sr = 0, sg = 0, sb = 0, sa = 0;
-            for (var y = 0; y <= r && y < h; y++) {
-              var i = base + y * stride;
-              sr += srcA[i]; sg += srcA[i + 1]; sb += srcA[i + 2]; sa += srcA[i + 3];
-            }
-            for (y = 0; y < h; y++) {
-              var o = base + y * stride;
-              var aOut = sa * inv;
-              if (straight && aOut > 0.5 && aOut < 254.6) {
-                var k = 255 / aOut;
-                dstA[o] = sr * inv * k;
-                dstA[o + 1] = sg * inv * k;
-                dstA[o + 2] = sb * inv * k;
-              } else {
-                dstA[o] = sr * inv;
-                dstA[o + 1] = sg * inv;
-                dstA[o + 2] = sb * inv;
-              }
-              dstA[o + 3] = aOut;
-              var ya = y + r + 1;
-              if (ya < h) {
-                var ia = base + ya * stride;
-                sr += srcA[ia]; sg += srcA[ia + 1]; sb += srcA[ia + 2]; sa += srcA[ia + 3];
-              }
-              var ys = y - r;
-              if (ys >= 0) {
-                var is = base + ys * stride;
-                sr -= srcA[is]; sg -= srcA[is + 1]; sb -= srcA[is + 2]; sa -= srcA[is + 3];
-              }
-            }
-          }
-        }
-
-        // Warp the premultiplied snapshot into dstArr — a dw×dh
-        // buffer covering the work area at 1/s of device resolution
-        // (s=1 full res, s=2 the half-res blur path) — through the
-        // current noise lattice. The source fetch is BILINEAR (like
-        // feDisplacementMap's smooth sampling; nearest-neighbour
-        // reads as pixelation): interior pixels take the unchecked
-        // fast path, the 1px rim is bounds-checked with transparent
-        // padding. With `straight` the write is un-premultiplied
-        // inline (putImageData wants straight alpha) so no extra
-        // full-buffer pass is needed on the no-blur path.
-        function remap(dstArr, dw, dh, s, straight) {
-          var snapW = snap.width, snapH = snap.height;
-          var src = snapPre;
-          var invLat = 1 / LAT;
-          var di = 0;
-          for (var yD = 0; yD < dh; yD++) {
-            var yF = yD * s;
-            var gy = yF * invLat;
-            var gy0 = gy | 0;
-            var fy = gy - gy0;
-            var row0 = gy0 * latW, row1 = row0 + latW;
-            for (var xD = 0; xD < dw; xD++, di += 4) {
-              var xF = xD * s;
-              var gx = xF * invLat;
-              var gx0 = gx | 0;
-              var fx = gx - gx0;
-              var a = row0 + gx0, b = row1 + gx0;
-              var dxv = (latDX[a] + (latDX[a + 1] - latDX[a]) * fx) * (1 - fy) +
-                        (latDX[b] + (latDX[b + 1] - latDX[b]) * fx) * fy;
-              var dyv = (latDY[a] + (latDY[a + 1] - latDY[a]) * fx) * (1 - fy) +
-                        (latDY[b] + (latDY[b + 1] - latDY[b]) * fx) * fy;
-              var sxf = xF - padDev + dxv;
-              var syf = yF - padDev + dyv;
-              var sx0 = Math.floor(sxf);
-              var sy0 = Math.floor(syf);
-              var rC = 0, gC = 0, bC = 0, aC = 0;
-              if (sx0 >= 0 && sx0 < snapW - 1 && sy0 >= 0 && sy0 < snapH - 1) {
-                var u = sxf - sx0, v = syf - sy0;
-                var w00 = (1 - u) * (1 - v), w10 = u * (1 - v);
-                var w01 = (1 - u) * v, w11 = u * v;
-                var i00 = (sy0 * snapW + sx0) * 4;
-                var i10 = i00 + 4;
-                var i01 = i00 + snapW * 4;
-                var i11 = i01 + 4;
-                rC = src[i00] * w00 + src[i10] * w10 + src[i01] * w01 + src[i11] * w11;
-                gC = src[i00 + 1] * w00 + src[i10 + 1] * w10 + src[i01 + 1] * w01 + src[i11 + 1] * w11;
-                bC = src[i00 + 2] * w00 + src[i10 + 2] * w10 + src[i01 + 2] * w01 + src[i11 + 2] * w11;
-                aC = src[i00 + 3] * w00 + src[i10 + 3] * w10 + src[i01 + 3] * w01 + src[i11 + 3] * w11;
-              } else if (sx0 >= -1 && sx0 <= snapW - 1 && sy0 >= -1 && sy0 <= snapH - 1) {
-                var u2 = sxf - sx0, v2 = syf - sy0;
-                var w, si;
-                if (sx0 >= 0 && sy0 >= 0) {
-                  w = (1 - u2) * (1 - v2); si = (sy0 * snapW + sx0) * 4;
-                  rC += src[si] * w; gC += src[si + 1] * w; bC += src[si + 2] * w; aC += src[si + 3] * w;
-                }
-                if (sx0 + 1 < snapW && sy0 >= 0) {
-                  w = u2 * (1 - v2); si = (sy0 * snapW + sx0 + 1) * 4;
-                  rC += src[si] * w; gC += src[si + 1] * w; bC += src[si + 2] * w; aC += src[si + 3] * w;
-                }
-                if (sx0 >= 0 && sy0 + 1 < snapH) {
-                  w = (1 - u2) * v2; si = ((sy0 + 1) * snapW + sx0) * 4;
-                  rC += src[si] * w; gC += src[si + 1] * w; bC += src[si + 2] * w; aC += src[si + 3] * w;
-                }
-                if (sx0 + 1 < snapW && sy0 + 1 < snapH) {
-                  w = u2 * v2; si = ((sy0 + 1) * snapW + sx0 + 1) * 4;
-                  rC += src[si] * w; gC += src[si + 1] * w; bC += src[si + 2] * w; aC += src[si + 3] * w;
-                }
-              } else {
-                // Premultiplied: transparent must be all-zero or the
-                // blur would bleed stale color back in.
-                dstArr[di] = 0;
-                dstArr[di + 1] = 0;
-                dstArr[di + 2] = 0;
-                dstArr[di + 3] = 0;
-                continue;
-              }
-              if (straight && aC > 0.5 && aC < 254.6) {
-                var k = 255 / aC;
-                rC *= k; gC *= k; bC *= k;
-              }
-              dstArr[di] = rC;
-              dstArr[di + 1] = gC;
-              dstArr[di + 2] = bC;
-              dstArr[di + 3] = aC;
-            }
-          }
-        }
-
-        // Deterministic two-octave value noise standing in for the
-        // old feTurbulence (seed 4; base wavelength 28px matches the
-        // 0.035 baseFrequency). Sampled once per tile per frame.
-        var N = 64;
-        var noiseR = new Float32Array(N * N);
-        var noiseG = new Float32Array(N * N);
-        (function seedNoise() {
-          var s = 4;
-          for (var i = 0; i < N * N; i++) {
-            s = (s * 1664525 + 1013904223) >>> 0;
-            noiseR[i] = s / 2147483648 - 1;
-            s = (s * 1664525 + 1013904223) >>> 0;
-            noiseG[i] = s / 2147483648 - 1;
-          }
-        })();
-        function gridAt(gArr, x, y) {
-          var xi = Math.floor(x), yi = Math.floor(y);
-          var fx = x - xi, fy = y - yi;
-          fx = fx * fx * (3 - 2 * fx);
-          fy = fy * fy * (3 - 2 * fy);
-          var x0 = ((xi % N) + N) % N, x1 = (x0 + 1) % N;
-          var y0 = ((yi % N) + N) % N, y1 = (y0 + 1) % N;
-          var top = gArr[y0 * N + x0] + (gArr[y0 * N + x1] - gArr[y0 * N + x0]) * fx;
-          var bot = gArr[y1 * N + x0] + (gArr[y1 * N + x1] - gArr[y1 * N + x0]) * fx;
-          return top + (bot - top) * fy;
-        }
-        // px, py in CSS pixels → [-1, 1]
-        function noise2(gArr, px, py) {
-          return (gridAt(gArr, px / 28, py / 28) +
-                  0.5 * gridAt(gArr, px / 14 + 37.7, py / 14 + 11.3)) / 1.5;
-        }
-
-        var dpr = Math.min(window.devicePixelRatio || 1, 2);
-        var cardX = 0, cardY = 0, cardW = 0, cardH = 0;
-
-        // Size the render targets to the stage and snapshot the card
-        // (cover-cropped photo in a rounded clip + the delete button)
-        // at device resolution. Runs at dissolve start so it always
-        // matches current layout. padCss = how far the work buffer
-        // pads out past the card (max displacement + blur spill) so
-        // warped, blurred pixels aren't clipped.
-        function prepare(padCss) {
-          var sr = stage.getBoundingClientRect();
-          var cr = card.getBoundingClientRect();
-          cardX = cr.left - sr.left;
-          cardY = cr.top - sr.top;
-          cardW = cr.width;
-          cardH = cr.height;
-          snap.width = Math.max(1, Math.round(cardW * dpr));
-          snap.height = Math.max(1, Math.round(cardH * dpr));
-          pad = Math.min(Math.ceil(padCss) + 6, 80);
-          padDev = Math.round(pad * dpr);
-          workW = snap.width + padDev * 2;
-          workH = snap.height + padDev * 2;
-          // The visible canvas IS the work buffer (card + pad),
-          // positioned over the card; the fall moves the ELEMENT via
-          // CSS transform instead of redrawing a stage-sized canvas.
-          canvas.width = workW;
-          canvas.height = workH;
-          canvas.style.left = (cardX - pad) + "px";
-          canvas.style.top = (cardY - pad) + "px";
-          canvas.style.width = (cardW + pad * 2) + "px";
-          canvas.style.height = (cardH + pad * 2) + "px";
-          // Resizing a canvas resets its context state, so the
-          // resampling-quality hint has to be (re)applied here (it
-          // shapes the half-res → full upscale draw).
-          ctx.imageSmoothingQuality = "high";
-          var sc = snap.getContext("2d");
-          sc.setTransform(dpr, 0, 0, dpr, 0, 0);
-          sc.clearRect(0, 0, cardW, cardH);
-          var r = 16; // matches .pro6-card border-radius
-          sc.beginPath();
-          sc.moveTo(r, 0);
-          sc.arcTo(cardW, 0, cardW, cardH, r);
-          sc.arcTo(cardW, cardH, 0, cardH, r);
-          sc.arcTo(0, cardH, 0, 0, r);
-          sc.arcTo(0, 0, cardW, 0, r);
-          sc.closePath();
-          sc.clip();
-          var img = card.querySelector("img");
-          if (img && img.naturalWidth) {
-            var s = Math.max(cardW / img.naturalWidth, cardH / img.naturalHeight);
-            var dw = img.naturalWidth * s, dh = img.naturalHeight * s;
-            sc.drawImage(img, (cardW - dw) / 2, (cardH - dh) / 2, dw, dh);
-          } else {
-            sc.fillStyle = "#e9e9ec";
-            sc.fillRect(0, 0, cardW, cardH);
-          }
-          var bx = cardW - 8 - 12, by = 8 + 12;
-          sc.beginPath();
-          sc.arc(bx, by, 12, 0, Math.PI * 2);
-          sc.fillStyle = "rgba(255, 255, 255, 0.92)";
-          sc.fill();
-          sc.strokeStyle = "#17181c";
-          sc.lineWidth = 1.5;
-          sc.lineCap = "round";
-          sc.beginPath();
-          sc.moveTo(bx - 3.5, by - 3.5);
-          sc.lineTo(bx + 3.5, by + 3.5);
-          sc.moveTo(bx + 3.5, by - 3.5);
-          sc.lineTo(bx - 3.5, by + 3.5);
-          sc.stroke();
-          // Pixel buffers for the software displacement map + blur.
-          // The snapshot is premultiplied once here — bilinear
-          // sampling and the box blur then stay fringe-free.
-          var sd = sc.getImageData(0, 0, snap.width, snap.height).data;
-          snapPre = new Uint8ClampedArray(sd.length);
-          for (var i = 0; i < sd.length; i += 4) {
-            var aP = sd[i + 3];
-            snapPre[i] = sd[i] * aP / 255;
-            snapPre[i + 1] = sd[i + 1] * aP / 255;
-            snapPre[i + 2] = sd[i + 2] * aP / 255;
-            snapPre[i + 3] = aP;
-          }
-          workData = ctx.createImageData(workW, workH);
-          wW2 = Math.ceil(workW / 2);
-          wH2 = Math.ceil(workH / 2);
-          workHalf.width = wW2;
-          workHalf.height = wH2;
-          halfData = whctx.createImageData(wW2, wH2);
-          blurTmp = new Uint8ClampedArray(halfData.data.length);
-          latW = Math.ceil(workW / LAT) + 2;
-          latH = Math.ceil(workH / LAT) + 2;
-          latDX = new Float32Array(latW * latH);
-          latDY = new Float32Array(latW * latH);
-        }
-
-        function dissolve() {
-          if (running || reduced) return;
-          running = true;
-          var durMs = readNum("--pro6-dur", 900);
-          var g = readNum("--pro6-gravity", 900);
-          var warp = readNum("--pro6-warp", 90);
-          var maxBlur = readNum("--pro6-blur", 18);
-          var sway = readNum("--pro6-sway", 14);
-          var spin = readNum("--pro6-spin", 8);
-          var churn = readNum("--pro6-churn", 200);
-          var spread = readNum("--pro6-spread", 30);
-          var warpEase = makeEaseSampler(readStr("--pro6-warp-ease"));
-          var blurEase = makeEaseSampler(readStr("--pro6-blur-ease"));
-          var gravityEase = makeEaseSampler(readStr("--pro6-gravity-ease"));
-          var dissolveEase = makeEaseSampler(readStr("--pro6-dissolve-ease"));
-          var warpDurRaw = readNum("--pro6-warp-dur", 0);
-          var warpDurMs = warpDurRaw > 0 ? warpDurRaw : durMs;
-          prepare(warp / 2 + maxBlur * 2);
-          card.style.visibility = "hidden";
-          var t0 = performance.now();
-          var frame = 0;
-          (function tick(now) {
-            var t = (now - t0) / 1000;
-            // rawP tracks real time (loop-exit); p is reshaped by the
-            // dissolve ease and drives every effect below.
-            var rawP = Math.min((now - t0) / Math.max(durMs, 1), 1);
-            var p = dissolveEase(rawP);
-            // teff = gravity-eased time in the ½·g·t² fall.
-            var teff = gravityEase(p) * (durMs / 1000);
-            var fallY = 0.5 * g * teff * teff;
-            var swayX = Math.sin(t * 5) * sway * p;
-            // Warp runs on its own clock so shredding can build slower.
-            var pw = Math.min((now - t0) / Math.max(warpDurMs, 1), 1);
-            var dispScale = warp * warpEase(pw);
-            var blur = maxBlur * blurEase(p);
-            var alpha = 1 - Math.pow(p, 1.6);
-            // Churn: slide the sample window through the noise field
-            // (downward, with sideways waver) so the billowing
-            // travels with the fall like sinking smoke.
-            var driftY = churn * t;
-            var driftX = Math.sin(t * 3.2) * churn * 0.3;
-
-            // 1) Texture — the software displacement map (same
-            //    sampling rule as feDisplacementMap: output(x,y) =
-            //    source(x + d.x, y + d.y)) plus the box-blur — runs
-            //    at HALF frame rate: 30fps churn is imperceptible
-            //    for smoke and it halves the JS cost. The motion
-            //    below still updates every frame on the compositor,
-            //    so the fall never stutters. While the blur is weak
-            //    the shred renders at full device resolution; once
-            //    it takes over (σ ≳ 1px) the whole warp+blur runs at
-            //    half resolution — the blur hides the difference and
-            //    the pixel work drops to a quarter.
-            if (frame % 2 === 0 || rawP >= 1) {
-              var halfDev = (dispScale / 2) * dpr;
-              for (var ly = 0; ly < latH; ly++) {
-                var py = (ly * LAT - padDev) / dpr;
-                for (var lx = 0; lx < latW; lx++) {
-                  var px = (lx * LAT - padDev) / dpr;
-                  var li = ly * latW + lx;
-                  latDX[li] = halfDev * noise2(noiseR, px - driftX, py - driftY);
-                  latDY[li] = halfDev * noise2(noiseG, px - driftX, py - driftY);
-                }
-              }
-              var rBox = blur > 0.3 ? Math.round(blur * dpr * 1.22) : 0;
-              if (rBox >= 2) {
-                remap(halfData.data, wW2, wH2, 2, false);
-                var rHalf = Math.max(1, Math.round(rBox / 2));
-                boxH(halfData.data, blurTmp, wW2, wH2, rHalf);
-                boxH(blurTmp, halfData.data, wW2, wH2, rHalf);
-                boxV(halfData.data, blurTmp, wW2, wH2, rHalf, false);
-                // Final pass writes straight alpha for putImageData.
-                boxV(blurTmp, halfData.data, wW2, wH2, rHalf, true);
-                whctx.putImageData(halfData, 0, 0);
-                ctx.clearRect(0, 0, workW, workH);
-                ctx.drawImage(workHalf, 0, 0, wW2, wH2, 0, 0, workW, workH);
-              } else {
-                remap(workData.data, workW, workH, 1, true);
-                ctx.putImageData(workData, 0, 0);
-              }
-            }
-            frame++;
-
-            // 2) Motion + fade on the ELEMENT — GPU-composited, so
-            //    it stays smooth regardless of texture cost.
-            canvas.style.transform =
-              "translate(" + swayX.toFixed(1) + "px, " + fallY.toFixed(1) + "px)" +
-              " rotate(" + (spin * p).toFixed(2) + "deg)" +
-              // Spread: real smoke expands as it thins out.
-              " scale(" + (1 + (spread / 100) * p).toFixed(3) + ")";
-            canvas.style.opacity = alpha.toFixed(3);
-
-            if (rawP < 1) { requestAnimationFrame(tick); return; }
-            // Fully dissolved — clear and respawn for replay.
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            canvas.style.transform = "";
-            canvas.style.opacity = "";
-            window.setTimeout(function () {
-              card.style.visibility = "";
-              card.classList.remove("is-respawning");
-              // eslint-disable-next-line no-unused-expressions
-              card.offsetWidth;
-              card.classList.add("is-respawning");
-              running = false;
-            }, readNum("--pro6-respawn", 800));
-          })(t0);
-        }
-
-        btn.addEventListener("click", dissolve);
-        card.addEventListener("animationend", function (e) {
-          if (e.animationName === "pro6-respawn") {
-            card.classList.remove("is-respawning");
-          }
-        });
-      })();
-    })();
-  </script>
+/* Pro preview (generated) — obfuscated demo build. The documented recipes
+   with tokens, React + TypeScript variants live in Transitions Pro:
+   https://transitions.dev/pro.html */
+(function () {
+"use strict";
+function readNum(name, fallback) {
+var raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+if (!raw) return fallback;
+if (raw.slice(-2) === "ms") return parseFloat(raw);
+if (raw.slice(-1) === "s" && raw.slice(-2) !== "ms") return parseFloat(raw) * 1000;
+var n = parseFloat(raw);
+return isNaN(n) ? fallback : n;
+}
+function readStr(name) {
+return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function makeEaseSampler(raw) {
+var kw = {
+"linear": [0, 0, 1, 1],
+"ease": [0.25, 0.1, 0.25, 1],
+"ease-in": [0.42, 0, 1, 1],
+"ease-out": [0, 0, 0.58, 1],
+"ease-in-out": [0.42, 0, 0.58, 1]
+};
+var c = kw[(raw || "").trim()];
+if (!c) {
+var m = (raw || "").match(
+/cubic-bezier\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/
+);
+if (m) c = [+m[1], +m[2], +m[3], +m[4]];
+}
+if (!c) c = kw["ease"];
+var x1 = c[0], y1 = c[1], x2 = c[2], y2 = c[3];
+var cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+var cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+function sx(t) { return ((ax * t + bx) * t + cx) * t; }
+function dx(t) { return (3 * ax * t + 2 * bx) * t + cx; }
+function sy(t) { return ((ay * t + by) * t + cy) * t; }
+return function (x) {
+if (x <= 0) return 0;
+if (x >= 1) return 1;
+var t = x;
+for (var i = 0; i < 6; i++) {
+var e = sx(t) - x;
+if (Math.abs(e) < 1e-4) break;
+var d = dx(t);
+if (Math.abs(d) < 1e-6) break;
+t -= e / d;
+}
+return sy(t);
+};
+}
+var PROTO_IMAGE_NAMES = [
+"Screenshot 2026-05-17 at 19.52.25.png",
+"Screenshot 2026-05-17 at 19.52.55.png",
+"Screenshot 2026-05-17 at 19.53.15.png",
+"Screenshot 2026-05-17 at 19.58.27.png",
+"Screenshot 2026-05-17 at 19.59.07.png",
+"Screenshot 2026-05-17 at 20.01.38.png",
+"Untitled.jpg",
+"Untitled2.jpg",
+"Untitled4.jpg",
+"photo-1773236759289-251d9687b6e3.avif"
+];
+function pickRandomImages(count) {
+var pool = PROTO_IMAGE_NAMES.slice();
+for (var i = pool.length - 1; i > 0; i--) {
+var j = Math.floor(Math.random() * (i + 1));
+var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+}
+return pool.slice(0, count).map(function (name) {
+return "assets/proto-images/" + encodeURIComponent(name);
+});
+}
+(function initProtoImages() {
+var STACK_IMAGES = [
+"photo-1773236759289-251d9687b6e3.avif",
+"Screenshot 2026-05-17 at 19.58.27.png",
+"Screenshot 2026-05-17 at 19.53.15.png"
+];
+var stackImgs = document.querySelectorAll(".pv24 img");
+stackImgs.forEach(function (img, i) {
+img.src = "assets/proto-images/" + encodeURIComponent(STACK_IMAGES[i % STACK_IMAGES.length]);
+});
+})();
+(function initPro1() {
+var stage = document.getElementById("pv1p");
+var canvas = document.getElementById("pv1c");
+var btn = document.getElementById("pv2h");
+if (!stage || !canvas || !btn || reduced) return;
+var ctx = canvas.getContext("2d");
+var COLORS = [
+"#ff4d67", "#ffb020", "#3b82f6", "#22c55e",
+"#a855f7", "#f97316", "#06b6d4", "#f43f5e"
+];
+var particles = [];
+var running = false;
+var lastT = 0;
+var burstEnd = 0;
+var fadeStart = null;
+var stageW = 0;
+var stageH = 0;
+function sizeCanvas() {
+var r = stage.getBoundingClientRect();
+var dpr = window.devicePixelRatio || 1;
+stageW = r.width;
+stageH = r.height;
+canvas.width = Math.round(r.width * dpr);
+canvas.height = Math.round(r.height * dpr);
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function buttonRect() {
+var s = stage.getBoundingClientRect();
+var b = btn.getBoundingClientRect();
+return {
+left: b.left - s.left,
+top: b.top - s.top,
+right: b.right - s.left,
+bottom: b.bottom - s.top
+};
+}
+function buttonSurface(x, b) {
+if (x < b.left || x > b.right) return null;
+var r = (b.bottom - b.top) / 2;
+var lc = b.left + r;
+var rc = b.right - r;
+if (x >= lc && x <= rc) return { y: b.top, slope: 0 };
+var cx = x < lc ? lc : rc;
+var dx = x - cx;
+var root = Math.sqrt(Math.max(r * r - dx * dx, 0));
+return { y: b.top + (r - root), slope: dx / Math.max(root, 0.001) };
+}
+function burst() {
+sizeCanvas();
+var now = performance.now();
+var count = Math.round(readNum("--pv1o", 120));
+var size = readNum("--pv22", 8);
+var spawnWindow = 500;
+particles = [];
+fadeStart = null;
+for (var i = 0; i < count; i++) {
+particles.push({
+start: now + Math.random() * spawnWindow,
+x: Math.random() * stageW,
+y: -12 - Math.random() * 30,
+py: -12,
+vx: (Math.random() - 0.5) * 60,
+vy: 40 + Math.random() * 120,
+w: size * (0.7 + Math.random() * 0.6),
+h: size * (0.5 + Math.random() * 0.5),
+maxFall: 420 + Math.random() * 280,
+rot: Math.random() * Math.PI,
+vr: (Math.random() - 0.5) * 7,
+tumble: Math.random() * Math.PI * 2,
+tumbleSpeed: 4 + Math.random() * 8,
+squish: 1,
+phase: Math.random() * Math.PI * 2,
+swayFreq: 2 + Math.random() * 3,
+swayScale: 0.5 + Math.random(),
+color: COLORS[Math.floor(Math.random() * COLORS.length)],
+bounces: 0,
+resting: false,
+dead: false
+});
+}
+burstEnd = now + spawnWindow + 100;
+if (!running) {
+running = true;
+lastT = now;
+requestAnimationFrame(frame);
+}
+}
+function step(dt, now) {
+var g = readNum("--pv15", 1300);
+var sway = readNum("--pv23", 16);
+var restitution = readNum("--pv1b", 0.3);
+var b = buttonRect();
+for (var i = 0; i < particles.length; i++) {
+var p = particles[i];
+if (p.resting || p.dead || now < p.start) continue;
+p.py = p.y;
+p.vy += g * dt;
+if (p.vy > p.maxFall) p.vy = p.maxFall;
+p.phase += p.swayFreq * dt;
+p.x += (p.vx + Math.cos(p.phase) * sway * p.swayScale) * dt;
+p.y += p.vy * dt;
+p.rot += p.vr * dt;
+p.tumble += p.tumbleSpeed * dt;
+p.squish = 0.25 + 0.75 * Math.abs(Math.cos(p.tumble));
+var half = p.h / 2;
+if (p.vy > 0) {
+var s = buttonSurface(p.x, b);
+if (s && p.y + half >= s.y && p.py + half <= s.y + 2) {
+if (Math.abs(s.slope) > 0.85) {
+var dir = p.x < (b.left + b.right) / 2 ? -1 : 1;
+p.vx = dir * Math.max(Math.abs(p.vx), 50 + Math.random() * 50);
+p.vy *= 0.35;
+p.y = s.y - half;
+} else if (p.vy > 150 && p.bounces < 2) {
+p.bounces++;
+p.vy = -p.vy * restitution * (0.6 + Math.random() * 0.5);
+p.vx = p.vx * 0.7 + s.slope * 40 + (Math.random() - 0.5) * 40;
+p.y = s.y - half;
+} else {
+p.resting = true;
+p.y = s.y - half - 0.5;
+p.vx = 0;
+p.vy = 0;
+}
+}
+}
+if (!p.resting && p.y + half >= stageH - 1) {
+if (p.vy > 170 && p.bounces < 2) {
+p.bounces++;
+p.vy = -p.vy * restitution * (0.5 + Math.random() * 0.4);
+p.vx *= 0.7;
+p.y = stageH - 1 - half;
+} else {
+p.resting = true;
+p.y = stageH - 1 - half;
+p.vx = 0;
+p.vy = 0;
+}
+}
+if (p.x < -30 || p.x > stageW + 30 || p.y > stageH + 30) {
+p.dead = true;
+}
+}
+}
+function draw(alpha) {
+ctx.clearRect(0, 0, stageW, stageH);
+ctx.globalAlpha = alpha;
+var now = performance.now();
+for (var i = 0; i < particles.length; i++) {
+var p = particles[i];
+if (p.dead || now < p.start) continue;
+ctx.save();
+ctx.translate(p.x, p.y);
+ctx.rotate(p.rot);
+ctx.scale(1, p.squish);
+ctx.fillStyle = p.color;
+ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+ctx.restore();
+}
+ctx.globalAlpha = 1;
+}
+function frame(now) {
+if (!running) return;
+var remaining = Math.min((now - lastT) / 1000, 0.25);
+lastT = now;
+while (remaining > 0) {
+var dt = Math.min(remaining, 1 / 60);
+step(dt, now);
+remaining -= dt;
+}
+var settled = now > burstEnd;
+if (settled) {
+for (var i = 0; i < particles.length; i++) {
+if (!particles[i].resting && !particles[i].dead) { settled = false; break; }
+}
+}
+if (settled && fadeStart === null) {
+fadeStart = now + readNum("--pv20", 1600);
+}
+var alpha = 1;
+if (fadeStart !== null && now >= fadeStart) {
+var fade = Math.max(readNum("--pv1z", 600), 1);
+alpha = 1 - (now - fadeStart) / fade;
+if (alpha <= 0) {
+running = false;
+particles = [];
+ctx.clearRect(0, 0, stageW, stageH);
+return;
+}
+}
+draw(alpha);
+requestAnimationFrame(frame);
+}
+btn.addEventListener("click", burst);
+window.addEventListener("resize", function () {
+if (running) sizeCanvas();
+});
+})();
+(function initPro2Touch() {
+var stack = document.querySelector(".pv1r");
+if (!stack) return;
+if (!window.matchMedia || !window.matchMedia("(hover: none)").matches) return;
+stack.addEventListener("click", function () {
+stack.classList.toggle("is-open");
+});
+})();
+(function initPro4() {
+var card = document.getElementById("pv28");
+if (!card) return;
+var img = card.querySelector(".pv2i");
+var canvas = card.querySelector(".pv1g");
+var cctx = canvas ? canvas.getContext("2d") : null;
+var bendRaf = null;
+var dprB = Math.min(window.devicePixelRatio || 1, 2);
+var NB = 64;
+var bnR = new Float32Array(NB * NB);
+var bnG = new Float32Array(NB * NB);
+(function seedBend() {
+var s = 11;
+for (var i = 0; i < NB * NB; i++) {
+s = (s * 1664525 + 1013904223) >>> 0;
+bnR[i] = s / 2147483648 - 1;
+s = (s * 1664525 + 1013904223) >>> 0;
+bnG[i] = s / 2147483648 - 1;
+}
+})();
+function bGrid(g, x, y) {
+var xi = Math.floor(x), yi = Math.floor(y);
+var fx = x - xi, fy = y - yi;
+fx = fx * fx * (3 - 2 * fx);
+fy = fy * fy * (3 - 2 * fy);
+var x0 = ((xi % NB) + NB) % NB, x1 = (x0 + 1) % NB;
+var y0 = ((yi % NB) + NB) % NB, y1 = (y0 + 1) % NB;
+var top = g[y0 * NB + x0] + (g[y0 * NB + x1] - g[y0 * NB + x0]) * fx;
+var bot = g[y1 * NB + x0] + (g[y1 * NB + x1] - g[y1 * NB + x0]) * fx;
+return top + (bot - top) * fy;
+}
+function bNoise(g, px, py) {
+return (bGrid(g, px / 110, py / 70) +
+0.5 * bGrid(g, px / 55 + 37.7, py / 35 + 11.3)) / 1.5;
+}
+var LATB = 8;
+var snapData = null, outData = null;
+var latFX = null, latFY = null, latWB = 0, latHB = 0;
+var padB = 0, padDevB = 0, sw = 0, sh = 0;
+function prepareBend(strength) {
+var cw = card.offsetWidth, chh = card.offsetHeight;
+sw = Math.max(2, Math.round(cw * dprB));
+sh = Math.max(2, Math.round(chh * dprB));
+padB = Math.ceil(Math.abs(strength) * 0.32) + 4;
+padDevB = Math.round(padB * dprB);
+canvas.style.left = -padB + "px";
+canvas.style.top = -padB + "px";
+canvas.style.width = (cw + padB * 2) + "px";
+canvas.style.height = (chh + padB * 2) + "px";
+canvas.width = sw + padDevB * 2;
+canvas.height = sh + padDevB * 2;
+outData = cctx.createImageData(canvas.width, canvas.height);
+var sc = document.createElement("canvas");
+sc.width = sw;
+sc.height = sh;
+var scx = sc.getContext("2d");
+if (img && img.naturalWidth) {
+var k = Math.max(sw / img.naturalWidth, sh / img.naturalHeight);
+var dw = img.naturalWidth * k, dh = img.naturalHeight * k;
+scx.drawImage(img, (sw - dw) / 2, (sh - dh) / 2, dw, dh);
+}
+snapData = scx.getImageData(0, 0, sw, sh).data;
+latWB = Math.ceil(canvas.width / LATB) + 2;
+latHB = Math.ceil(canvas.height / LATB) + 2;
+latFX = new Float32Array(latWB * latHB);
+latFY = new Float32Array(latWB * latHB);
+for (var ly = 0; ly < latHB; ly++) {
+var py = (ly * LATB - padDevB) / dprB;
+for (var lx = 0; lx < latWB; lx++) {
+var px = (lx * LATB - padDevB) / dprB;
+var q = (2 * px - cw) / (1.4 * cw);
+var li = ly * latWB + lx;
+latFX[li] = 0.0016 + 0.09 * bNoise(bnR, px, py);
+latFY[li] = 0.4116 * (1 - q * q) - 0.41 + 0.09 * bNoise(bnG, px, py);
+}
+}
+}
+function renderBend(s, rCss) {
+var rr = rCss * dprB;
+var W = canvas.width, H = canvas.height;
+var src = snapData, dst = outData.data;
+var sDev = s * dprB;
+var invLat = 1 / LATB;
+var di = 0;
+for (var y = 0; y < H; y++) {
+var gy = y * invLat, gy0 = gy | 0, fyL = gy - gy0;
+var row0 = gy0 * latWB, row1 = row0 + latWB;
+for (var x = 0; x < W; x++, di += 4) {
+var gx = x * invLat, gx0 = gx | 0, fxL = gx - gx0;
+var a = row0 + gx0, b = row1 + gx0;
+var Fx = (latFX[a] + (latFX[a + 1] - latFX[a]) * fxL) * (1 - fyL) +
+(latFX[b] + (latFX[b + 1] - latFX[b]) * fxL) * fyL;
+var Fy = (latFY[a] + (latFY[a + 1] - latFY[a]) * fxL) * (1 - fyL) +
+(latFY[b] + (latFY[b + 1] - latFY[b]) * fxL) * fyL;
+var sxf = x - padDevB + sDev * Fx;
+var syf = y - padDevB + sDev * Fy;
+var dx1 = Math.min(sxf, sw - sxf);
+var dy1 = Math.min(syf, sh - syf);
+var d;
+if (dx1 < rr && dy1 < rr) {
+var ax = rr - dx1, ay = rr - dy1;
+d = rr - Math.sqrt(ax * ax + ay * ay);
+} else {
+d = Math.min(dx1, dy1);
+}
+if (d <= 0) {
+dst[di + 3] = 0;
+continue;
+}
+var sx0 = Math.floor(sxf), sy0 = Math.floor(syf);
+if (sx0 < 0) sx0 = 0; else if (sx0 > sw - 2) sx0 = sw - 2;
+if (sy0 < 0) sy0 = 0; else if (sy0 > sh - 2) sy0 = sh - 2;
+var u = Math.min(Math.max(sxf - sx0, 0), 1);
+var v = Math.min(Math.max(syf - sy0, 0), 1);
+var w00 = (1 - u) * (1 - v), w10 = u * (1 - v);
+var w01 = (1 - u) * v, w11 = u * v;
+var i00 = (sy0 * sw + sx0) * 4;
+var i10 = i00 + 4;
+var i01 = i00 + sw * 4;
+var i11 = i01 + 4;
+dst[di] = src[i00] * w00 + src[i10] * w10 + src[i01] * w01 + src[i11] * w11;
+dst[di + 1] = src[i00 + 1] * w00 + src[i10 + 1] * w10 + src[i01 + 1] * w01 + src[i11 + 1] * w11;
+dst[di + 2] = src[i00 + 2] * w00 + src[i10 + 2] * w10 + src[i01 + 2] * w01 + src[i11 + 2] * w11;
+dst[di + 3] = d >= 1 ? 255 : 255 * d;
+}
+}
+cctx.putImageData(outData, 0, 0);
+}
+function makeBendEase(raw) {
+var kw = {
+"linear": [0, 0, 1, 1],
+"ease": [0.25, 0.1, 0.25, 1],
+"ease-in": [0.42, 0, 1, 1],
+"ease-out": [0, 0, 0.58, 1],
+"ease-in-out": [0.42, 0, 0.58, 1]
+};
+var c = kw[(raw || "").trim()];
+if (!c) {
+var m = (raw || "").match(
+/cubic-bezier\(\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/
+);
+if (m) c = [+m[1], +m[2], +m[3], +m[4]];
+}
+if (!c) c = kw["ease"];
+var x1 = c[0], y1 = c[1], x2 = c[2], y2 = c[3];
+var cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+var cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+var sx = function (t) { return ((ax * t + bx) * t + cx) * t; };
+var dxf = function (t) { return (3 * ax * t + 2 * bx) * t + cx; };
+var sy = function (t) { return ((ay * t + by) * t + cy) * t; };
+return function (x) {
+if (x <= 0) return 0;
+if (x >= 1) return 1;
+var t = x;
+for (var i = 0; i < 6; i++) {
+var e = sx(t) - x;
+if (Math.abs(e) < 1e-4) break;
+var d = dxf(t);
+if (Math.abs(d) < 1e-6) break;
+t -= e / d;
+}
+return sy(t);
+};
+}
+function runBend(sign, flightMs) {
+if (!canvas || !cctx || reduced) return;
+var strength = readNum("--pv27", 0);
+if (!strength) return;
+var explicit = readNum("--pv12", 0);
+var durMs = explicit > 0 ? explicit : flightMs;
+if (durMs <= 0) return;
+var ease = makeBendEase(readStr("--pvu"));
+var rFrom = parseFloat(getComputedStyle(card).borderTopLeftRadius) || 0;
+var rTo = sign > 0 ? 16 : 32;
+var flightEase = makeBendEase(
+readStr(sign > 0 ? "--pvw" : "--pvl")
+);
+if (bendRaf) cancelAnimationFrame(bendRaf);
+prepareBend(strength);
+card.classList.add("is-bending");
+var t0 = performance.now();
+(function tick(now) {
+var p = Math.min((now - t0) / durMs, 1);
+var e = Math.min(Math.max(ease(p), 0), 1);
+var env = Math.sin(Math.PI * e);
+var p2 = Math.min((now - t0) / Math.max(flightMs, 1), 1);
+renderBend(strength * sign * env, rFrom + (rTo - rFrom) * flightEase(p2));
+if (p < 1) {
+bendRaf = requestAnimationFrame(tick);
+} else {
+bendRaf = null;
+card.classList.remove("is-bending");
+}
+})(t0);
+}
+card.addEventListener("click", function () {
+var open = card.classList.contains("is-open");
+if (open) {
+card.classList.remove("is-open");
+card.classList.add("is-closing");
+card.setAttribute("aria-expanded", "false");
+runBend(-0.6, readNum("--pvv", 420));
+} else {
+card.classList.remove("is-closing");
+card.classList.add("is-open");
+card.setAttribute("aria-expanded", "true");
+runBend(1, readNum("--pv13", 620));
+}
+});
+card.addEventListener("animationend", function (e) {
+if (e.animationName === "pv1s") {
+card.classList.remove("is-closing");
+}
+});
+})();
+(function initPro3Toggle() {
+var square = document.querySelector(".pv1e");
+var btn = document.getElementById("pv1f");
+if (!square || !btn) return;
+btn.addEventListener("click", function () {
+var playing = square.getAttribute("data-playing") === "true";
+var next = !playing;
+square.setAttribute("data-playing", String(next));
+btn.textContent = next ? "Stop" : "Play";
+btn.setAttribute("aria-pressed", String(next));
+});
+})();
+(function initPro6() {
+var stage = document.querySelector(".pv1y");
+var card = document.getElementById("pv2c");
+var btn = document.getElementById("pv1m");
+var canvas = document.getElementById("pv1l");
+if (!stage || !card || !btn || !canvas) return;
+var ctx = canvas.getContext("2d");
+var workHalf = document.createElement("canvas"); 
+var snap = document.createElement("canvas"); 
+var whctx = workHalf.getContext("2d");
+var running = false;
+var LAT = 4;
+var snapPre = null, workData = null, halfData = null, blurTmp = null;
+var pad = 0, padDev = 0, latW = 0, latH = 0;
+var workW = 0, workH = 0, wW2 = 0, wH2 = 0;
+var latDX = null, latDY = null;
+function boxH(srcA, dstA, w, h, r) {
+var inv = 1 / (2 * r + 1);
+for (var y = 0; y < h; y++) {
+var base = y * w * 4;
+var sr = 0, sg = 0, sb = 0, sa = 0;
+for (var x = 0; x <= r && x < w; x++) {
+var i = base + x * 4;
+sr += srcA[i]; sg += srcA[i + 1]; sb += srcA[i + 2]; sa += srcA[i + 3];
+}
+for (x = 0; x < w; x++) {
+var o = base + x * 4;
+dstA[o] = sr * inv; dstA[o + 1] = sg * inv; dstA[o + 2] = sb * inv; dstA[o + 3] = sa * inv;
+var xa = x + r + 1;
+if (xa < w) {
+var ia = base + xa * 4;
+sr += srcA[ia]; sg += srcA[ia + 1]; sb += srcA[ia + 2]; sa += srcA[ia + 3];
+}
+var xs = x - r;
+if (xs >= 0) {
+var is = base + xs * 4;
+sr -= srcA[is]; sg -= srcA[is + 1]; sb -= srcA[is + 2]; sa -= srcA[is + 3];
+}
+}
+}
+}
+function boxV(srcA, dstA, w, h, r, straight) {
+var stride = w * 4;
+var inv = 1 / (2 * r + 1);
+for (var x = 0; x < w; x++) {
+var base = x * 4;
+var sr = 0, sg = 0, sb = 0, sa = 0;
+for (var y = 0; y <= r && y < h; y++) {
+var i = base + y * stride;
+sr += srcA[i]; sg += srcA[i + 1]; sb += srcA[i + 2]; sa += srcA[i + 3];
+}
+for (y = 0; y < h; y++) {
+var o = base + y * stride;
+var aOut = sa * inv;
+if (straight && aOut > 0.5 && aOut < 254.6) {
+var k = 255 / aOut;
+dstA[o] = sr * inv * k;
+dstA[o + 1] = sg * inv * k;
+dstA[o + 2] = sb * inv * k;
+} else {
+dstA[o] = sr * inv;
+dstA[o + 1] = sg * inv;
+dstA[o + 2] = sb * inv;
+}
+dstA[o + 3] = aOut;
+var ya = y + r + 1;
+if (ya < h) {
+var ia = base + ya * stride;
+sr += srcA[ia]; sg += srcA[ia + 1]; sb += srcA[ia + 2]; sa += srcA[ia + 3];
+}
+var ys = y - r;
+if (ys >= 0) {
+var is = base + ys * stride;
+sr -= srcA[is]; sg -= srcA[is + 1]; sb -= srcA[is + 2]; sa -= srcA[is + 3];
+}
+}
+}
+}
+function remap(dstArr, dw, dh, s, straight) {
+var snapW = snap.width, snapH = snap.height;
+var src = snapPre;
+var invLat = 1 / LAT;
+var di = 0;
+for (var yD = 0; yD < dh; yD++) {
+var yF = yD * s;
+var gy = yF * invLat;
+var gy0 = gy | 0;
+var fy = gy - gy0;
+var row0 = gy0 * latW, row1 = row0 + latW;
+for (var xD = 0; xD < dw; xD++, di += 4) {
+var xF = xD * s;
+var gx = xF * invLat;
+var gx0 = gx | 0;
+var fx = gx - gx0;
+var a = row0 + gx0, b = row1 + gx0;
+var dxv = (latDX[a] + (latDX[a + 1] - latDX[a]) * fx) * (1 - fy) +
+(latDX[b] + (latDX[b + 1] - latDX[b]) * fx) * fy;
+var dyv = (latDY[a] + (latDY[a + 1] - latDY[a]) * fx) * (1 - fy) +
+(latDY[b] + (latDY[b + 1] - latDY[b]) * fx) * fy;
+var sxf = xF - padDev + dxv;
+var syf = yF - padDev + dyv;
+var sx0 = Math.floor(sxf);
+var sy0 = Math.floor(syf);
+var rC = 0, gC = 0, bC = 0, aC = 0;
+if (sx0 >= 0 && sx0 < snapW - 1 && sy0 >= 0 && sy0 < snapH - 1) {
+var u = sxf - sx0, v = syf - sy0;
+var w00 = (1 - u) * (1 - v), w10 = u * (1 - v);
+var w01 = (1 - u) * v, w11 = u * v;
+var i00 = (sy0 * snapW + sx0) * 4;
+var i10 = i00 + 4;
+var i01 = i00 + snapW * 4;
+var i11 = i01 + 4;
+rC = src[i00] * w00 + src[i10] * w10 + src[i01] * w01 + src[i11] * w11;
+gC = src[i00 + 1] * w00 + src[i10 + 1] * w10 + src[i01 + 1] * w01 + src[i11 + 1] * w11;
+bC = src[i00 + 2] * w00 + src[i10 + 2] * w10 + src[i01 + 2] * w01 + src[i11 + 2] * w11;
+aC = src[i00 + 3] * w00 + src[i10 + 3] * w10 + src[i01 + 3] * w01 + src[i11 + 3] * w11;
+} else if (sx0 >= -1 && sx0 <= snapW - 1 && sy0 >= -1 && sy0 <= snapH - 1) {
+var u2 = sxf - sx0, v2 = syf - sy0;
+var w, si;
+if (sx0 >= 0 && sy0 >= 0) {
+w = (1 - u2) * (1 - v2); si = (sy0 * snapW + sx0) * 4;
+rC += src[si] * w; gC += src[si + 1] * w; bC += src[si + 2] * w; aC += src[si + 3] * w;
+}
+if (sx0 + 1 < snapW && sy0 >= 0) {
+w = u2 * (1 - v2); si = (sy0 * snapW + sx0 + 1) * 4;
+rC += src[si] * w; gC += src[si + 1] * w; bC += src[si + 2] * w; aC += src[si + 3] * w;
+}
+if (sx0 >= 0 && sy0 + 1 < snapH) {
+w = (1 - u2) * v2; si = ((sy0 + 1) * snapW + sx0) * 4;
+rC += src[si] * w; gC += src[si + 1] * w; bC += src[si + 2] * w; aC += src[si + 3] * w;
+}
+if (sx0 + 1 < snapW && sy0 + 1 < snapH) {
+w = u2 * v2; si = ((sy0 + 1) * snapW + sx0 + 1) * 4;
+rC += src[si] * w; gC += src[si + 1] * w; bC += src[si + 2] * w; aC += src[si + 3] * w;
+}
+} else {
+dstArr[di] = 0;
+dstArr[di + 1] = 0;
+dstArr[di + 2] = 0;
+dstArr[di + 3] = 0;
+continue;
+}
+if (straight && aC > 0.5 && aC < 254.6) {
+var k = 255 / aC;
+rC *= k; gC *= k; bC *= k;
+}
+dstArr[di] = rC;
+dstArr[di + 1] = gC;
+dstArr[di + 2] = bC;
+dstArr[di + 3] = aC;
+}
+}
+}
+var N = 64;
+var noiseR = new Float32Array(N * N);
+var noiseG = new Float32Array(N * N);
+(function seedNoise() {
+var s = 4;
+for (var i = 0; i < N * N; i++) {
+s = (s * 1664525 + 1013904223) >>> 0;
+noiseR[i] = s / 2147483648 - 1;
+s = (s * 1664525 + 1013904223) >>> 0;
+noiseG[i] = s / 2147483648 - 1;
+}
+})();
+function gridAt(gArr, x, y) {
+var xi = Math.floor(x), yi = Math.floor(y);
+var fx = x - xi, fy = y - yi;
+fx = fx * fx * (3 - 2 * fx);
+fy = fy * fy * (3 - 2 * fy);
+var x0 = ((xi % N) + N) % N, x1 = (x0 + 1) % N;
+var y0 = ((yi % N) + N) % N, y1 = (y0 + 1) % N;
+var top = gArr[y0 * N + x0] + (gArr[y0 * N + x1] - gArr[y0 * N + x0]) * fx;
+var bot = gArr[y1 * N + x0] + (gArr[y1 * N + x1] - gArr[y1 * N + x0]) * fx;
+return top + (bot - top) * fy;
+}
+function noise2(gArr, px, py) {
+return (gridAt(gArr, px / 28, py / 28) +
+0.5 * gridAt(gArr, px / 14 + 37.7, py / 14 + 11.3)) / 1.5;
+}
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+var cardX = 0, cardY = 0, cardW = 0, cardH = 0;
+function prepare(padCss) {
+var sr = stage.getBoundingClientRect();
+var cr = card.getBoundingClientRect();
+cardX = cr.left - sr.left;
+cardY = cr.top - sr.top;
+cardW = cr.width;
+cardH = cr.height;
+snap.width = Math.max(1, Math.round(cardW * dpr));
+snap.height = Math.max(1, Math.round(cardH * dpr));
+pad = Math.min(Math.ceil(padCss) + 6, 80);
+padDev = Math.round(pad * dpr);
+workW = snap.width + padDev * 2;
+workH = snap.height + padDev * 2;
+canvas.width = workW;
+canvas.height = workH;
+canvas.style.left = (cardX - pad) + "px";
+canvas.style.top = (cardY - pad) + "px";
+canvas.style.width = (cardW + pad * 2) + "px";
+canvas.style.height = (cardH + pad * 2) + "px";
+ctx.imageSmoothingQuality = "high";
+var sc = snap.getContext("2d");
+sc.setTransform(dpr, 0, 0, dpr, 0, 0);
+sc.clearRect(0, 0, cardW, cardH);
+var r = 16; 
+sc.beginPath();
+sc.moveTo(r, 0);
+sc.arcTo(cardW, 0, cardW, cardH, r);
+sc.arcTo(cardW, cardH, 0, cardH, r);
+sc.arcTo(0, cardH, 0, 0, r);
+sc.arcTo(0, 0, cardW, 0, r);
+sc.closePath();
+sc.clip();
+var img = card.querySelector("img");
+if (img && img.naturalWidth) {
+var s = Math.max(cardW / img.naturalWidth, cardH / img.naturalHeight);
+var dw = img.naturalWidth * s, dh = img.naturalHeight * s;
+sc.drawImage(img, (cardW - dw) / 2, (cardH - dh) / 2, dw, dh);
+} else {
+sc.fillStyle = "#e9e9ec";
+sc.fillRect(0, 0, cardW, cardH);
+}
+var bx = cardW - 8 - 12, by = 8 + 12;
+sc.beginPath();
+sc.arc(bx, by, 12, 0, Math.PI * 2);
+sc.fillStyle = "rgba(255, 255, 255, 0.92)";
+sc.fill();
+sc.strokeStyle = "#17181c";
+sc.lineWidth = 1.5;
+sc.lineCap = "round";
+sc.beginPath();
+sc.moveTo(bx - 3.5, by - 3.5);
+sc.lineTo(bx + 3.5, by + 3.5);
+sc.moveTo(bx + 3.5, by - 3.5);
+sc.lineTo(bx - 3.5, by + 3.5);
+sc.stroke();
+var sd = sc.getImageData(0, 0, snap.width, snap.height).data;
+snapPre = new Uint8ClampedArray(sd.length);
+for (var i = 0; i < sd.length; i += 4) {
+var aP = sd[i + 3];
+snapPre[i] = sd[i] * aP / 255;
+snapPre[i + 1] = sd[i + 1] * aP / 255;
+snapPre[i + 2] = sd[i + 2] * aP / 255;
+snapPre[i + 3] = aP;
+}
+workData = ctx.createImageData(workW, workH);
+wW2 = Math.ceil(workW / 2);
+wH2 = Math.ceil(workH / 2);
+workHalf.width = wW2;
+workHalf.height = wH2;
+halfData = whctx.createImageData(wW2, wH2);
+blurTmp = new Uint8ClampedArray(halfData.data.length);
+latW = Math.ceil(workW / LAT) + 2;
+latH = Math.ceil(workH / LAT) + 2;
+latDX = new Float32Array(latW * latH);
+latDY = new Float32Array(latW * latH);
+}
+function dissolve() {
+if (running || reduced) return;
+running = true;
+var durMs = readNum("--pv2k", 900);
+var g = readNum("--pv19", 900);
+var warp = readNum("--pv2g", 90);
+var maxBlur = readNum("--pv2b", 18);
+var sway = readNum("--pv2f", 14);
+var spin = readNum("--pv2e", 8);
+var churn = readNum("--pv1x", 200);
+var spread = readNum("--pv1n", 30);
+var warpEase = makeEaseSampler(readStr("--pvz"));
+var blurEase = makeEaseSampler(readStr("--pvy"));
+var gravityEase = makeEaseSampler(readStr("--pvc"));
+var dissolveEase = makeEaseSampler(readStr("--pv8"));
+var warpDurRaw = readNum("--pv14", 0);
+var warpDurMs = warpDurRaw > 0 ? warpDurRaw : durMs;
+prepare(warp / 2 + maxBlur * 2);
+card.style.visibility = "hidden";
+var t0 = performance.now();
+var frame = 0;
+(function tick(now) {
+var t = (now - t0) / 1000;
+var rawP = Math.min((now - t0) / Math.max(durMs, 1), 1);
+var p = dissolveEase(rawP);
+var teff = gravityEase(p) * (durMs / 1000);
+var fallY = 0.5 * g * teff * teff;
+var swayX = Math.sin(t * 5) * sway * p;
+var pw = Math.min((now - t0) / Math.max(warpDurMs, 1), 1);
+var dispScale = warp * warpEase(pw);
+var blur = maxBlur * blurEase(p);
+var alpha = 1 - Math.pow(p, 1.6);
+var driftY = churn * t;
+var driftX = Math.sin(t * 3.2) * churn * 0.3;
+if (frame % 2 === 0 || rawP >= 1) {
+var halfDev = (dispScale / 2) * dpr;
+for (var ly = 0; ly < latH; ly++) {
+var py = (ly * LAT - padDev) / dpr;
+for (var lx = 0; lx < latW; lx++) {
+var px = (lx * LAT - padDev) / dpr;
+var li = ly * latW + lx;
+latDX[li] = halfDev * noise2(noiseR, px - driftX, py - driftY);
+latDY[li] = halfDev * noise2(noiseG, px - driftX, py - driftY);
+}
+}
+var rBox = blur > 0.3 ? Math.round(blur * dpr * 1.22) : 0;
+if (rBox >= 2) {
+remap(halfData.data, wW2, wH2, 2, false);
+var rHalf = Math.max(1, Math.round(rBox / 2));
+boxH(halfData.data, blurTmp, wW2, wH2, rHalf);
+boxH(blurTmp, halfData.data, wW2, wH2, rHalf);
+boxV(halfData.data, blurTmp, wW2, wH2, rHalf, false);
+boxV(blurTmp, halfData.data, wW2, wH2, rHalf, true);
+whctx.putImageData(halfData, 0, 0);
+ctx.clearRect(0, 0, workW, workH);
+ctx.drawImage(workHalf, 0, 0, wW2, wH2, 0, 0, workW, workH);
+} else {
+remap(workData.data, workW, workH, 1, true);
+ctx.putImageData(workData, 0, 0);
+}
+}
+frame++;
+canvas.style.transform =
+"translate(" + swayX.toFixed(1) + "px, " + fallY.toFixed(1) + "px)" +
+" rotate(" + (spin * p).toFixed(2) + "deg)" +
+" scale(" + (1 + (spread / 100) * p).toFixed(3) + ")";
+canvas.style.opacity = alpha.toFixed(3);
+if (rawP < 1) { requestAnimationFrame(tick); return; }
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+canvas.style.transform = "";
+canvas.style.opacity = "";
+window.setTimeout(function () {
+card.style.visibility = "";
+card.classList.remove("is-respawning");
+card.offsetWidth;
+card.classList.add("is-respawning");
+running = false;
+}, readNum("--pv1a", 800));
+})(t0);
+}
+btn.addEventListener("click", dissolve);
+card.addEventListener("animationend", function (e) {
+if (e.animationName === "pv1a") {
+card.classList.remove("is-respawning");
+}
+});
+})();
+})();
+</script>
   <!-- Pro platform client: mounts Pro badges on data-pro cards, reads auth state. -->
   <script src="assets/pro-client.js?v=12" defer></script>
 </body>
