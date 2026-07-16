@@ -187,7 +187,7 @@
   function startPortal() {
     apiJSON("/portal", "POST").then(function (data) {
       if (data && data.url) location.href = data.url;
-      else notify("Billing portal is unavailable right now.");
+      else notify("Billing portal is unavailable right now." + (data && data.detail ? "\n(" + data.detail + ")" : ""));
     }).catch(function () { notify("Couldn't open the billing portal."); });
   }
 
