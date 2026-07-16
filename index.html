@@ -5246,7 +5246,11 @@
     }
 
     /* ── PRO1 Confetti ─────────────────────────────────────────── */
-    #pro1-stage .btn-animate { z-index: 1; }
+    /* No content above/below to balance against (canvas is full-bleed),
+       so the trigger sits centered in the stage instead of the usual
+       bottom-anchored position. The burst origin reads the button's
+       live rect, so recentring it doesn't need any JS change. */
+    #pro1-stage .btn-animate { top: 50%; bottom: auto; transform: translate(-50%, -50%); z-index: 1; }
     .pro1-canvas {
       position: absolute;
       inset: 0;
@@ -6773,7 +6777,7 @@
               <span class="p22-bar" aria-hidden="true"></span>
             </div>
           </div>
-          <button type="button" class="btn-animate" data-proto="22">Animate</button>
+          <button type="button" class="btn-animate" data-proto="22">Toggle</button>
         </div>
         <div class="card-meta">
           <div class="card-title">Toast open/close</div>
