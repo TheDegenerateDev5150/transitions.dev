@@ -11374,30 +11374,23 @@ export function Surface({ open, children }) {
               var pw = lock ? ensurePaywall(block) : block.querySelector(".detail-paywall");
               if (pw) pw.hidden = !lock;
             });
+            // Whenever the lock engages, scrub the panels back to the decoy —
+            // real recipe text fetched while entitled must never linger in the
+            // DOM behind the blur (e.g. after sign-out or an auth race).
+            if (lock && currentIndex >= 0 && items[currentIndex] && items[currentIndex].proId) {
+              cssEl.textContent = proDecoy("css");
+              reactEl.textContent = proDecoy("react");
+            }
           }
-          // Behind the blur, Pro panels show plausible placeholder lines —
-          // the real source is never in the page payload.
-          var PRO_CODE_PLACEHOLDER = (function () {
-            var lines = [
-              ":root {",
-              "  --t-dur: 410ms;",
-              "  --t-ease: cubic-bezier(0.31, 2.34, 0.64, 1);",
-              "  --t-scale: 1.04;",
-              "}",
-              "",
-              ".t-pro {",
-              "  translate: var(--cx) var(--cy);",
-              "  rotate: var(--rot);",
-              "  transition:",
-              "    translate var(--t-dur) var(--t-ease),",
-              "    rotate var(--t-dur) var(--t-ease);",
-              "}",
-              ""
-            ];
-            var out = [];
-            for (var i = 0; i < 4; i++) out = out.concat(lines);
-            return out.join("\n");
-          })();
+          // Behind the blur, Pro panels show the FREE card-resize snippet as a
+          // decoy — real, plausible-looking code that is already public, so a
+          // determined un-blur reveals nothing paid. The real Pro source only
+          // ever enters the page via the entitlement-gated API.
+          function proDecoy(kind) {
+            try {
+              return kind === "react" ? buildReactSnippet("p4") : buildSnippet("p4");
+            } catch (e) { return ""; }
+          }
 
           // Entitled viewers get the real recipe from the API; the fetch is
           // re-checked server-side, so this is convenience, not authority.
@@ -11409,9 +11402,12 @@ export function Surface({ open, children }) {
               TP.fetchContent(it.proId, variant)
                 .then(function (text) {
                   if (currentIndex !== idx) return; // stale selection
+                  // Entitlement may have dropped while the fetch was in
+                  // flight — never place real source behind a locked blur.
+                  if (!isEntitled()) return;
                   (variant === "css" ? cssEl : reactEl).textContent = text;
                 })
-                .catch(function () { /* stays on placeholder behind the paywall */ });
+                .catch(function () { /* stays on the decoy behind the paywall */ });
             });
           }
 
@@ -11455,9 +11451,9 @@ export function Surface({ open, children }) {
               try { cssEl.textContent = buildSnippet(it.key); } catch (e) { cssEl.textContent = ""; }
               try { reactEl.textContent = buildReactSnippet(it.key); } catch (e) { reactEl.textContent = ""; }
             } else {
-              // Pro item: placeholder behind the blur; real source only via API.
-              cssEl.textContent = PRO_CODE_PLACEHOLDER;
-              reactEl.textContent = PRO_CODE_PLACEHOLDER;
+              // Pro item: decoy behind the blur; real source only via API.
+              cssEl.textContent = proDecoy("css");
+              reactEl.textContent = proDecoy("react");
               loadProCode(it);
             }
             applyPaywall(it.pro);
