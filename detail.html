@@ -5287,8 +5287,10 @@
 
     .detail-body { margin-top: 24px; }
     /* Positioning context for the copy button, which lives here (a sibling
-       of the overflow:hidden .detail-code) so its tooltip isn't clipped. */
-    .detail-panel { position: relative; }
+       of the overflow:hidden .detail-code) so its tooltip isn't clipped.
+       Capped to the code card's / stage's own width so the button anchors
+       to the card's right edge, not the wider content column. */
+    .detail-panel { position: relative; max-width: 686px; }
     .detail-panel[hidden] { display: none; }
 
     /* ── Preview panel ───────────────────────────────────────────
