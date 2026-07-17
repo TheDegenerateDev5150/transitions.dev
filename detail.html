@@ -5286,6 +5286,9 @@
     .detail-tabs.proto-modal-tabs { align-self: flex-start; margin-bottom: 0; }
 
     .detail-body { margin-top: 24px; }
+    /* Positioning context for the copy button, which lives here (a sibling
+       of the overflow:hidden .detail-code) so its tooltip isn't clipped. */
+    .detail-panel { position: relative; }
     .detail-panel[hidden] { display: none; }
 
     /* ── Preview panel ───────────────────────────────────────────
@@ -5608,7 +5611,8 @@
       pointer-events: none;
       user-select: none;
     }
-    .detail-code.is-locked .detail-code-copy { display: none; }
+    /* Button is now a sibling that follows the code card. */
+    .detail-code.is-locked ~ .detail-code-copy { display: none; }
     .detail-paywall {
       position: absolute;
       inset: 0;
@@ -5785,9 +5789,17 @@
     }
     .detail-code-copy:hover { background: var(--chip-bg-hover); color: var(--text); }
     .detail-code-copy svg { width: 15px; height: 15px; }
-    /* This button sits at the panel's top edge, so drop its tooltip below
-       (the card tooltip defaults to pointing up). */
-    .detail-code-copy .card-copy-tooltip { top: calc(100% + 8px); bottom: auto; }
+    /* The button lives in the (non-clipping) .detail-panel wrapper rather
+       than inside the overflow:hidden code card, so its tooltip can sit
+       ABOVE the button. Right-align it to the button so the wider pill
+       grows leftward and never overhangs the card's right edge. */
+    .detail-code-copy .card-copy-tooltip {
+      top: auto;
+      bottom: calc(100% + 8px);
+      left: auto;
+      right: 0;
+      transform: none;
+    }
 
     /* ── Responsive ──────────────────────────────────────────── */
     @media (max-width: 860px) {
@@ -6029,22 +6041,22 @@
 
           <div class="detail-panel" data-detail-panel="css" hidden>
             <div class="detail-code">
-              <button type="button" class="detail-code-copy card-copy" data-copy-target="css" aria-label="Copy CSS">
-                <svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              </button>
               <div class="detail-code-scroll"><pre><code id="detail-css"></code></pre></div>
             </div>
+            <button type="button" class="detail-code-copy card-copy" data-copy-target="css" aria-label="Copy CSS">
+              <svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
           </div>
 
           <div class="detail-panel" data-detail-panel="react" hidden>
             <div class="detail-code">
-              <button type="button" class="detail-code-copy card-copy" data-copy-target="react" aria-label="Copy React">
-                <svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              </button>
               <div class="detail-code-scroll"><pre><code id="detail-react"></code></pre></div>
             </div>
+            <button type="button" class="detail-code-copy card-copy" data-copy-target="react" aria-label="Copy React">
+              <svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
           </div>
         </div>
 
