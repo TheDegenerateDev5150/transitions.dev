@@ -11345,27 +11345,62 @@ export function Surface({ open, children }) {
           }
           function ensurePaywall(block) {
             var pw = block.querySelector(".detail-paywall");
-            if (pw) return pw;
+            if (pw) { updatePaywallCopy(pw); return pw; }
             pw = document.createElement("div");
             pw.className = "detail-paywall";
             pw.innerHTML =
               '<div>' +
                 '<h2 class="detail-paywall-title">Get Transitions.dev<span class="paywall-pro">Pro</span></h2>' +
-                '<p class="detail-paywall-sub" style="margin-top:6px">' +
-                  '33+ production-ready transitions for modern web apps.<br>' +
-                  'Copy the CSS straight in, or let your agent apply them<br>' +
-                  'with the Pro skill, right inside your project.' +
-                '</p>' +
+                '<p class="detail-paywall-sub" style="margin-top:6px" data-paywall-sub></p>' +
               '</div>' +
               '<div class="detail-paywall-actions">' +
                 '<a class="detail-paywall-btn detail-paywall-btn--primary" href="pro.html">Get Pro</a>' +
                 '<button type="button" class="detail-paywall-btn detail-paywall-btn--secondary" data-paywall-signin>Sign in</button>' +
               '</div>';
             pw.querySelector("[data-paywall-signin]").addEventListener("click", function () {
-              if (window.TransitionsPro) window.TransitionsPro.openSignIn();
+              var TP = window.TransitionsPro;
+              if (!TP) return;
+              // Signed in but unentitled: "Switch account" — sign out first so
+              // the user can retry with the email they purchased with.
+              if (TP.state && TP.state.authenticated) {
+                TP.logout().then(function () { TP.openSignIn(); });
+              } else {
+                TP.openSignIn();
+              }
             });
             block.appendChild(pw);
+            updatePaywallCopy(pw);
             return pw;
+          }
+
+          // The overlay explains the situation it's actually blocking on. For a
+          // signed-in account with no Pro access, the by-far most common cause
+          // is signing in with a different email than the one used at checkout
+          // — say so, show which account this is, and offer to switch.
+          function updatePaywallCopy(pw) {
+            var TP = window.TransitionsPro;
+            var s = TP && TP.state;
+            var sub = pw.querySelector("[data-paywall-sub]");
+            var signinBtn = pw.querySelector("[data-paywall-signin]");
+            if (!sub || !signinBtn) return;
+            if (s && s.resolved && s.authenticated && !s.pro) {
+              sub.innerHTML =
+                "You're signed in as <strong>" + escHtml(s.email || "this account") + "</strong>, " +
+                "but it has no Pro access.<br>Bought Pro with a different email? Switch to that " +
+                "account —<br>or pick a plan to unlock every Pro transition.";
+              signinBtn.textContent = "Switch account";
+            } else {
+              sub.innerHTML =
+                "33+ production-ready transitions for modern web apps.<br>" +
+                "Copy the CSS straight in, or let your agent apply them<br>" +
+                "with the Pro skill, right inside your project.";
+              signinBtn.textContent = "Sign in";
+            }
+          }
+          function escHtml(t) {
+            var d = document.createElement("div");
+            d.textContent = t == null ? "" : t;
+            return d.innerHTML;
           }
           function applyPaywall(isPro) {
             var lock = !!isPro && !isEntitled();
@@ -11407,7 +11442,25 @@ export function Surface({ open, children }) {
                   if (!isEntitled()) return;
                   (variant === "css" ? cssEl : reactEl).textContent = text;
                 })
-                .catch(function () { /* stays on the decoy behind the paywall */ });
+                .catch(function (e) {
+                  if (currentIndex !== idx) return;
+                  // The server rejected an entitlement the client believed in
+                  // (signed out elsewhere, plan lapsed) — re-sync auth so the
+                  // paywall re-locks with an accurate explanation.
+                  if (e && (e.status === 401 || e.status === 403)) {
+                    if (TP.refresh) TP.refresh();
+                    return;
+                  }
+                  // Transient failure for an entitled viewer: say so instead of
+                  // silently presenting the decoy as if it were the Pro source.
+                  if (isEntitled()) {
+                    var el = variant === "css" ? cssEl : reactEl;
+                    el.textContent =
+                      "/* Couldn't load the Pro code (connection hiccup).\n" +
+                      "   Click this panel to retry. */";
+                    el.setAttribute("data-load-failed", "true");
+                  }
+                });
             });
           }
 
@@ -11417,6 +11470,17 @@ export function Surface({ open, children }) {
               applyPaywall(items[currentIndex].pro);
               loadProCode(items[currentIndex]);
             }
+          });
+
+          // Clicking a panel whose Pro fetch failed retries the load.
+          [cssEl, reactEl].forEach(function (el) {
+            if (!el) return;
+            el.addEventListener("click", function () {
+              if (el.getAttribute("data-load-failed") !== "true") return;
+              el.removeAttribute("data-load-failed");
+              el.textContent = "/* Retrying… */";
+              if (currentIndex >= 0) loadProCode(items[currentIndex]);
+            });
           });
 
           function moveActiveCard(it) {
@@ -13927,7 +13991,7 @@ card.classList.remove("is-respawning");
 })();
 </script>
   <!-- Pro platform client: unlocks Pro code for entitled viewers (fires pro:me). -->
-  <script src="assets/pro-client.js?v=13" defer></script>
+  <script src="assets/pro-client.js?v=14" defer></script>
 </body>
 </html>
 
